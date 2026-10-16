@@ -9,7 +9,11 @@ import 'package:party_tricks/screens/stats_screen.dart';
 import 'package:party_tricks/screens/wardrobe_screen.dart';
 import 'package:party_tricks/widgets/app_navigation_bar.dart';
 
-/// Estructura principal: la sección activa arriba y la barra de navegación abajo.
+/// Estructura principal: el fondo del juego, la sección activa encima
+/// y la barra de navegación abajo.
+///
+/// No usa SafeArea: cada pantalla decide cómo respetar las zonas seguras,
+/// para que el fondo pueda llegar hasta los bordes.
 class MainShellScreen extends ConsumerWidget {
   const MainShellScreen({super.key});
 
@@ -18,12 +22,23 @@ class MainShellScreen extends ConsumerWidget {
     final selected = ref.watch(navigationControllerProvider);
 
     return Scaffold(
-      body: SafeArea(
-        // IndexedStack conserva el estado de cada sección al cambiar de pestaña.
-        child: IndexedStack(
-          index: selected.index,
-          children: AppSection.values.map(_screenFor).toList(),
-        ),
+      // El contenido llega hasta el borde inferior, por detrás de la barra.
+      extendBody: true,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Fondo común a todas las secciones; las colinas quedan ancladas abajo.
+          Image.asset(
+            'assets/images/Fondo_Principal.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.bottomCenter,
+          ),
+          // IndexedStack conserva el estado de cada sección al cambiar de pestaña.
+          IndexedStack(
+            index: selected.index,
+            children: AppSection.values.map(_screenFor).toList(),
+          ),
+        ],
       ),
       bottomNavigationBar: AppNavigationBar(
         selected: selected,

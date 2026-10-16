@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:party_tricks/screens/main_shell_screen.dart';
+import 'package:party_tricks/screens/app_gate.dart';
 import 'package:party_tricks/theme/app_theme.dart';
 
 void main() {
@@ -16,7 +16,7 @@ class PartyTricksApp extends StatelessWidget {
       title: 'Party Tricks',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const MainShellScreen(),
+      home: const AppGate(),
     );
   }
 }
