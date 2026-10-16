@@ -85,3 +85,18 @@
 - **Decisión:** la foto de rostro es opcional (se puede armar el personaje con cosméticos) y el chat debe permitir reportar y bloquear.
 - **Motivo:** el público es de 10 a 27 años, así que hay jugadores menores y se guardan fotos de rostros.
 - **Pendiente:** definir la moderación del chat y la privacidad de las fotos.
+
+## D-11. Flutter Casual Games Toolkit como referencia; Flame solo si un minijuego lo necesita
+
+- **Estado:** Propuesta (por confirmar con Brayan)
+- **Origen:** recomendación del profesor de usar Flutter para juegos y el kit de herramientas de Flutter (Flutter Casual Games Toolkit).
+- **Decisión:**
+  - El tablero, los dados, los turnos, las tiendas y los resultados se hacen con Flutter normal y Riverpod, sin motor de juego.
+  - Las plantillas del toolkit (`basic`, `card` y `endless_runner`) y sus ejemplos (como `multiplayer`) se usan como **referencia**, no se adoptan completas.
+  - **Flame** (motor de juegos para Flutter) se usa únicamente en los minijuegos de tiempo real que lo necesiten. Se decide **por minijuego**.
+- **Motivo:** el toolkit considera que los juegos por turnos encajan bien en Flutter solo y reserva Flame para los de tiempo real. El tablero de Party Tricks es por turnos; los minijuegos son la única parte que podría ser de tiempo real.
+- **Alternativas:** usar Flame para todo el juego (más complejidad sin beneficio para un tablero por turnos) o no usar el toolkit.
+- **Pendientes:**
+  - Revisar qué gestor de estado usan las plantillas, porque puede ser distinto de Riverpod.
+  - Hacer una prueba corta de Flame con el minijuego más sencillo antes de decidir.
+  - Cuando se defina la lista de minijuegos, anotar cuáles usan Flame.

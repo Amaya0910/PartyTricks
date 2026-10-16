@@ -9,6 +9,7 @@ Juego 2D multijugador por turnos con minijuegos, para jugar en el celular con am
 - **App:** Flutter
 - **Backend:** Firebase (Authentication, Cloud Firestore, Realtime Database y Storage)
 - **Gestor de estado:** Riverpod
+- **Juego:** [Flutter Casual Games Toolkit](https://docs.flutter.dev/resources/games-toolkit) como referencia; Flame solo en los minijuegos de tiempo real que lo necesiten (ver `docs/decisiones.md`, D-11)
 
 ## Cómo ejecutarlo
 
