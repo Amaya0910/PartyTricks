@@ -15,6 +15,8 @@
 | Gestor de estado | Riverpod |
 | Lógica de la partida | El celular del creador de la sala hace de "servidor" |
 
+**Juegos:** se toma como referencia el Flutter Casual Games Toolkit. El tablero y los turnos son por turnos y se hacen con Flutter y Riverpod, sin motor. Flame se usa solo en los minijuegos de tiempo real que lo necesiten (ver `decisiones.md`, D-11).
+
 ---
 
 ## 2. Idea general
@@ -107,4 +109,5 @@ Toda la partida se guarda en Firebase y no solo en el celular del creador. Así,
 - [ ] Tiempo máximo por turno, por si alguien se queda inactivo.
 - [ ] Reglas de seguridad de Firebase.
 - [ ] Moderación del chat.
-- [ ] Si los minijuegos necesitan un motor de animación (por ejemplo Flame).
+- [x] Si los minijuegos necesitan un motor de animación: se decide por minijuego; Flame solo si hace falta (ver `decisiones.md`, D-11).
+- [ ] Prueba corta de Flame con el minijuego más sencillo.
