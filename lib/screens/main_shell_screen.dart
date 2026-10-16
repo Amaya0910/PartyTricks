@@ -18,6 +18,8 @@ class MainShellScreen extends ConsumerWidget {
     final selected = ref.watch(navigationControllerProvider);
 
     return Scaffold(
+      // El contenido llega hasta el borde inferior, por detrás de la barra.
+      extendBody: true,
       body: SafeArea(
         // IndexedStack conserva el estado de cada sección al cambiar de pestaña.
         child: IndexedStack(
