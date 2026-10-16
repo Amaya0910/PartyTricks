@@ -188,6 +188,7 @@ Hay **dos tiendas** en el mapa. Se compra con las **monedas de partida**. Todos 
 - Es **corto** y **aleatorio**.
 - El ganador recibe **monedas**.
 - Lista de minijuegos y su mecánica: **(por definir)**.
+- Tecnología **(propuesto)**: Flutter normal para los minijuegos simples y Flame solo para los de tiempo real que lo necesiten (ver `decisiones.md`, D-11).
 
 ---
 
@@ -346,6 +347,12 @@ lib/
 └── widgets/
 ```
 
+### 15.4 Toolkit y motor de juego **(propuesto)**
+
+- Se usa el **Flutter Casual Games Toolkit** como referencia (plantillas `basic`, `card` y `endless_runner`, y el ejemplo `multiplayer`), no se adopta completo.
+- El tablero y los turnos se hacen con Flutter y Riverpod.
+- **Flame** solo para minijuegos de tiempo real, decidido por minijuego.
+
 ---
 
 ## 16. Pendientes por definir
@@ -371,3 +378,4 @@ lib/
 - [ ] Confirmar gestor de estado.
 - [ ] Definir dónde se calcula la lógica de la partida (dados, monedas) para evitar trampas.
 - [ ] Modelo de datos en Firestore y Realtime Database.
+- [ ]  Decidir qué minijuegos usan Flame (después de definir la lista de minijuegos).
