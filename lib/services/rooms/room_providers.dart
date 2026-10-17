@@ -22,9 +22,13 @@ final roomServiceProvider = Provider<RoomService>(
 final roomIdentityProvider = FutureProvider<RoomIdentity>((ref) async {
   final auth = FirebaseAuth.instance;
   final user = auth.currentUser ?? (await auth.signInAnonymously()).user!;
+  final name = user.displayName;
   return RoomIdentity(
     uid: user.uid,
-    username: user.displayName ?? 'Jugador ${user.uid.substring(0, 4)}',
+    // Los usuarios anónimos llegan sin nombre (null o vacío).
+    username: name == null || name.isEmpty
+        ? 'Jugador ${user.uid.substring(0, 4)}'
+        : name,
   );
 });
 
