@@ -100,3 +100,15 @@
   - Revisar qué gestor de estado usan las plantillas, porque puede ser distinto de Riverpod.
   - Hacer una prueba corta de Flame con el minijuego más sencillo antes de decidir.
   - Cuando se defina la lista de minijuegos, anotar cuáles usan Flame.
+
+  
+## D-12. Configuración del proyecto de Firebase
+
+- **Fecha:** 2026-10-17
+- **Estado:** Aceptada
+- **Decisión:** proyecto `party-tricks` (plan Spark, gratis) con apps Android e iOS registradas con el identificador `com.partytricks.app`. Se activaron Authentication (correo y contraseña), Cloud Firestore (ubicación `nam5`) y Realtime Database (`us-central1`), ambas en modo de prueba. La configuración la genera `flutterfire configure` en `lib/firebase_options.dart`, y `main.dart` inicia Firebase antes de abrir la app.
+- **Motivo:** el identificador `com.example` no se acepta en tiendas y cambiarlo después obliga a registrar las apps otra vez. Correo y contraseña es lo que pide el diseño del juego.
+- **Pendientes:**
+  - Escribir las reglas de seguridad antes de que venza el modo de prueba (30 días).
+  - Storage pide el plan Blaze (de pago); se decide cuando llegue `feature/wardrobe-avatar`.
+  - Para entrar a la consola de Firebase, pedir acceso a Brayan.
