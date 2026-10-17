@@ -1,0 +1,135 @@
+import 'package:party_tricks/services/game_engine/tile_effects.dart';
+
+/// En qué momento de la ronda va la partida.
+enum GamePhase { rolling, choosingBranch, minigame, finished }
+
+/// Estado de un jugador dentro de una partida.
+class PlayerState {
+  const PlayerState({
+    required this.id,
+    required this.username,
+    this.position = 0,
+    this.coins = 0,
+    this.diamonds = 0,
+    this.pendingEffect,
+    this.minigamesWon = 0,
+    this.negativeTiles = 0,
+    this.purchases = 0,
+  });
+
+  final String id;
+  final String username;
+
+  /// Casilla donde está parado.
+  final int position;
+  final int coins;
+  final int diamonds;
+
+  /// Efecto de una casilla especial que se aplica en su siguiente turno.
+  final PendingEffect? pendingEffect;
+
+  // Contadores para los diamantes finales (diseno_juego.md, sección 10).
+  final int minigamesWon;
+  final int negativeTiles;
+  final int purchases;
+
+  /// Suma o resta monedas sin bajar de cero.
+  PlayerState addCoins(int delta) {
+    final total = coins + delta;
+    return copyWith(coins: total < 0 ? 0 : total);
+  }
+
+  PlayerState copyWith({
+    int? position,
+    int? coins,
+    int? diamonds,
+    PendingEffect? pendingEffect,
+    bool clearPendingEffect = false,
+    int? minigamesWon,
+    int? negativeTiles,
+    int? purchases,
+  }) {
+    return PlayerState(
+      id: id,
+      username: username,
+      position: position ?? this.position,
+      coins: coins ?? this.coins,
+      diamonds: diamonds ?? this.diamonds,
+      pendingEffect: clearPendingEffect
+          ? null
+          : pendingEffect ?? this.pendingEffect,
+      minigamesWon: minigamesWon ?? this.minigamesWon,
+      negativeTiles: negativeTiles ?? this.negativeTiles,
+      purchases: purchases ?? this.purchases,
+    );
+  }
+}
+
+/// Estado completo de una partida. No se modifica: cada acción crea uno nuevo.
+class GameState {
+  const GameState({
+    required this.players,
+    required this.turnOrder,
+    required this.totalRounds,
+    required this.diamondTileId,
+    this.round = 1,
+    this.turnIndex = 0,
+    this.phase = GamePhase.rolling,
+    this.stepsLeft = 0,
+    this.lastRoll = 0,
+  });
+
+  /// Jugadores por id.
+  final Map<String, PlayerState> players;
+
+  /// Ids de los jugadores en el orden en que juegan.
+  final List<String> turnOrder;
+  final int totalRounds;
+
+  /// Ronda actual, empieza en 1.
+  final int round;
+
+  /// Posición en [turnOrder] del jugador que tiene el turno.
+  final int turnIndex;
+  final GamePhase phase;
+
+  /// Casilla donde está el diamante del mapa.
+  final int diamondTileId;
+
+  /// Pasos que le faltan al jugador cuando se detiene en una bifurcación.
+  final int stepsLeft;
+
+  /// Último número que salió en el dado.
+  final int lastRoll;
+
+  String get currentPlayerId => turnOrder[turnIndex];
+
+  PlayerState get currentPlayer => players[currentPlayerId]!;
+
+  /// Copia del estado con [player] actualizado.
+  GameState withPlayer(PlayerState player) {
+    return copyWith(players: {...players, player.id: player});
+  }
+
+  GameState copyWith({
+    Map<String, PlayerState>? players,
+    int? round,
+    int? turnIndex,
+    GamePhase? phase,
+    int? diamondTileId,
+    int? stepsLeft,
+    int? lastRoll,
+  }) {
+    return GameState(
+      players: players ?? this.players,
+      turnOrder: turnOrder,
+      totalRounds: totalRounds,
+      round: round ?? this.round,
+      turnIndex: turnIndex ?? this.turnIndex,
+      phase: phase ?? this.phase,
+      diamondTileId: diamondTileId ?? this.diamondTileId,
+      stepsLeft: stepsLeft ?? this.stepsLeft,
+      lastRoll: lastRoll ?? this.lastRoll,
+    );
+  }
+}

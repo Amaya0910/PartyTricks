@@ -112,3 +112,17 @@
   - Escribir las reglas de seguridad antes de que venza el modo de prueba (30 días).
   - Storage pide el plan Blaze (de pago); se decide cuando llegue `feature/wardrobe-avatar`.
   - Para entrar a la consola de Firebase, pedir acceso a Brayan.
+
+  ## D-13. Motor del juego y valores provisionales
+
+- **Fecha:** 2026-10-17
+- **Estado:** Propuesta (por confirmar con Isabella)
+- **Decisión:** las reglas de la partida están en `lib/services/game_engine/` en Dart puro, sin Firebase. `GameEngine.apply(estado, acción)` devuelve un estado nuevo; el teléfono anfitrión lo usa y sube el resultado. El azar pasa por `RandomSource` para poder probarlo.
+- **Valores provisionales** (se cambian en un solo lugar):
+  - Tablero de 42 casillas: camino principal 0-29, bifurcaciones en 5, 15 y 24, tiendas en 12 y 22. Las posiciones se ajustan cuando esté el dibujo.
+  - Casilla positiva +3 monedas, negativa −3 y efectos especiales de monedas ±5.
+  - Cada jugador empieza con 10 monedas y el ganador del minijuego recibe 10.
+  - El diamante del mapa se gana al pasar por su casilla y reaparece en otra al azar (nunca en la salida ni en las tiendas).
+  - En una bifurcación el jugador se detiene y elige el camino.
+  - Si nadie tiene nada en una categoría de diamante final (por ejemplo, nadie compró), nadie lo recibe.
+- **Pendientes:** las compras y los dados extra se conectan en `feature/map-shop-items`, y las desconexiones en `feature/disconnections`.
