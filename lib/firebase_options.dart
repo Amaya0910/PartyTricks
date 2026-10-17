@@ -54,14 +54,15 @@ class DefaultFirebaseOptions {
     appId: '1:550690197232:android:c7c8ca7bc197d1465bfc35',
     messagingSenderId: '550690197232',
     projectId: 'party-tricks',
+    databaseURL: 'https://party-tricks-default-rtdb.firebaseio.com',
     storageBucket: 'party-tricks.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDeVhcWoLyAHmfbIdI0sorUJLJetFCjfXw',
     appId: '1:550690197232:ios:c0a11f2f994999d35bfc35',
     messagingSenderId: '550690197232',
     projectId: 'party-tricks',
+    databaseURL: 'https://party-tricks-default-rtdb.firebaseio.com',
     storageBucket: 'party-tricks.firebasestorage.app',
     iosBundleId: 'com.partytricks.app',
   );

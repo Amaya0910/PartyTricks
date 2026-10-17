@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "550690197232",
+    "firebase_url": "https://party-tricks-default-rtdb.firebaseio.com",
     "project_id": "party-tricks",
     "storage_bucket": "party-tricks.firebasestorage.app"
   },
