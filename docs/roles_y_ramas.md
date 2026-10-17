@@ -132,7 +132,7 @@ Una tarea está terminada cuando:
 
 | Rama | Responsable | Estado |
 | --- | --- | --- |
-| `chore/firebase-setup` | Brayan | 🟡 Pendiente |
+| `chore/firebase-setup` | Brayan | 🟢 Listo |
 | `feature/navigation-shell` | Isabella | 🟢 Listo |
 | `feature/auth` | Isabella | 🟡 Pendiente |
 | `feature/rooms-lobby` | Brayan | 🟡 Pendiente |
