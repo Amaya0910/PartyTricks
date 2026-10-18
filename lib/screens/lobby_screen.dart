@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/room_controller.dart';
 import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/screens/board_screen.dart';
+import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 
@@ -51,13 +53,18 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
     final decision = room.decide(DateTime.now());
     if (decision == LobbyDecision.keepWaiting) return;
     _deciding = true;
-    final status = decision == LobbyDecision.start
-        ? RoomStatus.playing
-        : RoomStatus.closed;
-    ref
-        .read(roomServiceProvider)
-        .setStatus(room, status)
-        .whenComplete(() => _deciding = false);
+    _applyDecision(room, decision).whenComplete(() => _deciding = false);
+  }
+
+  /// Al arrancar, primero se guarda la partida y después se avisa a todos.
+  Future<void> _applyDecision(Room room, LobbyDecision decision) async {
+    final rooms = ref.read(roomServiceProvider);
+    if (decision == LobbyDecision.close) {
+      await rooms.setStatus(room, RoomStatus.closed);
+      return;
+    }
+    await ref.read(gameServiceProvider).startGame(room);
+    await rooms.setStatus(room, RoomStatus.playing);
   }
 
   Future<void> _leave() async {
@@ -67,6 +74,16 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Cuando la sala arranca, todos pasan al tablero.
+    ref.listen(roomProvider(widget.roomId), (previous, next) {
+      final room = next.value;
+      if (room == null || room.status != RoomStatus.playing) return;
+      if (previous?.value?.status == RoomStatus.playing) return;
+      final me = ref.read(roomIdentityProvider).value;
+      Navigator.of(context).pushReplacement(
+        BoardScreen.route(room.id, isHost: room.hostUid == me?.uid),
+      );
+    });
     final roomAsync = ref.watch(roomProvider(widget.roomId));
     return PopScope(
       canPop: false,
