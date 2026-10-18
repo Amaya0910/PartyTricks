@@ -108,6 +108,7 @@ Los modelos viven en `lib/models/`. Hoy existen:
 | `app_section.dart` | Secciones de la barra de navegación |
 | `loading_state.dart` | Estado de la pantalla de carga |
 | `play_option.dart` | Opciones del menú de Jugar |
+| `room.dart` | Sala de juego: configuración, jugadores y cuándo arranca o se cierra |
 
 Los modelos de datos de este documento se agregarán a esa carpeta a medida que se construya cada área.
 

@@ -112,3 +112,33 @@
   - Escribir las reglas de seguridad antes de que venza el modo de prueba (30 días).
   - Storage pide el plan Blaze (de pago); se decide cuando llegue `feature/wardrobe-avatar`.
   - Para entrar a la consola de Firebase, pedir acceso a Brayan.
+
+  ## D-13. Motor del juego y valores provisionales
+
+- **Fecha:** 2026-10-17
+- **Estado:** Propuesta (por confirmar con Isabella)
+- **Decisión:** las reglas de la partida están en `lib/services/game_engine/` en Dart puro, sin Firebase. `GameEngine.apply(estado, acción)` devuelve un estado nuevo; el teléfono anfitrión lo usa y sube el resultado. El azar pasa por `RandomSource` para poder probarlo.
+- **Valores provisionales** (se cambian en un solo lugar):
+  - Tablero de 42 casillas: camino principal 0-29, bifurcaciones en 5, 15 y 24, tiendas en 12 y 22. Las posiciones se ajustan cuando esté el dibujo.
+  - Casilla positiva +3 monedas, negativa −3 y efectos especiales de monedas ±5.
+  - Cada jugador empieza con 10 monedas y el ganador del minijuego recibe 10.
+  - El diamante del mapa se gana al pasar por su casilla y reaparece en otra al azar (nunca en la salida ni en las tiendas).
+  - En una bifurcación el jugador se detiene y elige el camino.
+  - Si nadie tiene nada en una categoría de diamante final (por ejemplo, nadie compró), nadie lo recibe.
+- **Pendientes:** las compras y los dados extra se conectan en `feature/map-shop-items`, y las desconexiones en `feature/disconnections`.
+
+## D-14. Salas en Realtime Database
+
+- **Fecha:** 2026-10-17
+- **Estado:** Propuesta (por confirmar con Isabella)
+- **Decisión:** las salas viven en Realtime Database: `rooms/{id}/meta` (código, pública o privada, creador, jugadores máximos, rondas, estado y fin de la espera), `rooms/{id}/players/{uid}`, `roomCodes/{código}` para buscar por código y `publicLobby/{id}` para las salas públicas que esperan jugadores. El código tiene 6 caracteres sin letras que se confunden (O/0, I/1). El teléfono del creador decide cuándo arranca o se cierra la sala, y una transacción evita que dos jugadores entren al último puesto a la vez.
+- **Provisional:** mientras no exista `feature/auth`, las salas usan un usuario anónimo de Firebase con el nombre "Jugador XXXX". Se cambia en `room_providers.dart` cuando esté el inicio de sesión. Al arrancar la partida se muestra un mensaje; el tablero llega en `feature/board-turns`.
+- **Pendientes:** reglas de seguridad de Realtime Database, borrar salas viejas y qué pasa si el creador se sale (va en `feature/disconnections`).
+
+## D-15. Partida en vivo y pantalla del tablero
+
+- **Fecha:** 2026-10-18
+- **Estado:** Propuesta (por confirmar con Isabella)
+- **Decisión:** el estado de la partida se guarda en `rooms/{id}/game` y solo lo escribe el teléfono del creador (anfitrión). Los jugadores mandan sus acciones a `rooms/{id}/actions`; el anfitrión las aplica con el motor en orden y borra cada una en la misma escritura. Las acciones fuera de turno se ignoran.
+- **Provisional:** el tablero se dibuja en una cuadrícula de 9×8 (camino principal por el borde, caminos alternos por dentro) hasta tener el dibujo de Isabella. Como aún no hay minijuegos, el creador tiene un botón "Simular minijuego" que sortea al ganador. La pantalla de resultados llega en `feature/results-xp`.
+- **Pendientes:** salir a mitad de partida y cambio de anfitrión (`feature/disconnections`).
