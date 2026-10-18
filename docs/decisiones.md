@@ -126,3 +126,11 @@
   - En una bifurcación el jugador se detiene y elige el camino.
   - Si nadie tiene nada en una categoría de diamante final (por ejemplo, nadie compró), nadie lo recibe.
 - **Pendientes:** las compras y los dados extra se conectan en `feature/map-shop-items`, y las desconexiones en `feature/disconnections`.
+
+## D-14. Salas en Realtime Database
+
+- **Fecha:** 2026-10-17
+- **Estado:** Propuesta (por confirmar con Isabella)
+- **Decisión:** las salas viven en Realtime Database: `rooms/{id}/meta` (código, pública o privada, creador, jugadores máximos, rondas, estado y fin de la espera), `rooms/{id}/players/{uid}`, `roomCodes/{código}` para buscar por código y `publicLobby/{id}` para las salas públicas que esperan jugadores. El código tiene 6 caracteres sin letras que se confunden (O/0, I/1). El teléfono del creador decide cuándo arranca o se cierra la sala, y una transacción evita que dos jugadores entren al último puesto a la vez.
+- **Provisional:** mientras no exista `feature/auth`, las salas usan un usuario anónimo de Firebase con el nombre "Jugador XXXX". Se cambia en `room_providers.dart` cuando esté el inicio de sesión. Al arrancar la partida se muestra un mensaje; el tablero llega en `feature/board-turns`.
+- **Pendientes:** reglas de seguridad de Realtime Database, borrar salas viejas y qué pasa si el creador se sale (va en `feature/disconnections`).
