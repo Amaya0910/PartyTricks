@@ -65,4 +65,26 @@ class AppColors {
   // ---------------------------------------------------------------------------
 
   static const Color placeholderIcon = Color(0xB3FFFFFF);
+
+  // ---------------------------------------------------------------------------
+  // Tablero (provisional hasta tener el dibujo del tablero)
+  // ---------------------------------------------------------------------------
+
+  static const Color tileStart = blueStrong;
+  static const Color tilePositive = Color(0xFF66BB6A);
+  static const Color tileNegative = Color(0xFFE57373);
+  static const Color tileSpecial = Color(0xFFBA68C8);
+  static const Color tileShop = coin;
+  static const Color tileBorder = Color(0xFFFFFFFF);
+  static const Color boardPanel = Color(0xE6FFFFFF);
+
+  /// Color de cada jugador, en el orden de turnos.
+  static const List<Color> players = [
+    Color(0xFFD32F2F),
+    Color(0xFF1976D2),
+    Color(0xFF388E3C),
+    Color(0xFFFBC02D),
+    Color(0xFF7B1FA2),
+    Color(0xFFF57C00),
+  ];
 }
