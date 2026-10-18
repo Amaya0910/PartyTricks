@@ -135,7 +135,7 @@ Una tarea está terminada cuando:
 | `chore/firebase-setup` | Brayan | 🟢 Listo |
 | `feature/navigation-shell` | Isabella | 🟢 Listo |
 | `feature/auth` | Isabella | 🟡 Pendiente |
-| `feature/rooms-lobby` | Brayan | 🟡 Pendiente |
+| `feature/rooms-lobby` | Brayan | 🟢 Listo |
 | `feature/game-engine` | Brayan | 🟢 Listo |
 | `feature/wardrobe-avatar` | Isabella | 🟡 Pendiente |
 | `feature/board-turns` | Brayan | 🟡 Pendiente |
