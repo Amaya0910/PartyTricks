@@ -1,25 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/loading_controller.dart';
+import 'package:party_tricks/screens/auth_screen.dart';
 import 'package:party_tricks/screens/loading_screen.dart';
 import 'package:party_tricks/screens/main_shell_screen.dart';
+import 'package:party_tricks/services/auth/auth_providers.dart';
 
-/// Muestra la pantalla de carga hasta que termine y luego la app.
+/// Decide qué pantalla mostrar:
+/// carga → (sin sesión) inicio de sesión o registro → (con sesión) la app.
 class AppGate extends ConsumerWidget {
   const AppGate({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final loading = ref.watch(loadingControllerProvider);
+    // Se observa desde el inicio para que Firebase ya haya revisado la sesión
+    // cuando termine la carga.
+    final profile = ref.watch(userProfileProvider);
+
+    final Widget screen;
+    if (!loading.isDone) {
+      screen = LoadingScreen(
+        key: const ValueKey('loading'),
+        progress: loading.progress,
+      );
+    } else {
+      screen = profile.when(
+        // La barra ya llegó al final, pero Firebase aún no responde.
+        loading: () => LoadingScreen(
+          key: const ValueKey('loading'),
+          progress: loading.progress,
+        ),
+        // Sin conexión o con un error: se deja entrar a la pantalla de acceso,
+        // que muestra el mensaje cuando el jugador lo intenta.
+        error: (_, _) => const AuthScreen(key: ValueKey('auth')),
+        data: (user) => user == null
+            ? const AuthScreen(key: ValueKey('auth'))
+            : const MainShellScreen(key: ValueKey('main')),
+      );
+    }
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
-      child: loading.isDone
-          ? const MainShellScreen(key: ValueKey('main'))
-          : LoadingScreen(
-              key: const ValueKey('loading'),
-              progress: loading.progress,
-            ),
+      child: screen,
     );
   }
 }

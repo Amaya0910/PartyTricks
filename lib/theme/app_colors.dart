@@ -61,6 +61,33 @@ class AppColors {
   static const Color loadingFallback = Color(0xFF0B2A5B);
 
   // ---------------------------------------------------------------------------
+  // Inicio de sesión y registro
+  // (el fondo azul claro es [screenBackground])
+  // ---------------------------------------------------------------------------
+
+  /// Azul de la cabecera, el borde y el botón de la tarjeta.
+  static const Color authAccent = Color(0xFF63A9DB);
+
+  /// Gris claro de los campos de texto.
+  static const Color authField = Color(0xFFE4E4E4);
+
+  static const Color authCardBackground = Color(0xFFFFFFFF);
+
+  /// Texto sobre el azul (título de la tarjeta y botón).
+  static const Color authOnAccent = Color(0xFFFFFFFF);
+
+  /// Texto escrito en los campos y enlace de cambio de tarjeta.
+  static const Color authText = Color(0xFF4A4A4A);
+
+  /// Texto de ayuda dentro de los campos vacíos.
+  static const Color authHint = Color(0xFF6E6E6E);
+
+  static const Color authError = Color(0xFFD32F2F);
+
+  /// Sombra azulada de la tarjeta.
+  static const Color authShadow = Color(0x6663A9DB);
+
+  // ---------------------------------------------------------------------------
   // Marcadores de posición (hasta tener el arte final)
   // ---------------------------------------------------------------------------
 
