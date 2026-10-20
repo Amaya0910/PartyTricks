@@ -4,6 +4,7 @@ import 'package:party_tricks/controllers/room_controller.dart';
 import 'package:party_tricks/models/play_option.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/screens/lobby_screen.dart';
+import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/rooms/room_service.dart';
 import 'package:party_tricks/widgets/create_room_dialog.dart';
 import 'package:party_tricks/widgets/join_code_dialog.dart';
@@ -56,10 +57,17 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final loading = ref.watch(roomControllerProvider);
+    // El perfil del jugador con la sesión iniciada (null solo un instante,
+    // mientras llega de Firebase).
+    final profile = ref.watch(userProfileProvider).value;
+
     return Column(
       children: [
-        // Datos de prueba; luego vendrán del perfil del jugador.
-        const PlayerHeader(username: 'Tay_pro32', coins: 999, diamonds: 999),
+        PlayerHeader(
+          username: profile?.username ?? '',
+          coins: profile?.coins ?? 0,
+          diamonds: profile?.diamonds ?? 0,
+        ),
         // Reemplazar por el personaje armado con los cosméticos.
         const Expanded(
           child: Center(
