@@ -31,6 +31,7 @@ class RoomPlayer {
     required this.username,
     required this.joinedAt,
     this.connected = true,
+    this.photoUrl,
   });
 
   factory RoomPlayer.fromMap(String uid, Map<Object?, Object?> data) {
@@ -39,6 +40,7 @@ class RoomPlayer {
       username: data['username'] as String,
       joinedAt: DateTime.fromMillisecondsSinceEpoch(data['joinedAt'] as int),
       connected: data['connected'] as bool? ?? true,
+      photoUrl: data['photoUrl'] as String?,
     );
   }
 
@@ -47,10 +49,14 @@ class RoomPlayer {
   final DateTime joinedAt;
   final bool connected;
 
+  /// Foto de perfil (opcional). Si es null se muestra un ícono.
+  final String? photoUrl;
+
   Map<String, Object?> toMap() => {
     'username': username,
     'joinedAt': joinedAt.millisecondsSinceEpoch,
     'connected': connected,
+    if (photoUrl != null) 'photoUrl': photoUrl,
   };
 }
 
@@ -136,3 +142,6 @@ class Room {
     'lobbyEndsAt': lobbyEndsAt.millisecondsSinceEpoch,
   };
 }
+
+
+

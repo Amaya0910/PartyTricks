@@ -10,20 +10,38 @@
 
 ## 1. Navegación general
 
-La app arranca en una **pantalla de carga** (`AppGate` → `LoadingScreen`) y luego muestra la estructura principal (`MainShellScreen`): la sección activa arriba y una **barra de navegación inferior** con 5 secciones.
+La app arranca en una **pantalla de carga** (`AppGate` → `LoadingScreen`). Después, `AppGate` revisa si hay una sesión iniciada: si no la hay muestra la pantalla de **acceso**, y si la hay muestra la estructura principal (`MainShellScreen`): la sección activa arriba y una **barra de navegación inferior** con 5 secciones.
 
 ```
-Carga  →  MainShellScreen
-            ├── Tienda
-            ├── Vestuario
-            ├── Inicio      (sección inicial)
-            ├── Stats
-            └── Amigos
+Carga  →  ¿Hay sesión?
+            ├── No  →  Acceso (Inicio de sesión ⇄ Registro)  →  MainShellScreen
+            └── Sí  →  MainShellScreen
+                         ├── Tienda
+                         ├── Vestuario
+                         ├── Inicio      (sección inicial)
+                         ├── Stats
+                         └── Amigos
 ```
 
 - La barra conserva el estado de cada sección al cambiar de pestaña.
 - El orden de las secciones está definido en `lib/models/app_section.dart`.
 - Los colores de la barra salen del tema (`lib/theme/`).
+
+### 1.1 Acceso (inicio de sesión y registro)
+
+Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostrar la otra cara; lo que el jugador escribió en cada cara se conserva al voltear.
+
+| Cara | Campos | Enlace para voltear |
+|---|---|---|
+| Inicio de sesión | Correo o nombre de usuario (sin distinguir mayúsculas) y contraseña | ¿Aun no te registras? |
+| Registrarse | Nombre de usuario, correo, contraseña y repetir la contraseña | ¿Ya tienes una cuenta? |
+
+- El botón **Entrar a la party** inicia sesión o crea la cuenta. Si sale bien, la app pasa sola a `MainShellScreen`.
+- Las contraseñas tienen un **ojo** para mostrarlas u ocultarlas.
+- Los errores (datos inválidos, nombre en uso, contraseña incorrecta) salen en rojo dentro de la tarjeta.
+- El fondo es el mismo dibujo de las demás pantallas (`Fondo_Principal.png`), bajado para que solo se vean las nubes (se ajusta con `_hiddenFraction` en `auth_screen.dart`).
+- Los colores están en `AppColors`, en la sección "Inicio de sesión y registro".
+- Las reglas de los datos y cómo se guardan la cuenta y el perfil están en `decisiones.md`, D-16 y D-17.
 
 ---
 
@@ -43,7 +61,7 @@ Carga  →  MainShellScreen
 
 ## 3. Inicio
 
-- **Cabecera del jugador:** foto de perfil, nombre de usuario, monedas y diamantes.
+- **Cabecera del jugador:** foto de perfil, nombre de usuario, monedas y diamantes. Los datos salen del perfil del jugador con la sesión iniciada.
 - **Personaje:** el rostro armado con los cosméticos equipados (por ahora, un ícono provisional).
 - **Botón Jugar:** abre un menú emergente con tres opciones.
 
@@ -102,7 +120,7 @@ Pantallas que aparecen en el mockup:
 | Perfil / cuenta | Código del jugador (copiar y recargar), nombre de usuario, correo y botón de cambiar contraseña |
 | Preferencias | Notificaciones, sonido, efectos de sonido e idioma (Español) |
 | Más opciones | Acerca de, Términos y condiciones, Política de privacidad |
-| Cambiar contraseña | Contraseña actual, nueva y confirmación (mínimo 8 caracteres) |
+| Cambiar contraseña | Contraseña actual, nueva y confirmación (mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo; ver `decisiones.md`, D-16) |
 
 ---
 
@@ -110,7 +128,7 @@ Pantallas que aparecen en el mockup:
 
 Pantallas que se deducen del diseño del juego y que **aún no aparecen en el mockup** **(propuesto)**:
 
-- [ ] Registro e inicio de sesión.
+- [x] Registro e inicio de sesión (diseñados en Figma y construidos; ver 1.1).
 - [ ] Lobby de sala (espera de 1:30 minutos).
 - [ ] Tablero de juego y turnos.
 - [ ] Minijuego (puede usar Flame si es de tiempo real; ver `decisiones.md`, D-11).
