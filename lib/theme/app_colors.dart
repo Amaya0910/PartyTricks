@@ -114,4 +114,16 @@ class AppColors {
     Color(0xFF7B1FA2),
     Color(0xFFF57C00),
   ];
+  
+    // ---------------------------------------------------------------------------
+  // Sala de espera
+  // ---------------------------------------------------------------------------
+
+  /// Fondo gris azulado del recuadro del código.
+  static const Color lobbyCodePanel = Color(0xFFB8C7D1);
+
+  /// Borde de los espacios de jugador.
+  static const Color slotBorder = Color(0xFF6FA394);
+
 }
+
