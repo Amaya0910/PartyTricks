@@ -171,89 +171,105 @@ class _Waiting extends StatelessWidget {
     final players = room.players.values.toList()
       ..sort((a, b) => a.joinedAt.compareTo(b.joinedAt));
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.tileBorder,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.blueStrong, width: 3),
-                boxShadow: const [
-                  BoxShadow(
-                    color: AppColors.headerBorder,
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _Header(clock: clock),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+    // La tarjeta mide lo que mide su contenido y queda centrada. Si la
+    // pantalla es muy pequeña, todo se desplaza en vez de desbordarse.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.tileBorder,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: AppColors.blueStrong,
+                          width: 3,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.headerBorder,
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const _Pill(label: 'Tu código'),
-                          const SizedBox(height: 8),
-                          _CodePanel(code: room.code),
-                          const SizedBox(height: 16),
-                          _Pill(
-                            label:
-                                'Jugadores (${players.length}/${room.maxPlayers})'
-                                ' · ${room.rounds} rondas',
-                          ),
-                          const SizedBox(height: 12),
-                          // Un espacio por cada jugador posible; se
-                          // desplaza si no caben todos.
-                          Expanded(
-                            child: GridView.builder(
-                              itemCount: room.maxPlayers,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    mainAxisSpacing: 12,
-                                    crossAxisSpacing: 12,
-                                    childAspectRatio: 0.8,
-                                  ),
-                              itemBuilder: (context, index) {
-                                if (index >= players.length) {
-                                  return const PlayerSlot();
-                                }
-                                final player = players[index];
-                                return PlayerSlot(
-                                  player: player,
-                                  isMe: player.uid == myUid,
-                                  isHost: player.uid == room.hostUid,
-                                );
-                              },
+                          _Header(clock: clock),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const _Pill(label: 'Tu código'),
+                                const SizedBox(height: 8),
+                                _CodePanel(code: room.code),
+                                const SizedBox(height: 16),
+                                _Pill(
+                                  label:
+                                      'Jugadores (${players.length}/${room.maxPlayers})'
+                                      ' · ${room.rounds} rondas',
+                                ),
+                                const SizedBox(height: 12),
+                                // Un espacio por cada jugador posible. La
+                                // cuadrícula mide lo que miden sus filas.
+                                GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  padding: EdgeInsets.zero,
+                                  itemCount: room.maxPlayers,
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        mainAxisSpacing: 12,
+                                        crossAxisSpacing: 12,
+                                        childAspectRatio: 0.8,
+                                      ),
+                                  itemBuilder: (context, index) {
+                                    if (index >= players.length) {
+                                      return const PlayerSlot();
+                                    }
+                                    final player = players[index];
+                                    return PlayerSlot(
+                                      player: player,
+                                      isMe: player.uid == myUid,
+                                      isHost: player.uid == room.hostUid,
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        backgroundColor: AppColors.menuButton,
+                      ),
+                      onPressed: onLeave,
+                      child: const Text('Salir'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              backgroundColor: AppColors.menuButton,
-            ),
-            onPressed: onLeave,
-            child: const Text('Salir'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
