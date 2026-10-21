@@ -114,7 +114,7 @@ class AppColors {
     Color(0xFF7B1FA2),
     Color(0xFFF57C00),
   ];
-  
+
     // ---------------------------------------------------------------------------
   // Sala de espera
   // ---------------------------------------------------------------------------
@@ -125,5 +125,13 @@ class AppColors {
   /// Borde de los espacios de jugador.
   static const Color slotBorder = Color(0xFF6FA394);
 
+  // ---------------------------------------------------------------------------
+  // Diálogos
+  // ---------------------------------------------------------------------------
+
+  /// Velo suave detrás de los diálogos (el desenfoque hace el resto).
+  static const Color dialogBarrier = Color(0x1F000000);
+
 }
 
+  
