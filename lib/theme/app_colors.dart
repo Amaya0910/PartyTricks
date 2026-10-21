@@ -5,6 +5,16 @@ class AppColors {
   AppColors._();
 
   // ---------------------------------------------------------------------------
+  // Colores compartidos
+  // ---------------------------------------------------------------------------
+
+  /// Blanco: fondo de tarjetas, texto sobre azul y bordes claros.
+  static const Color white = Color(0xFFFFFFFF);
+
+  /// Azul principal de la app: cabeceras, bordes, botones y controles.
+  static const Color authAccent = Color(0xFF63A9DB);
+
+  // ---------------------------------------------------------------------------
   // Barra de navegación y fondo
   // ---------------------------------------------------------------------------
 
@@ -51,11 +61,8 @@ class AppColors {
   static const Color diamond = blueMain;
 
   // ---------------------------------------------------------------------------
-  // Menú de "Jugar" y barra de carga
+  // Barra de carga
   // ---------------------------------------------------------------------------
-
-  static const Color menuButton = Color(0xFF63A8DC);
-  static const Color progressText = Color(0xFFFFFFFF);
 
   /// Se ve si falta la imagen de la pantalla de carga.
   static const Color loadingFallback = Color(0xFF0B2A5B);
@@ -65,21 +72,13 @@ class AppColors {
   // (el fondo azul claro es [screenBackground])
   // ---------------------------------------------------------------------------
 
-  /// Azul de la cabecera, el borde y el botón de la tarjeta.
-  static const Color authAccent = Color(0xFF63A9DB);
-
   /// Gris claro de los campos de texto.
   static const Color authField = Color(0xFFE4E4E4);
-
-  static const Color authCardBackground = Color(0xFFFFFFFF);
-
-  /// Texto sobre el azul (título de la tarjeta y botón).
-  static const Color authOnAccent = Color(0xFFFFFFFF);
 
   /// Texto escrito en los campos y enlace de cambio de tarjeta.
   static const Color authText = Color(0xFF4A4A4A);
 
-  /// Texto de ayuda dentro de los campos vacíos.
+  /// Texto de ayuda: campos vacíos y subtítulos grises.
   static const Color authHint = Color(0xFF6E6E6E);
 
   static const Color authError = Color(0xFFD32F2F);
@@ -102,7 +101,6 @@ class AppColors {
   static const Color tileNegative = Color(0xFFE57373);
   static const Color tileSpecial = Color(0xFFBA68C8);
   static const Color tileShop = coin;
-  static const Color tileBorder = Color(0xFFFFFFFF);
   static const Color boardPanel = Color(0xE6FFFFFF);
 
   /// Color de cada jugador, en el orden de turnos.
@@ -115,7 +113,7 @@ class AppColors {
     Color(0xFFF57C00),
   ];
 
-    // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Sala de espera
   // ---------------------------------------------------------------------------
 
@@ -132,6 +130,18 @@ class AppColors {
   /// Velo suave detrás de los diálogos (el desenfoque hace el resto).
   static const Color dialogBarrier = Color(0x1F000000);
 
-}
+  // ---------------------------------------------------------------------------
+  // Crear sala ("Alista tu party")
+  // ---------------------------------------------------------------------------
 
-  
+  /// Parte sin rellenar de los deslizadores y fondo del interruptor.
+  static const Color sliderInactive = Color(0xFFDADADA);
+  static const Color switchBorder = Color(0xFFBDBDBD);
+
+  /// Interruptor en modo privado (verde) y su ícono.
+  static const Color switchGreen = Color(0xFF86CB87);
+  static const Color switchGreenIcon = Color(0xFF3E7D40);
+
+  /// Sombra suave bajo las etiquetas azules.
+  static const Color pillShadow = Color(0x40000000);
+}

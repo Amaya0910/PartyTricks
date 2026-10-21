@@ -121,7 +121,7 @@ class _Pill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.menuButton,
+          color: AppColors.authAccent,
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
             BoxShadow(
@@ -136,7 +136,7 @@ class _Pill extends StatelessWidget {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.progressText,
+            color: AppColors.white,
           ),
         ),
       ),
@@ -202,7 +202,7 @@ class _Digit extends StatelessWidget {
         aspectRatio: 0.7,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.tileBorder,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(6),
             border: isActive
                 ? Border.all(color: AppColors.blueStrong, width: 2)

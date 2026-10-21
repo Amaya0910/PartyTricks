@@ -69,7 +69,7 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 
 | Opción | Qué hace | Estado |
 |---|---|---|
-| Crear Party | Crea una sala; el creador define jugadores y rondas. Muestra el código de la sala y la lista de jugadores | Por conectar (`feature/rooms-lobby`) |
+| Alista tu party | Crea una sala; el creador define jugadores y rondas. Muestra el código de la sala y la lista de jugadores | Por conectar (`feature/rooms-lobby`) |
 | Unirse a Party | Pide un código de sala (6 dígitos en el mockup) | Por conectar |
 | Juego Random | Entra a una sala pública aleatoria | Por conectar |
 
