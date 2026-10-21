@@ -38,16 +38,17 @@ Nadie trabaja directamente en `main` ni en `develop`.
 
 Nombre: `feature/<área>-<descripcion-corta>`, en minúsculas y con guiones.
 
+Se prefieren **pocas ramas, una por área grande**: no se crea una rama por cada pantalla, diálogo o widget.
+
 **Isabella**
 
 | Rama | Qué incluye | Depende de |
 | --- | --- | --- |
+| `feature/ui` | Toda la interfaz visual: barra de navegación y pantallas base (Inicio, Tienda, Vestuario, Stats, Amigos), diálogos (incluido "Alista tu party"), widgets reutilizables, colores en `AppColors` y ajustes al mockup | — |
 | `feature/auth` | Registro, inicio de sesión y perfil con código de amistad | `chore/firebase-setup` |
-| `feature/navigation-shell` | Barra de navegación y pantallas base (Inicio, Tienda, Vestuario, Stats, Amigos) | — |
-| `feature/wardrobe-avatar` | Vestuario, cosméticos y foto del rostro | `feature/auth` |
+| `feature/player-profile` | Vestuario, cosméticos, foto del rostro, estadísticas, nivel y experiencia | `feature/auth` |
 | `feature/game-shop` | Tienda del juego, caja secreta de dados | `feature/auth` |
 | `feature/friends-chat` | Amigos por código y chat | `feature/auth` |
-| `feature/stats-levels` | Pantalla de estadísticas, nivel y experiencia | `feature/auth` |
 
 **Brayan**
 
@@ -73,7 +74,8 @@ Nombre: `feature/<área>-<descripcion-corta>`, en minúsculas y con guiones.
 
 ## 3. Reglas de trabajo
 
-- **Una rama por tarea.** Se crea desde `develop` y se borra al terminar.
+- **Una rama por área o tarea grande.** Se crea desde `develop` y se borra al terminar. Si `feature/ui` ya se unió y hay más cambios visuales, se vuelve a crear con el mismo nombre desde `develop`.
+- **Agrupar en vez de dividir.** Los cambios pequeños del mismo tipo (por ejemplo, varios ajustes visuales) van juntos en una sola rama, con commits separados.
 - **Commits pequeños** con prefijo: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`.
 - **Pull Request obligatorio** para unir a `develop`, y lo revisa la otra persona antes de aceptarlo.
 - **Traer `develop` seguido** a la rama de trabajo para evitar conflictos grandes.
@@ -106,14 +108,14 @@ git merge develop
 
 | Etapa | Isabella | Brayan |
 | --- | --- | --- |
-| 1 | `feature/navigation-shell` | `chore/firebase-setup` |
+| 1 | `feature/ui` | `chore/firebase-setup` |
 | 2 | `feature/auth` | `feature/game-engine` y `feature/rooms-lobby` |
-| 3 | `feature/wardrobe-avatar` | `feature/board-turns` |
-| 4 | `feature/game-shop` y `feature/stats-levels` | `feature/map-shop-items` y `feature/results-xp` |
+| 3 | `feature/player-profile` | `feature/board-turns` |
+| 4 | `feature/game-shop` | `feature/map-shop-items` y `feature/results-xp` |
 | 5 | `feature/friends-chat` | `feature/disconnections` |
 | 6 | Minijuegos (mitad de la lista) | Minijuegos (mitad de la lista) |
 
-Así los dos pueden avanzar a la vez desde el inicio: la navegación y el motor del juego no necesitan esperar a Firebase.
+Así los dos pueden avanzar a la vez desde el inicio: la interfaz y el motor del juego no necesitan esperar a Firebase.
 
 ---
 
@@ -133,16 +135,15 @@ Una tarea está terminada cuando:
 | Rama | Responsable | Estado |
 | --- | --- | --- |
 | `chore/firebase-setup` | Brayan | 🟢 Listo |
-| `feature/navigation-shell` | Isabella | 🟢 Listo |
+| `feature/ui` | Isabella | 🟡 En proceso (se reabre con cada lote de cambios visuales) |
 | `feature/auth` | Isabella | 🟢 Listo |
 | `feature/rooms-lobby` | Brayan | 🟢 Listo |
 | `feature/game-engine` | Brayan | 🟢 Listo |
-| `feature/wardrobe-avatar` | Isabella | 🟡 Pendiente |
+| `feature/player-profile` | Isabella | 🔴 Pendiente |
 | `feature/board-turns` | Brayan | 🟢 Listo |
-| `feature/map-shop-items` | Brayan | 🟡 Pendiente |
-| `feature/results-xp` | Brayan | 🟡 Pendiente |
-| `feature/game-shop` | Isabella | 🟡 Pendiente |
-| `feature/stats-levels` | Isabella | 🟡 Pendiente |
-| `feature/friends-chat` | Isabella | 🟡 Pendiente |
-| `feature/disconnections` | Brayan | 🟡 Pendiente |
-| Minijuegos | Ambos | 🟡 Pendiente |
+| `feature/map-shop-items` | Brayan | 🔴 Pendiente |
+| `feature/results-xp` | Brayan | 🔴 Pendiente |
+| `feature/game-shop` | Isabella | 🔴 Pendiente |
+| `feature/friends-chat` | Isabella | 🔴 Pendiente |
+| `feature/disconnections` | Brayan | 🔴 Pendiente |
+| Minijuegos | Ambos | 🔴 Pendiente |
