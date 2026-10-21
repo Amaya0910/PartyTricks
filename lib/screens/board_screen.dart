@@ -251,7 +251,7 @@ class _Button extends StatelessWidget {
     return FilledButton(
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(52),
-        backgroundColor: AppColors.menuButton,
+        backgroundColor: AppColors.authAccent,
         textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
       ),
       onPressed: onPressed,

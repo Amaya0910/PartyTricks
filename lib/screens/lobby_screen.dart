@@ -187,7 +187,7 @@ class _Waiting extends StatelessWidget {
                   children: [
                     DecoratedBox(
                       decoration: BoxDecoration(
-                        color: AppColors.tileBorder,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: AppColors.blueStrong,
@@ -258,7 +258,7 @@ class _Waiting extends StatelessWidget {
                     FilledButton(
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(48),
-                        backgroundColor: AppColors.menuButton,
+                        backgroundColor: AppColors.authAccent,
                       ),
                       onPressed: onLeave,
                       child: const Text('Salir'),
@@ -295,7 +295,7 @@ class _Header extends StatelessWidget {
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: AppColors.progressText,
+              color: AppColors.white,
             ),
           ),
           Text(
@@ -303,7 +303,7 @@ class _Header extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.progressText,
+              color: AppColors.white,
             ),
           ),
         ],
@@ -325,7 +325,7 @@ class _Pill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.menuButton,
+          color: AppColors.authAccent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -333,7 +333,7 @@ class _Pill extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: AppColors.progressText,
+            color: AppColors.white,
           ),
         ),
       ),
@@ -390,7 +390,7 @@ class _Digit extends StatelessWidget {
         aspectRatio: 0.7,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.tileBorder,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(6),
             boxShadow: const [
               BoxShadow(
@@ -442,7 +442,7 @@ class _Message extends StatelessWidget {
             const SizedBox(height: 24),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.menuButton,
+                backgroundColor: AppColors.authAccent,
               ),
               onPressed: onBack,
               child: const Text('Regresar a menú'),

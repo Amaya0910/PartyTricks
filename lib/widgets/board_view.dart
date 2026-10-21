@@ -112,12 +112,12 @@ class _Tile extends StatelessWidget {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.tileBorder, width: 2),
+          border: Border.all(color: AppColors.white, width: 2),
         ),
         child: Center(
           child: tile.id == state.diamondTileId
               ? const Icon(Icons.diamond, color: AppColors.diamond)
-              : Icon(icon, color: AppColors.tileBorder, size: 16),
+              : Icon(icon, color: AppColors.white, size: 16),
         ),
       ),
     );
@@ -147,7 +147,7 @@ class _Token extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.players[index % AppColors.players.length],
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.tileBorder, width: 2),
+          border: Border.all(color: AppColors.white, width: 2),
         ),
       ),
     );
