@@ -20,19 +20,31 @@
 
 ### 2.1 Jugador (perfil)
 
-| Campo | Descripción |
-|---|---|
-| `uid` | Identificador de Authentication |
-| `correo` | Para iniciar sesión |
-| `nombreUsuario` | Único; lo ven los demás jugadores |
-| `codigoAmistad` | Único; para que otros te agreguen |
-| `experiencia` | XP acumulada; el nivel se calcula a partir de ella |
-| `monedas` | Monedas de la cuenta |
-| `diamantes` | Diamantes de la cuenta |
-| `cosmeticosDesbloqueados` | Lista de ids de cosméticos |
-| `cosmeticosEquipados` | Un cosmético por categoría |
-| `dadosExtra` | Dados extra consumibles obtenidos en el cofre "Dados secretos"; se gastan en próximas partidas |
-| `fotoRostro` | Ruta en Storage (opcional) |
+Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
+
+| Campo | En Firestore | Descripción |
+|---|---|---|
+| `uid` | id del documento | Identificador de Authentication |
+| `correo` | `email` | Para iniciar sesión |
+| `nombreUsuario` | `username` | Único sin distinguir mayúsculas; lo ven los demás jugadores. De 3 a 16 caracteres: letras, números y guion bajo |
+| `codigoAmistad` | `friendCode` | Único; 6 caracteres sin letras que se confunden (O/0, I/1); para que otros te agreguen |
+| `experiencia` | `experience` | XP acumulada, empieza en 0; el nivel se calcula a partir de ella |
+| `monedas` | `coins` | Monedas de la cuenta, empiezan en 0 |
+| `diamantes` | `diamonds` | Diamantes de la cuenta, empiezan en 0 |
+| `cosmeticosDesbloqueados` | _(por construir)_ | Lista de ids de cosméticos |
+| `cosmeticosEquipados` | _(por construir)_ | Un cosmético por categoría |
+| `dadosExtra` | _(por construir)_ | Dados extra consumibles obtenidos en el cofre "Dados secretos"; se gastan en próximas partidas |
+| `fotoRostro` | _(por construir)_ | Ruta en Storage (opcional) |
+
+#### Colecciones de Firestore de la cuenta
+
+| Colección | Documento | Contenido | Para qué |
+|---|---|---|---|
+| `users` | `{uid}` | El perfil de la tabla anterior | Datos del jugador |
+| `usernames` | `{nombre en minúsculas}` | `uid` y `email` | Reservar el nombre de usuario (único) y permitir iniciar sesión con él (ver D-17) |
+| `friendCodes` | `{código}` | `uid` | Reservar el código de amistad (único) |
+
+El perfil y las dos reservas se crean en la misma transacción al registrarse. Si el nombre o el código ya existen, la transacción falla y no se guarda nada.
 
 ### 2.2 Cosmético
 
@@ -109,6 +121,8 @@ Los modelos viven en `lib/models/`. Hoy existen:
 | `loading_state.dart` | Estado de la pantalla de carga |
 | `play_option.dart` | Opciones del menú de Jugar |
 | `room.dart` | Sala de juego: configuración, jugadores y cuándo arranca o se cierra |
+| `user_profile.dart` | Perfil del jugador (correo, nombre de usuario, código de amistad, experiencia, monedas y diamantes) |
+| `auth_form_state.dart` | Estado de los formularios de inicio de sesión y registro (cargando y mensaje de error) |
 
 Los modelos de datos de este documento se agregarán a esa carpeta a medida que se construya cada área.
 
@@ -116,7 +130,7 @@ Los modelos de datos de este documento se agregarán a esa carpeta a medida que 
 
 ## 4. Pendientes
 
-- [ ] Estructura exacta de las colecciones de Firestore y de los nodos de Realtime Database.
-- [ ] Reglas de seguridad (que cada jugador solo lea y modifique lo suyo).
-- [ ] Forma de garantizar que el nombre de usuario y el código de amistad sean únicos.
+- [ ] Estructura exacta de las colecciones de Firestore y de los nodos de Realtime Database (la de la cuenta ya está en 2.1).
+- [ ] Reglas de seguridad (que cada jugador solo lea y modifique lo suyo). En `usernames`, permitir leer solo por nombre exacto y no listar (ver `decisiones.md`, D-17).
+- [x] Forma de garantizar que el nombre de usuario y el código de amistad sean únicos (colecciones `usernames` y `friendCodes` con transacción; ver D-16).
 - [ ] Qué se guarda para permitir reconexión a una partida.

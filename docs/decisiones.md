@@ -142,3 +142,30 @@
 - **Decisión:** el estado de la partida se guarda en `rooms/{id}/game` y solo lo escribe el teléfono del creador (anfitrión). Los jugadores mandan sus acciones a `rooms/{id}/actions`; el anfitrión las aplica con el motor en orden y borra cada una en la misma escritura. Las acciones fuera de turno se ignoran.
 - **Provisional:** el tablero se dibuja en una cuadrícula de 9×8 (camino principal por el borde, caminos alternos por dentro) hasta tener el dibujo de Isabella. Como aún no hay minijuegos, el creador tiene un botón "Simular minijuego" que sortea al ganador. La pantalla de resultados llega en `feature/results-xp`.
 - **Pendientes:** salir a mitad de partida y cambio de anfitrión (`feature/disconnections`).
+
+## D-16. Cuentas y perfiles de jugador
+
+- **Fecha:** 2026-10-20
+- **Estado:** Aceptada
+- **Decisión:** Firebase Authentication guarda el correo y la contraseña. El perfil vive en Cloud Firestore, en `users/{uid}`, con correo, nombre de usuario, código de amistad, experiencia, monedas y diamantes (los tres últimos empiezan en 0). Para que el nombre de usuario y el código de amistad sean únicos se usan dos colecciones de reserva, `usernames/{nombre en minúsculas}` y `friendCodes/{código}`, que se crean en la **misma transacción** que el perfil. Si el nombre ya existe, el registro se rechaza; si el código se repite, se genera otro (hasta 5 intentos). Si algo falla después de crear la cuenta en Authentication, esa cuenta se elimina para que no quede una cuenta sin perfil.
+- **Reglas de los datos:**
+  - Nombre de usuario: de 3 a 16 caracteres (letras, números y guion bajo), único sin distinguir mayúsculas.
+  - Contraseña al registrarse: mínimo 8 caracteres, con una mayúscula, una minúscula, un número y un símbolo. Al iniciar sesión solo se pide que no esté vacía, para que las cuentas anteriores puedan entrar.
+  - Código de amistad: 6 caracteres sin letras ni números que se confunden (O/0, I/1), igual que los códigos de sala.
+- **En el código:** `lib/services/auth/` (interfaz `AuthService` y su versión con Firebase), `AuthController` con Riverpod y `lib/models/user_profile.dart`. El perfil se sigue en vivo con `userProfileProvider`, y `AppGate` decide qué pantalla mostrar: carga, acceso (sin sesión) o la app (con sesión).
+- **Motivo:** una transacción evita que dos jugadores se queden con el mismo nombre o código a la vez, sin necesitar un servidor. Entregar el servicio por interfaz permite probar el controlador con uno falso.
+- **Alternativas:** consultar el nombre solo en el perfil (no garantiza la unicidad si dos personas se registran a la vez) o usar Cloud Functions (requiere el plan Blaze).
+- **Pendientes:**
+  - Botón de cerrar sesión, cambiar contraseña y recuperarla.
+  - Cambiar `room_providers.dart` para que las salas usen el nombre de usuario real en vez del anónimo provisional (ver D-14).
+  - Reglas de seguridad de Firestore.
+
+## D-17. Inicio de sesión con correo o nombre de usuario
+
+- **Fecha:** 2026-10-20
+- **Estado:** Aceptada para el proyecto de aula
+- **Decisión:** en el inicio de sesión se acepta el correo o el nombre de usuario (sin distinguir mayúsculas). Firebase Authentication solo entra con correo, así que al registrarse se guarda el correo dentro de `usernames/{nombre}`. Al iniciar con un nombre, se lee ese documento para obtener el correo y luego se autentica. Las cuentas creadas antes de esta decisión completan ese dato la primera vez que inician sesión con su correo.
+- **Motivo:** es lo que pide el mockup de la pantalla de acceso.
+- **Riesgo:** la búsqueda ocurre antes de tener sesión, así que `usernames` debe poder leerse sin iniciar sesión. Si las reglas permitieran listar la colección, cualquiera vería los correos de todos los jugadores, y hay jugadores menores (ver D-10).
+- **Alternativas:** iniciar solo con correo (más simple y sin exponer correos) o Cloud Functions que conviertan el nombre en correo sin mostrarlo (requiere el plan Blaze).
+- **Pendiente (antes de terminar el modo de prueba):** en las reglas de Firestore, permitir leer un documento de `usernames` solo por su nombre exacto (`get`), nunca listar la colección (`list`), y que solo su dueño pueda escribirlo. Se coordina con Brayan, que configura las reglas.
