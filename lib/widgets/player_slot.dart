@@ -88,7 +88,7 @@ class _Avatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AppColors.blueLight,
-        border: Border.all(color: AppColors.tileBorder, width: 2),
+        border: Border.all(color: AppColors.white, width: 2),
       ),
       child: ClipOval(
         child: photoUrl == null || photoUrl.isEmpty

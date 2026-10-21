@@ -53,7 +53,7 @@ class _LiquidProgressBarState extends State<LiquidProgressBar>
                 child: Text(
                   '$percent%',
                     style: const TextStyle(
-                    color: AppColors.progressText,
+                    color: AppColors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     shadows: [

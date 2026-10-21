@@ -35,7 +35,7 @@ class AuthCardFace extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.authCardBackground,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(_radius),
         border: Border.all(color: AppColors.authAccent, width: _borderWidth),
         boxShadow: const [
@@ -125,7 +125,7 @@ class _Header extends StatelessWidget {
           fontFamily: 'Inter',
           fontSize: 20,
           fontWeight: FontWeight.w700,
-          color: AppColors.authOnAccent,
+          color: AppColors.white,
         ),
       ),
     );
@@ -151,7 +151,7 @@ class _SubmitButton extends StatelessWidget {
         minimumSize: const Size.fromHeight(46),
         backgroundColor: AppColors.authAccent,
         disabledBackgroundColor: AppColors.authAccent,
-        foregroundColor: AppColors.authOnAccent,
+        foregroundColor: AppColors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: isLoading
@@ -160,7 +160,7 @@ class _SubmitButton extends StatelessWidget {
               height: 22,
               child: CircularProgressIndicator(
                 strokeWidth: 2.5,
-                color: AppColors.authOnAccent,
+                color: AppColors.white,
               ),
             )
           : Text(

@@ -54,10 +54,10 @@ class DialogCard extends StatelessWidget {
               type: MaterialType.transparency,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: AppColors.authCardBackground,
+                  color: AppColors.white,
                   borderRadius: BorderRadius.circular(_radius),
                   border: Border.all(
-                    color: AppColors.blueStrong,
+                    color: AppColors.authAccent,
                     width: _borderWidth,
                   ),
                   boxShadow: const [
@@ -98,7 +98,7 @@ class _Header extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: const BoxDecoration(
-        color: AppColors.blueStrong,
+        color: AppColors.authAccent,
         boxShadow: [
           BoxShadow(
             color: AppColors.headerBorder,
@@ -113,7 +113,7 @@ class _Header extends StatelessWidget {
         style: const TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.bold,
-          color: AppColors.progressText,
+          color: AppColors.white,
         ),
       ),
     );
