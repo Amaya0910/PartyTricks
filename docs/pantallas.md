@@ -3,7 +3,7 @@
 > Proyecto de aula · Programación Móvil
 > Basado en el mockup de Figma y en el código actual de `lib/screens/`.
 > Complementa a `diseno_juego.md` (sección 14) y `arquitectura.md`.
-> Última actualización: 2026-10-26
+> Última actualización: 2026-10-27
 
 **Mockup en Figma:** _(pegar aquí el enlace)_
 
@@ -54,7 +54,7 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 | Inicio | `home_screen.dart` | En desarrollo | Cabecera del jugador, personaje y botón **Jugar** |
 | Tienda | `shop_screen.dart` | En desarrollo | Tienda de Tricks: cofres (50, 100, 150) y cosméticos con precio |
 | Vestuario | `wardrobe_screen.dart` | En desarrollo | Foto del rostro y categorías: Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos, Boca |
-| Stats | `stats_screen.dart` | Base | Estadísticas de partidas, minijuegos y tiempo |
+| Stats | `stats_screen.dart` | En desarrollo | Estadísticas de partidas, minijuegos y tiempo |
 | Amigos | `friends_screen.dart` | Base | Lista de amigos, invitar a jugar y chat |
 
 **Estado:** _Base_ = pantalla provisional con un texto; _En desarrollo_ = ya tiene interfaz, pero faltan datos o funciones.
@@ -125,12 +125,32 @@ Archivo: `wardrobe_screen.dart`.
 
 ## 6. Stats
 
-| Grupo | Datos |
-|---|---|
-| Partidas | Ganadas, perdidas, porcentaje de ganadas, máximo de diamantes y de monedas en una partida |
-| Minijuegos | Ganados, perdidos, porcentaje de ganados, máximo de ganados en una partida y mejor puntaje |
-| Tiempo | En la app, jugando y en minijuegos |
-| Rachas | Racha actual y racha máxima (en días) |
+Archivo: `stats_screen.dart`.
+
+- Arriba, la misma **cabecera del jugador** que en Inicio.
+- Debajo, **todas las tarjetas en una lista** que se recorre hacia abajo (sin pestañas). Las tres primeras son las del mockup; las demás repiten sus colores en orden: azul, azul oscuro y morado (`AppColors`, sección "Estadísticas"; solo el azul oscuro es un color nuevo).
+
+| Tarjeta | Datos | Estado |
+|---|---|---|
+| Partidas | Ganadas, perdidas, porcentaje de ganadas, máximo de diamantes y de monedas en una partida | Listo |
+| Minijuegos | Ganados, perdidos, porcentaje de ganados, máximo de ganados en una partida y mejor puntaje | Listo (el puntaje queda en 0 hasta tener minijuegos con puntaje) |
+| Tiempo | En la app, jugando y en minijuegos (en minutos), racha actual y máxima (en días) | Listo |
+| Podio | Partidas jugadas, primer, segundo y tercer lugar, empates, victorias seguidas y máximo de victorias seguidas | Listo |
+| Premios finales | Veces que ganó cada diamante final (rey de los minijuegos, peor suerte, el más rico, mayor comprador) y el total | Listo |
+| Detalle de partidas | Como anfitrión, públicas, privadas, rondas jugadas, partida más larga, promedio de diamantes, monedas y diamantes ganados | Listo |
+| Tablero | Dados lanzados, promedio del dado, veces con el número máximo, casillas positivas, negativas y especiales, caminos normales, atajos, vueltas, diamantes del mapa y compras en tiendas del mapa | Listo (las compras llegan con `feature/map-shop-items`) |
+| Minijuegos por tipo | Favorito, más ganado y tipos jugados | Preparado: se llena cuando existan minijuegos |
+| Tienda | Cofres abiertos por tipo y en total, diamantes gastados y premios obtenidos | Listo |
+| Social | Compañero más frecuente, partidas con amigos, invitaciones enviadas y aceptadas, mensajes enviados | Compañero listo; lo demás llega con `feature/friends-chat` |
+
+- Los datos salen de `stats/{uid}` en vivo: se actualizan solos.
+- **Cuándo se guardan:**
+  - **Partida:** al llegar al final, cada jugador guarda la suya desde `BoardScreen`. Una partida no se cuenta dos veces.
+  - **Cofres:** en la misma transacción de la compra.
+  - **Tiempo en la app:** mientras la app está en primer plano (`AppUsageTracker`); se guarda cada minuto y al pasar a segundo plano.
+  - **Racha:** cuenta los días seguidos en que se abre la app.
+- Las etiquetas y el formato de cada tarjeta están en `StatsPresenter`. Los decimales llevan coma (3,5) y los datos que aún no existen se muestran con una raya (—).
+- Las reglas están en `decisiones.md`, D-21.
 
 ---
 

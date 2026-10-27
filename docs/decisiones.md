@@ -199,3 +199,26 @@
 - **Motivo:** mantener la menor cantidad de ramas posible y tener un lugar fijo para actualizar los documentos.
 - **Alternativas:** crear una rama `docs/<tema>` nueva en cada actualización (más ramas que limpiar).
 - **Detalle:** comandos en `roles_y_ramas.md`, sección 3.
+
+## D-21. Estadísticas del jugador
+
+- **Fecha:** 2026-10-27
+- **Estado:** Propuesta (por confirmar con Brayan)
+- **Decisión:** las estadísticas viven en Cloud Firestore, en `stats/{uid}`, aparte del perfil, con un mapa por grupo (partidas, premios finales, minijuegos, tablero, tienda, social y tiempo). Cada jugador guarda las suyas:
+  - **Partida:** al terminar, `BoardScreen` arma un `MatchSummary` (con `MatchSummaryBuilder` y `AwardCalculator`) y `StatsCalculator` lo suma. La suma y una marca en `stats/{uid}/matches/{id de la sala}` van en **una sola transacción**, así una partida nunca se cuenta dos veces. Como hay un minijuego por ronda, los minijuegos jugados son las rondas.
+  - **Tablero:** el motor cuenta en `PlayerState` los dados, el número máximo, el tipo de casilla, el camino elegido, las vueltas y los diamantes del mapa. Son solo contadores: no cambian las reglas.
+  - **Cofres:** `FirebaseShopService` suma el cofre, el gasto y el premio en la **misma transacción de la compra**, con `FieldValue.increment`.
+  - **Tiempo jugando y en minijuegos:** lo mide `MatchTimeTracker` con los cambios de fase.
+  - **Tiempo en la app:** `AppUsageTracker` envuelve a `MainShellScreen` y cuenta mientras la app está en primer plano. Se guarda con `FieldValue.increment` cada minuto y al pasar a segundo plano.
+  - **Racha:** `StreakCalculator` cuenta los días seguidos en que se abre la app, con la fecha del celular.
+  - **Social:** `StatsController.recordSocial` queda listo para invitaciones y mensajes (`feature/friends-chat`).
+- **En el código:** `lib/models/player_stats.dart`, `lib/models/stats/`, `lib/models/match_summary.dart`, `lib/services/stats/` (interfaz `StatsService`, versión con Firebase, `FirestoreStatsDocument`, calculadoras, formato y proveedores), `StatsController`, `StatsPresenter`, `StatsScreen` y los widgets `stats_card.dart` y `app_usage_tracker.dart`. En el motor: `game_state.dart`, `game_engine.dart` y `game_codec.dart`.
+- **Motivo:** un grupo por clase evita una clase gigante y deja cada parte con una sola responsabilidad. `FirestoreStatsDocument` es el único lugar que conoce la ruta y los incrementos, así la tienda y el servicio no se separan. Las calculadoras y el presentador no dependen de Firebase ni del reloj real, así que se prueban solos.
+- **Provisional:**
+  - El mejor puntaje y los minijuegos por tipo quedan vacíos hasta que existan minijuegos (hoy se simula al ganador).
+  - Las compras en tiendas del mapa quedan en 0 hasta `feature/map-shop-items`.
+  - Invitaciones, mensajes y partidas con amigos quedan en 0 hasta `feature/friends-chat`.
+- **Riesgo:** como el resto de la partida (ver D-04), las estadísticas las escribe el celular del jugador. Para el proyecto de aula es aceptable.
+- **Pendientes:**
+  - Reglas de Firestore: `stats/{uid}` y su subcolección `matches` solo las lee y escribe su dueño. Se coordina con Brayan.
+  - Cuando llegue `feature/results-xp`, la pantalla de resultados puede reutilizar `MatchSummaryBuilder`.
