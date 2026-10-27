@@ -75,8 +75,13 @@ class GameEngine {
       case null:
         break;
     }
-    player = player.copyWith(clearPendingEffect: true);
     final roll = random.rollDie(sides);
+    player = player.copyWith(
+      clearPendingEffect: true,
+      diceRolled: player.diceRolled + 1,
+      diceTotal: player.diceTotal + roll,
+      maxRolls: roll == sides ? player.maxRolls + 1 : null,
+    );
     return _move(state.withPlayer(player).copyWith(lastRoll: roll), roll);
   }
 
@@ -86,7 +91,13 @@ class GameEngine {
     if (branch < 0 || branch >= fork.next.length) {
       throw StateError('El camino $branch no existe');
     }
-    final moved = _step(state, fork.next[branch]);
+    final player = state.currentPlayer;
+    final counted = state.withPlayer(
+      branch == 0
+          ? player.copyWith(mainPathsTaken: player.mainPathsTaken + 1)
+          : player.copyWith(shortcutsTaken: player.shortcutsTaken + 1),
+    );
+    final moved = _step(counted, fork.next[branch]);
     return _move(moved, state.stepsLeft - 1);
   }
 
@@ -108,11 +119,18 @@ class GameEngine {
   }
 
   /// Mueve al jugador una casilla. Si pasa por el diamante, se lo lleva.
+  /// Si llega a la salida, completó una vuelta.
   GameState _step(GameState state, int tileId) {
     var player = state.currentPlayer.copyWith(position: tileId);
+    if (tileId == BoardLayout.startId) {
+      player = player.copyWith(laps: player.laps + 1);
+    }
     var diamondTileId = state.diamondTileId;
     if (tileId == diamondTileId) {
-      player = player.copyWith(diamonds: player.diamonds + 1);
+      player = player.copyWith(
+        diamonds: player.diamonds + 1,
+        mapDiamonds: player.mapDiamonds + 1,
+      );
       diamondTileId = _randomDiamondTile(exclude: tileId);
     }
     return state.withPlayer(player).copyWith(diamondTileId: diamondTileId);
@@ -129,6 +147,12 @@ class GameEngine {
           pendingEffect: outcome.pendingEffect,
           negativeTiles: tile.type == TileType.negative
               ? player.negativeTiles + 1
+              : null,
+          positiveTiles: tile.type == TileType.positive
+              ? player.positiveTiles + 1
+              : null,
+          specialTiles: tile.type == TileType.special
+              ? player.specialTiles + 1
               : null,
         );
     return _nextTurn(state.withPlayer(updated).copyWith(stepsLeft: 0));

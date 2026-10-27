@@ -20,6 +20,15 @@ void main() {
           minigamesWon: 2,
           negativeTiles: 3,
           purchases: 1,
+          diceRolled: 4,
+          diceTotal: 15,
+          maxRolls: 1,
+          positiveTiles: 2,
+          specialTiles: 1,
+          mainPathsTaken: 3,
+          shortcutsTaken: 2,
+          laps: 1,
+          mapDiamonds: 1,
         ),
         'b': PlayerState(id: 'b', username: 'Beto'),
       },
@@ -48,6 +57,15 @@ void main() {
     expect(ana.pendingEffect, PendingEffect.die12);
     expect(ana.minigamesWon, 2);
     expect(ana.negativeTiles, 3);
+    expect(ana.diceRolled, 4);
+    expect(ana.diceTotal, 15);
+    expect(ana.maxRolls, 1);
+    expect(ana.positiveTiles, 2);
+    expect(ana.specialTiles, 1);
+    expect(ana.mainPathsTaken, 3);
+    expect(ana.shortcutsTaken, 2);
+    expect(ana.laps, 1);
+    expect(ana.mapDiamonds, 1);
     expect(read.players['b']!.pendingEffect, isNull);
   });
 
@@ -66,6 +84,9 @@ void main() {
 
     expect(read.players['a']!.position, 3);
     expect(read.players['a']!.diamonds, 0);
+    // Las partidas guardadas antes de los contadores los leen en 0.
+    expect(read.players['a']!.diceRolled, 0);
+    expect(read.players['a']!.laps, 0);
     expect(read.totalRounds, 5);
   });
 

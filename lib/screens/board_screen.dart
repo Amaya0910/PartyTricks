@@ -2,11 +2,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/stats_controller.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/game_engine/award_calculator.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
+import 'package:party_tricks/services/stats/match_time_tracker.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/board_view.dart';
 
@@ -33,6 +35,12 @@ class BoardScreen extends ConsumerStatefulWidget {
 class _BoardScreenState extends ConsumerState<BoardScreen> {
   void Function()? _stopHost;
 
+  /// Mide la partida para las estadísticas (tiempo jugando y en minijuegos).
+  final _timeTracker = MatchTimeTracker();
+
+  /// Para guardar la partida en las estadísticas una sola vez.
+  bool _statsRecorded = false;
+
   @override
   void initState() {
     super.initState();
@@ -51,8 +59,30 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     ref.read(gameServiceProvider).sendAction(widget.roomId, action);
   }
 
+  /// Cada jugador guarda sus propias estadísticas al terminar la partida.
+  void _onGameChanged(GameState? game) {
+    if (game == null) return;
+    _timeTracker.onPhase(game.phase);
+    if (game.phase != GamePhase.finished || _statsRecorded) return;
+    _statsRecorded = true;
+    ref
+        .read(statsControllerProvider)
+        .recordFinishedMatch(
+          roomId: widget.roomId,
+          game: game,
+          tracker: _timeTracker,
+          isHost: widget.isHost,
+          isPublic:
+              ref.read(roomProvider(widget.roomId)).value?.isPublic ?? false,
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen(
+      gameProvider(widget.roomId),
+      (_, next) => _onGameChanged(next.value),
+    );
     final game = ref.watch(gameProvider(widget.roomId)).value;
     final me = ref.watch(roomIdentityProvider).value;
     return PopScope(
