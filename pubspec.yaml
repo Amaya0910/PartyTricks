@@ -31,6 +31,7 @@ flutter:
   # Imágenes del juego (fondo, personaje, etc.).
   assets:
     - assets/images/
+    - assets/images/cofres/
 
   # Tipografía del mockup.
   fonts:

@@ -10,6 +10,7 @@ class UserProfile {
     this.experience = 0,
     this.coins = 0,
     this.diamonds = 0,
+    this.extraDice = 0,
   });
 
   /// Identificador de Firebase Authentication.
@@ -31,6 +32,9 @@ class UserProfile {
   /// Diamantes de la cuenta.
   final int diamonds;
 
+  /// Dados extra consumibles que ganó en los cofres.
+  final int extraDice;
+
   /// El [uid] es el id del documento, por eso no va dentro del mapa.
   factory UserProfile.fromMap(String uid, Map<String, dynamic> map) {
     return UserProfile(
@@ -41,6 +45,7 @@ class UserProfile {
       experience: (map['experience'] as num?)?.toInt() ?? 0,
       coins: (map['coins'] as num?)?.toInt() ?? 0,
       diamonds: (map['diamonds'] as num?)?.toInt() ?? 0,
+      extraDice: (map['extraDice'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -52,10 +57,16 @@ class UserProfile {
       'experience': experience,
       'coins': coins,
       'diamonds': diamonds,
+      'extraDice': extraDice,
     };
   }
 
-  UserProfile copyWith({int? experience, int? coins, int? diamonds}) {
+  UserProfile copyWith({
+    int? experience,
+    int? coins,
+    int? diamonds,
+    int? extraDice,
+  }) {
     return UserProfile(
       uid: uid,
       email: email,
@@ -64,6 +75,7 @@ class UserProfile {
       experience: experience ?? this.experience,
       coins: coins ?? this.coins,
       diamonds: diamonds ?? this.diamonds,
+      extraDice: extraDice ?? this.extraDice,
     );
   }
 }

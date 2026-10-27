@@ -154,4 +154,20 @@ class AppColors {
 
   /// Íconos, textos y bordes punteados de los cosméticos.
   static const Color wardrobeInk = Color(0xFF000000);
+  
+  // ---------------------------------------------------------------------------
+  // Tienda
+  // ---------------------------------------------------------------------------
+
+  /// Franja "COFRES".
+  static const Color shopBand = Color(0xFFD6EAB9);
+
+  /// De cada cofre: `Card` para fondos y `Strong` para bordes, cabeceras
+  /// y textos.
+  static const Color chestBasicCard = Color(0xFFDDFF8F);
+  static const Color chestBasicStrong = Color(0xFF8FA05A);
+  static const Color chestPartyCard = Color(0xFFF5D391);
+  static const Color chestPartyStrong = Color(0xFFB09868);
+  static const Color chestDiamondCard = Color(0xFFC688FF);
+  static const Color chestDiamondStrong = Color(0xFF8E62B6);
 }
