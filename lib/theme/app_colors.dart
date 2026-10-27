@@ -144,4 +144,14 @@ class AppColors {
 
   /// Sombra suave bajo las etiquetas azules.
   static const Color pillShadow = Color(0x40000000);
+
+  // ---------------------------------------------------------------------------
+  // Vestuario
+  // ---------------------------------------------------------------------------
+
+  /// Fondo gris de cada categoría en la barra de pestañas.
+  static const Color wardrobeChip = Color(0xFFD9D9D9);
+
+  /// Íconos, textos y bordes punteados de los cosméticos.
+  static const Color wardrobeInk = Color(0xFF000000);
 }
