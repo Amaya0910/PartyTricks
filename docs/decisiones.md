@@ -76,7 +76,7 @@
 ## D-09. Flujo de trabajo en Git
 
 - **Estado:** Aceptada
-- **Decisión:** ramas `main` y `develop`, una rama por tarea (`feature/...`, `docs/...`, `fix/...`), commits con prefijo y Pull Request revisado por la otra persona.
+- **Decisión:** ramas `main` y `develop`, una rama por tarea (`feature/...`, `fix/...`), una rama permanente para la documentación (ver D-20), commits con prefijo y Pull Request revisado por la otra persona.
 - **Detalle completo:** ver `roles_y_ramas.md`.
 
 ## D-10. Foto del rostro opcional y chat moderable
@@ -101,7 +101,6 @@
   - Hacer una prueba corta de Flame con el minijuego más sencillo antes de decidir.
   - Cuando se defina la lista de minijuegos, anotar cuáles usan Flame.
 
-  
 ## D-12. Configuración del proyecto de Firebase
 
 - **Fecha:** 2026-10-17
@@ -109,11 +108,11 @@
 - **Decisión:** proyecto `party-tricks` (plan Spark, gratis) con apps Android e iOS registradas con el identificador `com.partytricks.app`. Se activaron Authentication (correo y contraseña), Cloud Firestore (ubicación `nam5`) y Realtime Database (`us-central1`), ambas en modo de prueba. La configuración la genera `flutterfire configure` en `lib/firebase_options.dart`, y `main.dart` inicia Firebase antes de abrir la app.
 - **Motivo:** el identificador `com.example` no se acepta en tiendas y cambiarlo después obliga a registrar las apps otra vez. Correo y contraseña es lo que pide el diseño del juego.
 - **Pendientes:**
-  - Escribir las reglas de seguridad antes de que venza el modo de prueba (30 días).
-  - Storage pide el plan Blaze (de pago); se decide cuando llegue `feature/wardrobe-avatar`.
+  - Escribir las reglas de seguridad antes de que venza el modo de prueba (30 días desde el 2026-10-17, es decir, hacia el **2026-11-16**).
+  - Storage pide el plan Blaze (de pago); se decide cuando llegue `feature/player-profile` con la foto del rostro.
   - Para entrar a la consola de Firebase, pedir acceso a Brayan.
 
-  ## D-13. Motor del juego y valores provisionales
+## D-13. Motor del juego y valores provisionales
 
 - **Fecha:** 2026-10-17
 - **Estado:** Propuesta (por confirmar con Isabella)
@@ -132,7 +131,7 @@
 - **Fecha:** 2026-10-17
 - **Estado:** Propuesta (por confirmar con Isabella)
 - **Decisión:** las salas viven en Realtime Database: `rooms/{id}/meta` (código, pública o privada, creador, jugadores máximos, rondas, estado y fin de la espera), `rooms/{id}/players/{uid}`, `roomCodes/{código}` para buscar por código y `publicLobby/{id}` para las salas públicas que esperan jugadores. El código tiene 6 caracteres sin letras que se confunden (O/0, I/1). El teléfono del creador decide cuándo arranca o se cierra la sala, y una transacción evita que dos jugadores entren al último puesto a la vez.
-- **Provisional:** mientras no exista `feature/auth`, las salas usan un usuario anónimo de Firebase con el nombre "Jugador XXXX". Se cambia en `room_providers.dart` cuando esté el inicio de sesión. Al arrancar la partida se muestra un mensaje; el tablero llega en `feature/board-turns`.
+- **Provisional:** las salas todavía usan un usuario anónimo de Firebase con el nombre "Jugador XXXX" (`room_providers.dart`). Hay que cambiarlo para que usen el nombre de usuario real de la cuenta (ver D-16). Al arrancar la partida todos pasan al tablero.
 - **Pendientes:** reglas de seguridad de Realtime Database, borrar salas viejas y qué pasa si el creador se sale (va en `feature/disconnections`).
 
 ## D-15. Partida en vivo y pantalla del tablero
@@ -169,3 +168,34 @@
 - **Riesgo:** la búsqueda ocurre antes de tener sesión, así que `usernames` debe poder leerse sin iniciar sesión. Si las reglas permitieran listar la colección, cualquiera vería los correos de todos los jugadores, y hay jugadores menores (ver D-10).
 - **Alternativas:** iniciar solo con correo (más simple y sin exponer correos) o Cloud Functions que conviertan el nombre en correo sin mostrarlo (requiere el plan Blaze).
 - **Pendiente (antes de terminar el modo de prueba):** en las reglas de Firestore, permitir leer un documento de `usernames` solo por su nombre exacto (`get`), nunca listar la colección (`list`), y que solo su dueño pueda escribirlo. Se coordina con Brayan, que configura las reglas.
+
+## D-18. Tienda de cofres con diamantes
+
+- **Fecha:** 2026-10-26
+- **Estado:** Propuesta (por confirmar con Brayan)
+- **Decisión:** los cofres (Básico 50, Party 100 y Diamante 150) se compran con los **diamantes de la cuenta**. Los premios son: cosmético aleatorio, nada, 100 monedas o dado extra. Las probabilidades salen del mockup y viven en `lib/models/chest.dart`. El sorteo está en `ChestRoller`, que usa `RandomSource` para poder probarlo. `FirebaseShopService` cobra y entrega el premio en **una sola transacción** de Firestore sobre `users/{uid}`. El dado extra se guarda en el campo `extraDice` del perfil.
+- **En el código:** `lib/models/chest.dart`, `lib/services/shop/` (interfaz `ShopService`, versión con Firebase, `ChestRoller` y proveedores), `ShopController`, y los widgets `chest_dialog.dart` y `chest_visuals.dart`. Las imágenes están en `assets/images/cofres/`.
+- **Motivo:** una transacción evita cobrar sin dar premio o gastar dos veces el mismo diamante. Entregar el servicio por interfaz permite probar sin Firebase.
+- **Provisional:**
+  - El tercer cofre se llama "Cofre Diamante" porque el mockup lo repite como "Cofre Party".
+  - El premio "cosmético" todavía no se guarda: falta el catálogo (hay un `TODO` en `firebase_shop_service.dart`).
+  - La tienda aún no tiene ítems (cosméticos a la venta).
+- **Riesgo:** el cobro lo calcula el celular del jugador. Las reglas de Firestore deben impedir que un jugador edite por su cuenta `diamonds`, `coins` y `extraDice`; si no, puede hacer trampa.
+- **Pendientes:** catálogo de cosméticos, ítems de la tienda y reglas de seguridad.
+
+## D-19. Vestuario con datos provisionales
+
+- **Fecha:** 2026-10-26
+- **Estado:** Propuesta
+- **Decisión:** `WardrobeController` guarda la categoría activa (`CosmeticCategory`: camisa, pantalón, zapatos, cabello, nariz, ojos y boca). Los cosméticos que se muestran son un mapa fijo en `wardrobe_screen.dart` (solo "Camisa 1"). Si la categoría no tiene ítems, se muestra su mensaje de "Aún no tienes...".
+- **Motivo:** permite construir y revisar la interfaz del mockup antes de que exista el catálogo de cosméticos.
+- **Pendientes:** reemplazar el mapa por los cosméticos desbloqueados del perfil, poder equiparlos, armar el personaje y conectar el botón "Foto" (hoy muestra "La cámara llega pronto").
+
+## D-20. Una rama permanente para la documentación
+
+- **Fecha:** 2026-10-26
+- **Estado:** Aceptada
+- **Decisión:** toda la documentación se actualiza en una sola rama, `docs/documentacion-completa`, que no se borra. Antes de editar se trae `develop` a esa rama, y los cambios se unen a `develop` con Pull Request. Las demás ramas ya unidas se borran.
+- **Motivo:** mantener la menor cantidad de ramas posible y tener un lugar fijo para actualizar los documentos.
+- **Alternativas:** crear una rama `docs/<tema>` nueva en cada actualización (más ramas que limpiar).
+- **Detalle:** comandos en `roles_y_ramas.md`, sección 3.

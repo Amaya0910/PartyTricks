@@ -1,7 +1,8 @@
 # Party Tricks — Modelos de datos
 
 > Proyecto de aula · Programación Móvil
-> Borrador **(propuesto)**: sale de `diseno_juego.md` y `arquitectura.md`. Los campos exactos y su ubicación en Firebase se definen en `chore/firebase-setup`.
+> Borrador **(propuesto)**: sale de `diseno_juego.md` y `arquitectura.md`. Los campos exactos y su ubicación en Firebase se van definiendo a medida que se construye cada área.
+> Última actualización: 2026-10-26
 
 ---
 
@@ -31,9 +32,9 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | `experiencia` | `experience` | XP acumulada, empieza en 0; el nivel se calcula a partir de ella |
 | `monedas` | `coins` | Monedas de la cuenta, empiezan en 0 |
 | `diamantes` | `diamonds` | Diamantes de la cuenta, empiezan en 0 |
+| `dadosExtra` | `extraDice` | Dados extra consumibles ganados en los cofres (ver D-18); empiezan en 0. Se gastan en próximas partidas |
 | `cosmeticosDesbloqueados` | _(por construir)_ | Lista de ids de cosméticos |
 | `cosmeticosEquipados` | _(por construir)_ | Un cosmético por categoría |
-| `dadosExtra` | _(por construir)_ | Dados extra consumibles obtenidos en el cofre "Dados secretos"; se gastan en próximas partidas |
 | `fotoRostro` | _(por construir)_ | Ruta en Storage (opcional) |
 
 #### Colecciones de Firestore de la cuenta
@@ -48,6 +49,8 @@ El perfil y las dos reservas se crean en la misma transacción al registrarse. S
 
 ### 2.2 Cosmético
 
+Hoy solo existe la categoría (`CosmeticCategory` en `lib/models/cosmetic_category.dart`). El cosmético como tal llega con el catálogo.
+
 | Campo | Descripción |
 |---|---|
 | `id` | Identificador |
@@ -57,11 +60,15 @@ El perfil y las dos reservas se crean en la misma transacción al registrarse. S
 
 ### 2.3 Cofre
 
-| Campo | Descripción |
-|---|---|
-| `id` y `nombre` | Cofre Básico, Cofre Party y el cofre **Dados secretos** (donde se compran dados extra) |
-| `precio` | 50, 100 o 150 según el mockup **(por definir cuál cofre cuesta cuánto)** |
-| `probabilidades` | Premios posibles de cada cofre; en Básico y Party: dado extra, monedas, cosmético aleatorio o nada (deben sumar 100 %) |
+Definido en código, en `lib/models/chest.dart` (`ChestType`). Se compran con **diamantes de la cuenta** (ver D-18). Las probabilidades salen del mockup y suman 100 %.
+
+| Cofre | Precio (diamantes) | Cosmético aleatorio | Nada | 100 monedas | Dado extra |
+|---|---|---|---|---|---|
+| Básico | 50 | 25 % | 5 % | 65 % | 5 % |
+| Party | 100 | 40 % | 2 % | 25 % | 33 % |
+| Diamante _(nombre provisional)_ | 150 | 50 % | 0 % | 0 % | 50 % |
+
+El mockup repite el nombre "Cofre Party" en el tercer cofre; el nombre final está por definir.
 
 ### 2.4 Amistad y chat
 
@@ -72,6 +79,8 @@ El perfil y las dos reservas se crean en la misma transacción al registrarse. S
 
 ### 2.5 Sala
 
+Vive en Realtime Database, en `rooms/{id}` (ver D-14).
+
 | Campo | Descripción |
 |---|---|
 | `codigo` | Código para entrar a una sala privada |
@@ -79,19 +88,21 @@ El perfil y las dos reservas se crean en la misma transacción al registrarse. S
 | `tipo` | Pública o privada |
 | `maxJugadores` | Entre 2 y 6 |
 | `rondas` | Entre 5 y 25 |
-| `estado` | Esperando, en juego o terminada |
+| `estado` | Esperando, en juego o cerrada |
 | `jugadores` | Lista con su presencia (conectado o no) |
 
 ### 2.6 Partida
+
+Vive en Realtime Database, en `rooms/{id}/game` (ver D-15).
 
 | Campo | Descripción |
 |---|---|
 | `ordenTurnos` | Resultado de la tirada inicial, con el desempate por nombre |
 | `rondaActual` y `turnoActual` | Dónde va la partida |
-| `jugadores` | Por jugador: posición, monedas, diamantes, efecto pendiente, ítems y conteos para los premios finales |
-| `casillas` | Tipo de cada casilla (positiva, negativa o especial) |
+| `jugadores` | Por jugador: posición, monedas, diamantes, efecto pendiente y conteos para los premios finales |
 | `casillaDiamante` | Casilla donde está el diamante |
-| `trampas` | Casillas con trampa colocada y quién la puso |
+| `fase` | Lanzando, eligiendo camino, minijuego o terminada |
+| `ítems y trampas` | _(por construir, `feature/map-shop-items`)_ Casillas con trampa colocada, quién la puso y los dados extra comprados |
 
 Conteos que se guardan para los **diamantes finales**: minijuegos ganados, casillas negativas pisadas, monedas al final y compras hechas.
 
@@ -121,16 +132,22 @@ Los modelos viven en `lib/models/`. Hoy existen:
 | `loading_state.dart` | Estado de la pantalla de carga |
 | `play_option.dart` | Opciones del menú de Jugar |
 | `room.dart` | Sala de juego: configuración, jugadores y cuándo arranca o se cierra |
-| `user_profile.dart` | Perfil del jugador (correo, nombre de usuario, código de amistad, experiencia, monedas y diamantes) |
+| `user_profile.dart` | Perfil del jugador (correo, nombre de usuario, código de amistad, experiencia, monedas, diamantes y dados extra) |
 | `auth_form_state.dart` | Estado de los formularios de inicio de sesión y registro (cargando y mensaje de error) |
+| `chest.dart` | Cofres de la tienda: precio, probabilidades, imagen y premios posibles |
+| `cosmetic_category.dart` | Categorías de cosméticos del Vestuario, con su etiqueta y mensaje de "sin ítems" |
 
-Los modelos de datos de este documento se agregarán a esa carpeta a medida que se construya cada área.
+El estado de la partida (`GameState`, `PlayerState`) y sus acciones están en `lib/services/game_engine/`, porque forman parte de las reglas del juego y no dependen de Firebase.
+
+Los modelos de datos de este documento que faltan se agregarán a esa carpeta a medida que se construya cada área.
 
 ---
 
 ## 4. Pendientes
 
-- [ ] Estructura exacta de las colecciones de Firestore y de los nodos de Realtime Database (la de la cuenta ya está en 2.1).
-- [ ] Reglas de seguridad (que cada jugador solo lea y modifique lo suyo). En `usernames`, permitir leer solo por nombre exacto y no listar (ver `decisiones.md`, D-17).
+- [ ] Estructura exacta de las colecciones de Firestore para amigos, chat y catálogo de cosméticos (la de la cuenta ya está en 2.1).
+- [ ] Reglas de seguridad (que cada jugador solo lea y modifique lo suyo, incluidos `diamonds`, `coins` y `extraDice`; ver D-18). En `usernames`, permitir leer solo por nombre exacto y no listar (ver `decisiones.md`, D-17).
 - [x] Forma de garantizar que el nombre de usuario y el código de amistad sean únicos (colecciones `usernames` y `friendCodes` con transacción; ver D-16).
+- [x] Estructura de las salas y de la partida en Realtime Database (ver D-14 y D-15).
 - [ ] Qué se guarda para permitir reconexión a una partida.
+- [ ] Guardar el cosmético ganado en un cofre (hoy el premio se sortea pero no se guarda).
