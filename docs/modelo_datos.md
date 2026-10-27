@@ -2,7 +2,7 @@
 
 > Proyecto de aula · Programación Móvil
 > Borrador **(propuesto)**: sale de `diseno_juego.md` y `arquitectura.md`. Los campos exactos y su ubicación en Firebase se van definiendo a medida que se construye cada área.
-> Última actualización: 2026-10-26
+> Última actualización: 2026-10-27
 
 ---
 
@@ -118,7 +118,24 @@ Un jugador desconectado recibe 0 de experiencia, monedas y diamantes.
 
 ### 2.8 Estadísticas del jugador
 
-Contadores para la pantalla de Stats: partidas ganadas y perdidas, máximo de diamantes y de monedas en una partida, minijuegos ganados y perdidos, mejor puntaje, tiempo en la app, jugando y en minijuegos, y rachas (actual y máxima).
+Viven en Cloud Firestore, en `stats/{uid}` (ver `decisiones.md`, D-21), aparte del perfil para que guardar el tiempo en la app no reescriba la cuenta. El documento tiene **un mapa por grupo**; cada grupo es una clase en `lib/models/stats/`. Todo empieza en 0. Los porcentajes y promedios no se guardan: se calculan al mostrarlos.
+
+| Grupo (mapa) | Clase | Campos |
+|---|---|---|
+| `matches` | `MatchStats` | `won`, `lost`, `ties`, `firstPlaces`, `secondPlaces`, `thirdPlaces`, `currentWinStreak`, `maxWinStreak`, `maxDiamonds`, `maxCoins`, `totalDiamonds`, `totalCoins`, `hosted`, `publicMatches`, `privateMatches`, `roundsPlayed`, `longestMatchSeconds` |
+| `awards` | `AwardStats` | `minigames`, `worstLuck`, `richest`, `topBuyer` (veces que ganó cada diamante final) |
+| `minigames` | `MinigameStats` | `won`, `lost`, `maxWonInMatch`, `bestScore` y `byType` (por id del minijuego: `played`, `won`, `bestScore`) |
+| `board` | `BoardStats` | `diceRolled`, `diceTotal`, `maxRolls`, `positiveTiles`, `negativeTiles`, `specialTiles`, `mainPathsTaken`, `shortcutsTaken`, `laps`, `mapDiamonds`, `shopPurchases` |
+| `shop` | `ShopStats` | `chestsOpened` (por tipo de cofre), `diamondsSpent`, `cosmeticPrizes`, `emptyPrizes`, `coinPrizes`, `dicePrizes`, `coinsFromChests` |
+| `social` | `SocialStats` | `invitesSent`, `invitesAccepted`, `messagesSent`, `matchesWithFriends` y `playedWith` (por uid: `username` y `matches`) |
+| `time` | `TimeStats` | `secondsInApp`, `secondsPlaying`, `secondsInMinigames`, `currentStreak`, `maxStreak`, `lastActiveDay` (`AAAA-MM-DD`, hora del celular) |
+
+| Colección | Documento | Contenido | Para qué |
+|---|---|---|---|
+| `stats` | `{uid}` | Los grupos de la tabla anterior | Pantalla de Stats |
+| `stats/{uid}/matches` | `{id de la sala}` | `won` y `recordedAt` | Marca de partida ya sumada, para no contarla dos veces |
+
+**Contadores de la partida.** Para el grupo `board`, `PlayerState` (en `rooms/{id}/game`) guarda también: `diceRolled`, `diceTotal`, `maxRolls`, `positiveTiles`, `specialTiles`, `mainPathsTaken`, `shortcutsTaken`, `laps` y `mapDiamonds`. Las partidas guardadas antes los leen en 0.
 
 ---
 
@@ -136,6 +153,9 @@ Los modelos viven en `lib/models/`. Hoy existen:
 | `auth_form_state.dart` | Estado de los formularios de inicio de sesión y registro (cargando y mensaje de error) |
 | `chest.dart` | Cofres de la tienda: precio, probabilidades, imagen y premios posibles |
 | `cosmetic_category.dart` | Categorías de cosméticos del Vestuario, con su etiqueta y mensaje de "sin ítems" |
+| `player_stats.dart` | Estadísticas del jugador: une los grupos de `stats/` |
+| `stats/` | Un archivo por grupo de estadísticas (ver 2.8), `stats_section.dart` (tarjetas de la pantalla) y `stats_map.dart` (lectura segura de Firestore) |
+| `match_summary.dart` | Lo que un jugador se lleva de una partida terminada, para sumarlo a sus estadísticas |
 
 El estado de la partida (`GameState`, `PlayerState`) y sus acciones están en `lib/services/game_engine/`, porque forman parte de las reglas del juego y no dependen de Firebase.
 
@@ -146,7 +166,7 @@ Los modelos de datos de este documento que faltan se agregarán a esa carpeta a 
 ## 4. Pendientes
 
 - [ ] Estructura exacta de las colecciones de Firestore para amigos, chat y catálogo de cosméticos (la de la cuenta ya está en 2.1).
-- [ ] Reglas de seguridad (que cada jugador solo lea y modifique lo suyo, incluidos `diamonds`, `coins` y `extraDice`; ver D-18). En `usernames`, permitir leer solo por nombre exacto y no listar (ver `decisiones.md`, D-17).
+- [ ] Reglas de seguridad (que cada jugador solo lea y modifique lo suyo, incluidos `diamonds`, `coins` y `extraDice`; ver D-18). En `stats/{uid}`, solo su dueño lee y escribe (ver D-21). En `usernames`, permitir leer solo por nombre exacto y no listar (ver `decisiones.md`, D-17).
 - [x] Forma de garantizar que el nombre de usuario y el código de amistad sean únicos (colecciones `usernames` y `friendCodes` con transacción; ver D-16).
 - [x] Estructura de las salas y de la partida en Realtime Database (ver D-14 y D-15).
 - [ ] Qué se guarda para permitir reconexión a una partida.

@@ -2,7 +2,7 @@
 
 > Equipo: **Isabella Amaya** y **Brayan Vasquez**
 > Este documento es **propuesto**: cambien lo que no les convenga. Se actualiza durante el desarrollo (marquen las casillas al avanzar).
-> Última actualización: 2026-10-26
+> Última actualización: 2026-10-27
 
 ---
 
@@ -184,7 +184,7 @@ Una tarea está terminada cuando:
 | `feature/auth` | Isabella | 🟢 Listo |
 | `feature/rooms-lobby` | Brayan | 🟢 Listo |
 | `feature/game-engine` | Brayan | 🟢 Listo |
-| `feature/player-profile` | Isabella | 🟡 En proceso (vestuario listo; faltan cosméticos desbloqueados, foto, estadísticas, nivel y experiencia) |
+| `feature/player-profile` | Isabella | 🟡 En proceso (vestuario y estadísticas listos; faltan cosméticos desbloqueados, foto, nivel y experiencia) |
 | `feature/board-turns` | Brayan | 🟢 Listo |
 | `feature/map-shop-items` | Brayan | 🔴 Pendiente |
 | `feature/results-xp` | Brayan | 🔴 Pendiente |
