@@ -170,4 +170,18 @@ class AppColors {
   static const Color chestPartyStrong = Color(0xFFB09868);
   static const Color chestDiamondCard = Color(0xFFC688FF);
   static const Color chestDiamondStrong = Color(0xFF8E62B6);
+
+  // ---------------------------------------------------------------------------
+  // Estadísticas
+  // ---------------------------------------------------------------------------
+
+  /// Cabecera y borde de las tarjetas de la pantalla Stats. Se repiten en
+  /// orden: azul, azul oscuro y morado. Solo el azul oscuro es nuevo; los
+  /// otros reutilizan colores que ya existían.
+  static const Color statsBlue = authAccent;
+  static const Color statsDarkBlue = Color(0xFF5381A5);
+  static const Color statsPurple = chestDiamondStrong;
+
+  /// Etiquetas y números de las filas.
+  static const Color statsText = wardrobeInk;
 }
