@@ -184,4 +184,27 @@ class AppColors {
 
   /// Etiquetas y números de las filas.
   static const Color statsText = wardrobeInk;
+
+  // ---------------------------------------------------------------------------
+  // Amigos y chat (todos reutilizan colores que ya existían)
+  // ---------------------------------------------------------------------------
+
+  /// Borde de la tarjeta "Tus amigos" y del chat.
+  static const Color friendsBorder = statsDarkBlue;
+
+  /// Cabecera "Tus amigos", burbujas propias y botón "+".
+  static const Color friendsAccent = authAccent;
+
+  /// Cabecera del chat y recuadro de la foto de cada amigo.
+  static const Color chatHeader = avatarBackground;
+
+  /// Burbujas del amigo y campo para escribir.
+  static const Color chatField = authField;
+
+  /// Punto de mensajes sin leer.
+  static const Color unreadDot = blueStrong;
+
+  /// Botón Aceptar y Rechazar de las solicitudes.
+  static const Color accept = activeButton;
+  static const Color reject = authError;
 }

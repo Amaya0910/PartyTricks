@@ -4,14 +4,28 @@ import 'package:party_tricks/services/rooms/room_code_generator.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
 
-/// Pide el código de una sala privada. Devuelve el código o null si se cierra.
+/// Pide un código de 6 caracteres. Devuelve el código o null si se cierra.
+///
+/// Sirve para entrar a una sala privada y para agregar amigos: los códigos
+/// de sala y de amistad usan el mismo alfabeto y el mismo largo.
 class JoinCodeDialog extends StatefulWidget {
-  const JoinCodeDialog({super.key});
+  const JoinCodeDialog({
+    super.key,
+    this.title = 'Ingresar',
+    this.label = 'Ingresa Codigo',
+  });
 
-  static Future<String?> show(BuildContext context) {
+  final String title;
+  final String label;
+
+  static Future<String?> show(
+    BuildContext context, {
+    String title = 'Ingresar',
+    String label = 'Ingresa Codigo',
+  }) {
     return showBlurredDialog<String>(
       context,
-      builder: (_) => const JoinCodeDialog(),
+      builder: (_) => JoinCodeDialog(title: title, label: label),
     );
   }
 
@@ -52,13 +66,13 @@ class _JoinCodeDialogState extends State<JoinCodeDialog> {
   @override
   Widget build(BuildContext context) {
     return DialogCard(
-      title: 'Ingresar',
+      title: widget.title,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const _Pill(label: 'Ingresa Codigo'),
+            _Pill(label: widget.label),
             const SizedBox(height: 12),
             GestureDetector(
               onTap: _focus.requestFocus,
@@ -108,7 +122,7 @@ class _JoinCodeDialogState extends State<JoinCodeDialog> {
   }
 }
 
-/// Etiqueta redondeada "Ingresa Codigo".
+/// Etiqueta redondeada ("Ingresa Codigo").
 class _Pill extends StatelessWidget {
   const _Pill({required this.label});
 

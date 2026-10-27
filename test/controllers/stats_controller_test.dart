@@ -5,6 +5,7 @@ import 'package:party_tricks/models/stats/social_stats.dart';
 import 'package:party_tricks/models/user_profile.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/social/social_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
 import 'package:party_tricks/services/stats/stats_providers.dart';
 
@@ -41,6 +42,8 @@ void main() {
         statsServiceProvider.overrideWithValue(service),
         clockProvider.overrideWithValue(() => now),
         userProfileProvider.overrideWith((ref) => Stream.value(profile)),
+        // uid-2 es amigo: la partida cuenta como "con amigos".
+        friendUidsProvider.overrideWithValue(const {'uid-2'}),
       ],
     );
     addTearDown(container.dispose);
@@ -74,6 +77,7 @@ void main() {
       expect(match.isHost, isTrue);
       expect(match.isPublic, isTrue);
       expect(match.opponents, {'uid-2': 'Beto'});
+      expect(match.playedWithFriend, isTrue);
     });
 
     test('no guarda nada si la partida no ha terminado', () async {

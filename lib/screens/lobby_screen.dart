@@ -3,12 +3,15 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/invite_controller.dart';
 import 'package:party_tricks/controllers/room_controller.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/screens/board_screen.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
+import 'package:party_tricks/services/social/social_exception.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/invite_friends_dialog.dart';
 import 'package:party_tricks/widgets/player_slot.dart';
 
 /// Sala de espera: muestra el código, los jugadores y la cuenta regresiva
@@ -71,6 +74,32 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
     }
     await ref.read(gameServiceProvider).startGame(room);
     await rooms.setStatus(room, RoomStatus.playing);
+  }
+
+  /// Abre la lista de amigos y les envía la invitación (al chat y como
+  /// aviso). Los que ya están en la sala no aparecen en la lista.
+  Future<void> _invite(Room room) async {
+    final invites = ref.read(inviteControllerProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    final chosen = await InviteFriendsDialog.show(
+      context,
+      exclude: room.players.keys.toSet(),
+    );
+    if (chosen == null || chosen.isEmpty) return;
+    try {
+      final sent = await invites.invite(room: room, friendUids: chosen);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            sent == 1
+                ? 'Invitación enviada'
+                : 'Invitaciones enviadas: $sent',
+          ),
+        ),
+      );
+    } on SocialException catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    }
   }
 
   Future<void> _leave() async {
@@ -137,7 +166,12 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
 
   Widget _content(Room room, String? myUid) {
     return switch (room.status) {
-      RoomStatus.waiting => _Waiting(room: room, myUid: myUid, onLeave: _leave),
+      RoomStatus.waiting => _Waiting(
+        room: room,
+        myUid: myUid,
+        onInvite: () => _invite(room),
+        onLeave: _leave,
+      ),
       // Mientras se arma la partida, hasta que el listener pase al tablero.
       RoomStatus.playing => _Message(
         text: '¡La partida va a empezar!',
@@ -155,11 +189,13 @@ class _Waiting extends StatelessWidget {
   const _Waiting({
     required this.room,
     required this.myUid,
+    required this.onInvite,
     required this.onLeave,
   });
 
   final Room room;
   final String? myUid;
+  final VoidCallback onInvite;
   final VoidCallback onLeave;
 
   @override
@@ -255,6 +291,16 @@ class _Waiting extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        backgroundColor: AppColors.accept,
+                      ),
+                      onPressed: onInvite,
+                      icon: const Icon(Icons.person_add),
+                      label: const Text('Invitar a amigos'),
+                    ),
+                    const SizedBox(height: 8),
                     FilledButton(
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(48),
