@@ -189,7 +189,7 @@ Una tarea está terminada cuando:
 | `feature/map-shop-items` | Brayan | 🔴 Pendiente |
 | `feature/results-xp` | Brayan | 🔴 Pendiente |
 | `feature/game-shop` | Isabella | 🟡 En proceso (cofres listos; faltan cosméticos e ítems en la tienda) |
-| `feature/friends-chat` | Isabella | 🔴 Pendiente |
+| `feature/friends-chat` | Isabella | 🟢 Listo (amigos por solicitud, chat, invitaciones, bloquear y reportar) |
 | `feature/disconnections` | Brayan | 🔴 Pendiente |
 | `docs/documentacion-completa` | Ambos | 🟢 Rama permanente (se reutiliza en cada actualización) |
 | Minijuegos | Ambos | 🔴 Pendiente |

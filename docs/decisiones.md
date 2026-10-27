@@ -131,7 +131,7 @@
 - **Fecha:** 2026-10-17
 - **Estado:** Propuesta (por confirmar con Isabella)
 - **Decisión:** las salas viven en Realtime Database: `rooms/{id}/meta` (código, pública o privada, creador, jugadores máximos, rondas, estado y fin de la espera), `rooms/{id}/players/{uid}`, `roomCodes/{código}` para buscar por código y `publicLobby/{id}` para las salas públicas que esperan jugadores. El código tiene 6 caracteres sin letras que se confunden (O/0, I/1). El teléfono del creador decide cuándo arranca o se cierra la sala, y una transacción evita que dos jugadores entren al último puesto a la vez.
-- **Provisional:** las salas todavía usan un usuario anónimo de Firebase con el nombre "Jugador XXXX" (`room_providers.dart`). Hay que cambiarlo para que usen el nombre de usuario real de la cuenta (ver D-16). Al arrancar la partida todos pasan al tablero.
+- **Actualizado (D-22):** las salas ya usan el uid y el nombre de usuario real de la cuenta (`room_providers.dart`). Solo si no hay sesión se entra como usuario anónimo con el nombre "Jugador XXXX". Al arrancar la partida todos pasan al tablero.
 - **Pendientes:** reglas de seguridad de Realtime Database, borrar salas viejas y qué pasa si el creador se sale (va en `feature/disconnections`).
 
 ## D-15. Partida en vivo y pantalla del tablero
@@ -156,7 +156,7 @@
 - **Alternativas:** consultar el nombre solo en el perfil (no garantiza la unicidad si dos personas se registran a la vez) o usar Cloud Functions (requiere el plan Blaze).
 - **Pendientes:**
   - Botón de cerrar sesión, cambiar contraseña y recuperarla.
-  - Cambiar `room_providers.dart` para que las salas usen el nombre de usuario real en vez del anónimo provisional (ver D-14).
+  - ~~Cambiar `room_providers.dart` para que las salas usen el nombre de usuario real~~ (hecho en D-22).
   - Reglas de seguridad de Firestore.
 
 ## D-17. Inicio de sesión con correo o nombre de usuario
@@ -222,3 +222,63 @@
 - **Pendientes:**
   - Reglas de Firestore: `stats/{uid}` y su subcolección `matches` solo las lee y escribe su dueño. Se coordina con Brayan.
   - Cuando llegue `feature/results-xp`, la pantalla de resultados puede reutilizar `MatchSummaryBuilder`.
+
+## D-22. Amigos, chat e invitaciones
+
+- **Fecha:** 2026-10-27
+- **Estado:** Propuesta (por confirmar con Brayan)
+- **Decisión:**
+  - **Perfil público:** lo que ven los demás vive en `publicProfiles/{uid}` (nombre, código, experiencia y foto), **sin el correo**, porque hay jugadores menores (D-10). `PublicProfilePublisher` lo mantiene igual al perfil cada vez que este cambia, y solo escribe si algo cambió.
+  - **Amistad por solicitud:** se envía con el código de amistad (`friendCodes/{código}` → uid). Entre dos jugadores hay un solo documento, `friendships/{id de pareja}`, con estado `pending` o `accepted`; se crea en una transacción. Si los dos se envían solicitud, queda aceptada. Rechazar, cancelar y eliminar borran el documento.
+  - **Chat:** `chats/{id de pareja}` guarda el último mensaje y hasta cuándo leyó cada uno (para el punto de "sin leer"); los mensajes van en `chats/{id}/messages`. El mensaje y el resumen se escriben juntos en un `WriteBatch`. Máximo 200 caracteres. Solo se puede escribir a amigos.
+  - **Invitaciones:** desde **Tu party**, con **Invitar a amigos**. Cada invitación se guarda en `invites` (para el aviso emergente) y como mensaje del chat de tipo `invite`, en la misma escritura. El botón del mensaje cambia según el estado de la sala en Realtime Database. El aviso solo sale en el menú principal y si la party aún espera jugadores.
+  - **Bloquear y reportar:** bloquear crea `blocks/{bloqueador}_{bloqueado}` y borra la amistad en la misma escritura. Quien está bloqueado no puede escribir, enviar solicitudes ni invitar; no se le dice que lo bloquearon. Reportar guarda el caso en `reports` para que lo revise un adulto o el docente.
+  - **Estadísticas:** se suman los mensajes enviados, las invitaciones enviadas y aceptadas, y las partidas con al menos un amigo (D-21).
+  - **Nombre en la sala:** `roomIdentityProvider` usa el uid y el nombre de usuario real de la cuenta, para que los amigos se reconozcan en la sala.
+- **En el código:** `lib/models/social/`, `lib/services/social/` (una interfaz y su versión con Firebase por tema: `ProfileDirectory`, `FriendsService`, `ChatService`, `InviteService` y `ModerationService`; `FirestoreSocialPaths` es el único lugar que conoce las rutas; lógica pura en `PairId`, `ChatRules`, `FriendsSections`, `ChatFormat` e `InviteStatus`), los controladores `FriendsController`, `ChatController`, `InviteController`, `ModerationController` y `PublicProfileController`, las pantallas `friends_screen.dart` y `chat_view.dart`, y los widgets de amigos, chat y diálogos.
+- **Motivo:** un servicio por tema deja cada clase con una sola responsabilidad y permite probar los controladores con servicios falsos. Las reglas del negocio (solo a amigos, bloqueos, límites) viven en los controladores y en `ChatRules`, no en la interfaz.
+- **Alternativas:** guardar los amigos dentro de cada perfil (cada jugador tendría que escribir en el perfil del otro) o usar notificaciones push para las invitaciones (necesitan Cloud Functions y el plan Blaze).
+- **Riesgo:** las reglas de Firestore son las que de verdad impiden que alguien lea chats ajenos o escriba sin ser amigo. Sin ellas, cualquiera con la app modificada podría hacerlo.
+- **Reglas de Firestore propuestas** (las configura Brayan):
+
+```
+match /publicProfiles/{uid} {
+  allow read: if request.auth != null;
+  allow write: if request.auth.uid == uid;
+}
+match /friendCodes/{code} {
+  allow get: if request.auth != null;   // nunca list
+}
+match /friendships/{id} {
+  allow read: if request.auth.uid in resource.data.members;
+  allow create: if request.auth.uid in request.resource.data.members
+                && request.resource.data.requestedBy == request.auth.uid;
+  allow update, delete: if request.auth.uid in resource.data.members;
+}
+match /chats/{id} {
+  allow read, write: if request.auth.uid in id.split('_');
+  match /messages/{messageId} {
+    allow read: if request.auth.uid in id.split('_');
+    allow create: if request.auth.uid in id.split('_')
+                  && request.resource.data.senderId == request.auth.uid
+                  && request.resource.data.text.size() <= 200;
+  }
+}
+match /invites/{id} {
+  allow read, update: if request.auth.uid == resource.data.toUid;
+  allow create: if request.resource.data.fromUid == request.auth.uid;
+}
+match /blocks/{id} {
+  allow get: if request.auth != null;
+  allow list: if request.auth.uid == resource.data.blocker;
+  allow create, delete: if id.split('_')[0] == request.auth.uid;
+}
+match /reports/{id} {
+  allow create: if request.resource.data.reporterUid == request.auth.uid;
+}
+```
+
+- **Pendientes:**
+  - Lista de bloqueados para desbloquear (va en Ajustes).
+  - Foto de perfil en el perfil público (llega con la foto del rostro).
+  - Ver si un amigo está conectado.
