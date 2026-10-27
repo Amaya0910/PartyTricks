@@ -1,8 +1,8 @@
 # Party Tricks — Roles y ramas del equipo
 
 > Equipo: **Isabella Amaya** y **Brayan Vasquez**
-Este documento es **propuesto**: cambien lo que no les convenga. Se actualiza durante el desarrollo (marquen las casillas al avanzar).
-> 
+> Este documento es **propuesto**: cambien lo que no les convenga. Se actualiza durante el desarrollo (marquen las casillas al avanzar).
+> Última actualización: 2026-10-26
 
 ---
 
@@ -34,20 +34,34 @@ La idea del reparto es dividir por **áreas de la app** (no por "pantallas" y "l
 
 Nadie trabaja directamente en `main` ni en `develop`.
 
-### 2.2 Ramas de trabajo
+### 2.2 Rama permanente de documentación
+
+| Rama | Para qué |
+| --- | --- |
+| `docs/documentacion-completa` | **Única rama para la documentación.** No se borra: se reutiliza cada vez que se actualiza la carpeta `docs/` o el `README.md` |
+
+Cómo se usa (ver los comandos en la sección 3):
+
+1. Antes de editar, se trae `develop` a esta rama para que no quede atrasada.
+2. Se editan los documentos, con commits `docs:`.
+3. Se abre un Pull Request hacia `develop`, que revisa la otra persona.
+4. Al unirse, la rama se queda; la próxima actualización empieza otra vez en el paso 1.
+
+### 2.3 Ramas de trabajo
 
 Nombre: `feature/<área>-<descripcion-corta>`, en minúsculas y con guiones.
+
+Se prefieren **pocas ramas, una por área grande**: no se crea una rama por cada pantalla, diálogo o widget.
 
 **Isabella**
 
 | Rama | Qué incluye | Depende de |
 | --- | --- | --- |
+| `feature/ui` | Toda la interfaz visual: barra de navegación y pantallas base (Inicio, Tienda, Vestuario, Stats, Amigos), diálogos (incluido "Alista tu party"), widgets reutilizables, colores en `AppColors` y ajustes al mockup | — |
 | `feature/auth` | Registro, inicio de sesión y perfil con código de amistad | `chore/firebase-setup` |
-| `feature/navigation-shell` | Barra de navegación y pantallas base (Inicio, Tienda, Vestuario, Stats, Amigos) | — |
-| `feature/wardrobe-avatar` | Vestuario, cosméticos y foto del rostro | `feature/auth` |
-| `feature/game-shop` | Tienda del juego, caja secreta de dados | `feature/auth` |
+| `feature/player-profile` | Vestuario, cosméticos, foto del rostro, estadísticas, nivel y experiencia | `feature/auth` |
+| `feature/game-shop` | Tienda del juego: cofres, cosméticos y dados extra | `feature/auth` |
 | `feature/friends-chat` | Amigos por código y chat | `feature/auth` |
-| `feature/stats-levels` | Pantalla de estadísticas, nivel y experiencia | `feature/auth` |
 
 **Brayan**
 
@@ -66,14 +80,18 @@ Nombre: `feature/<área>-<descripcion-corta>`, en minúsculas y con guiones.
 | Rama | Qué incluye | Responsable |
 | --- | --- | --- |
 | `feature/minigame-<nombre>` | Un minijuego por rama | Se reparten la lista a medias |
-| `docs/<tema>` | Cambios en la documentación | Quien edite |
+| `docs/documentacion-completa` | Toda la documentación (rama permanente, ver 2.2) | Quien edite |
 | `fix/<descripcion>` | Corrección de errores | Quien lo encuentre |
 
 ---
 
 ## 3. Reglas de trabajo
 
-- **Una rama por tarea.** Se crea desde `develop` y se borra al terminar.
+- **Pocas ramas.** Se trabaja con la menor cantidad posible: `main`, `develop`, la rama permanente de documentación y solo las ramas de trabajo que estén abiertas en ese momento.
+- **Una rama por área o tarea grande.** Se crea desde `develop` y se borra al terminar (la rama de documentación es la excepción). Si `feature/ui` ya se unió y hay más cambios visuales, se vuelve a crear con el mismo nombre desde `develop`.
+- **Limpiar al unir.** Cuando un Pull Request se une, se borra su rama en GitHub y en local (ver comandos abajo).
+- **Una rama no se crea desde otra rama de trabajo** (por ejemplo, `feature/game-shop` desde `feature/player-profile`): el segundo Pull Request arrastra los commits del primero. Si hay dependencia, se une primero la rama de la que depende.
+- **Agrupar en vez de dividir.** Los cambios pequeños del mismo tipo (por ejemplo, varios ajustes visuales) van juntos en una sola rama, con commits separados.
 - **Commits pequeños** con prefijo: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`.
 - **Pull Request obligatorio** para unir a `develop`, y lo revisa la otra persona antes de aceptarlo.
 - **Traer `develop` seguido** a la rama de trabajo para evitar conflictos grandes.
@@ -100,20 +118,49 @@ git switch feature/auth
 git merge develop
 ```
 
+### Actualizar la documentación (rama permanente)
+
+```bash
+git switch develop
+git pull
+git switch docs/documentacion-completa
+git merge develop
+
+# ... editar los archivos de docs/ ...
+
+git add docs/ README.md
+git commit -m "docs: actualizar documentación"
+git push
+# Abrir el Pull Request hacia develop en GitHub
+```
+
+### Borrar ramas ya unidas
+
+```bash
+# En local
+git branch -d feature/game-shop
+
+# En GitHub (también se puede con el ícono de la papelera)
+git push origin --delete feature/game-shop
+
+# Quitar de la lista las ramas que ya no existen en GitHub
+git fetch --prune
+```
+
 ---
 
 ## 4. Orden sugerido de trabajo
 
 | Etapa | Isabella | Brayan |
 | --- | --- | --- |
-| 1 | `feature/navigation-shell` | `chore/firebase-setup` |
+| 1 | `feature/ui` | `chore/firebase-setup` |
 | 2 | `feature/auth` | `feature/game-engine` y `feature/rooms-lobby` |
-| 3 | `feature/wardrobe-avatar` | `feature/board-turns` |
-| 4 | `feature/game-shop` y `feature/stats-levels` | `feature/map-shop-items` y `feature/results-xp` |
+| 3 | `feature/player-profile` | `feature/board-turns` |
+| 4 | `feature/game-shop` | `feature/map-shop-items` y `feature/results-xp` |
 | 5 | `feature/friends-chat` | `feature/disconnections` |
 | 6 | Minijuegos (mitad de la lista) | Minijuegos (mitad de la lista) |
 
-Así los dos pueden avanzar a la vez desde el inicio: la navegación y el motor del juego no necesitan esperar a Firebase.
+Así los dos pueden avanzar a la vez desde el inicio: la interfaz y el motor del juego no necesitan esperar a Firebase.
 
 ---
 
@@ -132,17 +179,17 @@ Una tarea está terminada cuando:
 
 | Rama | Responsable | Estado |
 | --- | --- | --- |
-| `chore/firebase-setup` | Brayan | 🟡 Pendiente |
-| `feature/navigation-shell` | Isabella | 🟢 Listo |
+| `chore/firebase-setup` | Brayan | 🟢 Listo |
+| `feature/ui` | Isabella | 🟡 En proceso (se reabre con cada lote de cambios visuales) |
 | `feature/auth` | Isabella | 🟢 Listo |
 | `feature/rooms-lobby` | Brayan | 🟢 Listo |
 | `feature/game-engine` | Brayan | 🟢 Listo |
-| `feature/wardrobe-avatar` | Isabella | 🟡 Pendiente |
-| `feature/board-turns` | Brayan | 🟡 Pendiente |
-| `feature/map-shop-items` | Brayan | 🟡 Pendiente |
-| `feature/results-xp` | Brayan | 🟡 Pendiente |
-| `feature/game-shop` | Isabella | 🟡 Pendiente |
-| `feature/stats-levels` | Isabella | 🟡 Pendiente |
-| `feature/friends-chat` | Isabella | 🟡 Pendiente |
-| `feature/disconnections` | Brayan | 🟡 Pendiente |
-| Minijuegos | Ambos | 🟡 Pendiente |
+| `feature/player-profile` | Isabella | 🟡 En proceso (vestuario listo; faltan cosméticos desbloqueados, foto, estadísticas, nivel y experiencia) |
+| `feature/board-turns` | Brayan | 🟢 Listo |
+| `feature/map-shop-items` | Brayan | 🔴 Pendiente |
+| `feature/results-xp` | Brayan | 🔴 Pendiente |
+| `feature/game-shop` | Isabella | 🟡 En proceso (cofres listos; faltan cosméticos e ítems en la tienda) |
+| `feature/friends-chat` | Isabella | 🔴 Pendiente |
+| `feature/disconnections` | Brayan | 🔴 Pendiente |
+| `docs/documentacion-completa` | Ambos | 🟢 Rama permanente (se reutiliza en cada actualización) |
+| Minijuegos | Ambos | 🔴 Pendiente |

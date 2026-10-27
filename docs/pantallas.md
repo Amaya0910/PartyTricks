@@ -3,6 +3,7 @@
 > Proyecto de aula · Programación Móvil
 > Basado en el mockup de Figma y en el código actual de `lib/screens/`.
 > Complementa a `diseno_juego.md` (sección 14) y `arquitectura.md`.
+> Última actualización: 2026-10-26
 
 **Mockup en Figma:** _(pegar aquí el enlace)_
 
@@ -19,6 +20,7 @@ Carga  →  ¿Hay sesión?
                          ├── Tienda
                          ├── Vestuario
                          ├── Inicio      (sección inicial)
+                         │     └── Jugar → Sala de espera → Tablero
                          ├── Stats
                          └── Amigos
 ```
@@ -50,12 +52,12 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 | Sección | Archivo | Estado | Contenido según el mockup |
 |---|---|---|---|
 | Inicio | `home_screen.dart` | En desarrollo | Cabecera del jugador, personaje y botón **Jugar** |
-| Tienda | `shop_screen.dart` | Base | Tienda de Tricks: cofres (50, 100, 150) y cosméticos con precio |
-| Vestuario | `wardrobe_screen.dart` | Base | Foto del rostro y categorías: Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos, Boca |
+| Tienda | `shop_screen.dart` | En desarrollo | Tienda de Tricks: cofres (50, 100, 150) y cosméticos con precio |
+| Vestuario | `wardrobe_screen.dart` | En desarrollo | Foto del rostro y categorías: Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos, Boca |
 | Stats | `stats_screen.dart` | Base | Estadísticas de partidas, minijuegos y tiempo |
 | Amigos | `friends_screen.dart` | Base | Lista de amigos, invitar a jugar y chat |
 
-**Estado:** _Base_ = pantalla provisional con un texto; _En desarrollo_ = ya tiene interfaz.
+**Estado:** _Base_ = pantalla provisional con un texto; _En desarrollo_ = ya tiene interfaz, pero faltan datos o funciones.
 
 ---
 
@@ -69,26 +71,55 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 
 | Opción | Qué hace | Estado |
 |---|---|---|
-| Crear Party | Crea una sala; el creador define jugadores y rondas. Muestra el código de la sala y la lista de jugadores | Por conectar (`feature/rooms-lobby`) |
-| Unirse a Party | Pide un código de sala (6 dígitos en el mockup) | Por conectar |
-| Juego Random | Entra a una sala pública aleatoria | Por conectar |
+| Crear Party | Abre "Alista tu party": el creador define jugadores (2 a 6), rondas (5 a 25) y si la sala es privada o pública. Luego pasa a la sala de espera | Listo |
+| Unirse a Party | Pide un código de sala de 6 caracteres y entra a la sala de espera | Listo |
+| Juego Random | Entra a una sala pública con cupo. Si no hay ninguna, avisa "No hay salas públicas libres, crea una" | Listo |
+
+### 3.1 Sala de espera (lobby)
+
+Archivo: `lobby_screen.dart`.
+
+- Muestra el **código de la sala** en cuadritos (por ejemplo ABC-234), los **jugadores** con su espacio (el creador lleva una estrella y el propio jugador aparece como "(tú)") y la **cuenta regresiva de 1:30**.
+- El teléfono del creador decide cuándo empieza o se cierra la sala (ver `diseno_juego.md`, sección 4.3).
+- Si se cierra por falta de jugadores, muestra "¡Se ha terminado el tiempo! Invita a tus amigos a jugar" y el botón **Regresar a menú**.
+- El botón **Salir** saca al jugador de la sala.
+- Cuando la sala arranca, todos pasan al tablero.
+
+### 3.2 Tablero de juego
+
+Archivos: `board_screen.dart` y `board_view.dart`.
+
+- Arriba, el **tablero** de 42 casillas en una cuadrícula de 9×8 (provisional hasta tener el dibujo): salida, positivas, negativas, especiales y tiendas, con el diamante y las fichas de colores de cada jugador.
+- Abajo, un panel con la **ronda actual**, la lista de jugadores (monedas y diamantes) y el botón de lo que toca hacer:
+  - **Lanzar dado** (cuando es tu turno).
+  - **Seguir** o **Atajo** (cuando llegas a una bifurcación).
+  - **Simular minijuego** (solo el creador; provisional hasta tener minijuegos).
+- Al terminar la última ronda se muestra el ganador en el panel. La pantalla de resultados llega en `feature/results-xp`.
+- Todavía no se puede salir a mitad de partida (llega con `feature/disconnections`).
 
 ---
 
 ## 4. Tienda
 
-- Encabezado **Tienda de Tricks** con los **cofres** (precios 50, 100 y 150): Cofre Básico, Cofre Party y **Dados secretos**, el cofre donde se compran dados extra.
-- Cada cofre muestra sus **probabilidades** de premio: dado extra, 100 monedas, cosmético aleatorio o nada.
-- Lista de cosméticos con nombre, descripción y precio (por ejemplo, camisas de distintos colores).
-- Botón **Comprar** para cada ítem.
+Archivo: `shop_screen.dart`.
+
+- Encabezado **Tienda de Tricks** con la franja **COFRES**.
+- Tres cofres con su precio en **diamantes**: Cofre Básico (50), Cofre Party (100) y Cofre Diamante (150, nombre provisional; el mockup lo repite como "Cofre Party").
+- Al tocar un cofre se abre una ventana con sus **probabilidades** de premio (cosmético aleatorio, nada, 100 monedas o dado extra) y el botón **Comprar**.
+- Si no alcanzan los diamantes, la ventana muestra el mensaje de error; si se compra, aparece un aviso con el premio.
+- Debajo de los cofres está la lista de ítems. Por ahora muestra "Aún no hay ítems en la tienda"; los cosméticos con nombre, descripción, precio y botón **Comprar** llegan después.
+- Las reglas de la compra están en `decisiones.md`, D-18.
 
 ---
 
 ## 5. Vestuario
 
-- Foto del rostro del personaje, con la opción **Tomar** para usar una foto propia (**opcional**).
-- Pestañas por categoría: Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos y Boca.
-- Cada categoría muestra los cosméticos desbloqueados para equipar.
+Archivo: `wardrobe_screen.dart`.
+
+- Arriba, el personaje (ícono provisional) y el botón **Foto** para usar una foto propia (**opcional**). Por ahora solo muestra "La cámara llega pronto".
+- En el medio, la barra de **categorías**: Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos y Boca. Se desplaza si no caben.
+- Abajo, una cuadrícula con los cosméticos que el jugador ya tiene en la categoría elegida. Si no tiene ninguno, muestra un mensaje ("Aún no tienes ninguna camisa", etc.).
+- Provisional: los cosméticos son un mapa fijo en el código (solo "Camisa 1"). Se reemplazan por los cosméticos desbloqueados del perfil (ver `decisiones.md`, D-19).
 
 ---
 
@@ -113,7 +144,7 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 
 ## 8. Cuenta y configuración
 
-Pantallas que aparecen en el mockup:
+Pantallas que aparecen en el mockup (todavía no están construidas):
 
 | Pantalla | Contenido |
 |---|---|
@@ -129,8 +160,10 @@ Pantallas que aparecen en el mockup:
 Pantallas que se deducen del diseño del juego y que **aún no aparecen en el mockup** **(propuesto)**:
 
 - [x] Registro e inicio de sesión (diseñados en Figma y construidos; ver 1.1).
-- [ ] Lobby de sala (espera de 1:30 minutos).
-- [ ] Tablero de juego y turnos.
+- [x] Lobby de sala (espera de 1:30 minutos; ver 3.1).
+- [x] Tablero de juego y turnos (provisional; ver 3.2).
 - [ ] Minijuego (puede usar Flame si es de tiempo real; ver `decisiones.md`, D-11).
 - [ ] Resultados de la partida.
 - [ ] Mensaje "Lo sentimos, no quedan jugadores :(" con el botón **[Regresar a menú]**.
+- [ ] Tienda de ítems (cosméticos a la venta).
+- [ ] Perfil, preferencias y cambio de contraseña (ver sección 8).

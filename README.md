@@ -44,6 +44,8 @@ Todo el detalle está en la carpeta [`docs/`](docs/README.md):
 - [Diseño del juego](docs/diseno_juego.md)
 - [Arquitectura](docs/arquitectura.md)
 - [Pantallas y navegación](docs/pantallas.md)
-- [Modelos de datos](docs/modelos_datos.md)
+- [Modelos de datos](docs/modelo_datos.md)
 - [Decisiones técnicas](docs/decisiones.md)
 - [Roles y ramas](docs/roles_y_ramas.md)
+
+La documentación se actualiza siempre en la rama `docs/documentacion-completa` (ver `docs/roles_y_ramas.md`).

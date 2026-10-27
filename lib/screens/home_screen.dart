@@ -1,36 +1,81 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/room_controller.dart';
 import 'package:party_tricks/models/play_option.dart';
+import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/screens/lobby_screen.dart';
+import 'package:party_tricks/services/auth/auth_providers.dart';
+import 'package:party_tricks/services/rooms/room_service.dart';
+import 'package:party_tricks/widgets/create_room_dialog.dart';
+import 'package:party_tricks/widgets/join_code_dialog.dart';
 import 'package:party_tricks/widgets/play_menu_dialog.dart';
 import 'package:party_tricks/widgets/player_header.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 
 /// Pantalla de inicio. El fondo lo pone MainShellScreen.
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  Future<void> _onPlayPressed(BuildContext context) async {
+  Future<void> _onPlayPressed(BuildContext context, WidgetRef ref) async {
     final option = await PlayMenuDialog.show(context);
     if (option == null || !context.mounted) return;
 
-    // Provisional: se conectará a las salas en feature/rooms-lobby.
-    final text = switch (option) {
-      PlayOption.createParty => 'Crear party: próximamente',
-      PlayOption.joinParty => 'Unirse a party: próximamente',
-      PlayOption.randomGame => 'Juego random: próximamente',
-    };
+    final rooms = ref.read(roomControllerProvider.notifier);
+    try {
+      final Room? room;
+      switch (option) {
+        case PlayOption.createParty:
+          final settings = await CreateRoomDialog.show(context);
+          if (settings == null) return;
+          room = await rooms.create(settings);
+        case PlayOption.joinParty:
+          final code = await JoinCodeDialog.show(context);
+          if (code == null) return;
+          room = await rooms.joinByCode(code);
+        case PlayOption.randomGame:
+          room = await rooms.joinRandom();
+      }
+      if (!context.mounted) return;
+      if (room == null) {
+        _showMessage(context, 'No hay salas públicas libres, crea una');
+        return;
+      }
+      await Navigator.of(context).push(LobbyScreen.route(room.id));
+    } on RoomException catch (error) {
+      if (context.mounted) _showMessage(context, error.message);
+    } catch (_) {
+      if (context.mounted) {
+        _showMessage(context, 'Algo salió mal, intenta otra vez');
+      }
+    }
+  }
+
+  void _showMessage(BuildContext context, String text) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loading = ref.watch(roomControllerProvider);
+    // El perfil del jugador con la sesión iniciada (null solo un instante,
+    // mientras llega de Firebase).
+    final profile = ref.watch(userProfileProvider).value;
+
     return Column(
       children: [
-        // Datos de prueba; luego vendrán del perfil del jugador.
-        const PlayerHeader(username: 'Tay_pro32', coins: 999, diamonds: 999),
+        PlayerHeader(
+          username: profile?.username ?? '',
+          coins: profile?.coins ?? 0,
+          diamonds: profile?.diamonds ?? 0,
+        ),
         // Reemplazar por el personaje armado con los cosméticos.
         const Expanded(
           child: Center(
-            child: Icon(Icons.face, size: 200, color: AppColors.placeholderIcon),
+            child: Icon(
+              Icons.face,
+              size: 200,
+              color: AppColors.placeholderIcon,
+            ),
           ),
         ),
         // SafeArea inferior: también deja espacio para la barra de navegación.
@@ -38,7 +83,9 @@ class HomeScreen extends StatelessWidget {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(48, 0, 48, 24),
-            child: _PlayButton(onPressed: () => _onPlayPressed(context)),
+            child: _PlayButton(
+              onPressed: loading ? null : () => _onPlayPressed(context, ref),
+            ),
           ),
         ),
       ],
@@ -49,7 +96,8 @@ class HomeScreen extends StatelessWidget {
 class _PlayButton extends StatelessWidget {
   const _PlayButton({required this.onPressed});
 
-  final VoidCallback onPressed;
+  /// Null mientras se crea o se busca la sala.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

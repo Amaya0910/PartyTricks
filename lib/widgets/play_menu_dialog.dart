@@ -54,7 +54,7 @@ class _OptionButton extends StatelessWidget {
     return FilledButton(
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 20),
-        backgroundColor: AppColors.menuButton,
+        backgroundColor: AppColors.authAccent,
         textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
       ),
       onPressed: () => Navigator.of(context).pop(option),
