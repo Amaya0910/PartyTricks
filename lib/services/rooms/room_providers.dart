@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/rooms/firebase_room_service.dart';
 import 'package:party_tricks/services/rooms/room_service.dart';
 
@@ -17,18 +18,19 @@ final roomServiceProvider = Provider<RoomService>(
   (ref) => FirebaseRoomService(FirebaseDatabase.instance),
 );
 
-/// Provisional hasta que exista feature/auth: entra como usuario anónimo y
-/// usa un nombre de prueba.
+/// Quién es el jugador en las salas: su uid y su nombre de usuario real
+/// (para que sus amigos lo reconozcan). Si aún no hay sesión, entra como
+/// usuario anónimo con un nombre de prueba.
 final roomIdentityProvider = FutureProvider<RoomIdentity>((ref) async {
+  final profile = await ref.watch(userProfileProvider.future);
+  if (profile != null) {
+    return RoomIdentity(uid: profile.uid, username: profile.username);
+  }
   final auth = FirebaseAuth.instance;
   final user = auth.currentUser ?? (await auth.signInAnonymously()).user!;
-  final name = user.displayName;
   return RoomIdentity(
     uid: user.uid,
-    // Los usuarios anónimos llegan sin nombre (null o vacío).
-    username: name == null || name.isEmpty
-        ? 'Jugador ${user.uid.substring(0, 4)}'
-        : name,
+    username: 'Jugador ${user.uid.substring(0, 4)}',
   );
 });
 
