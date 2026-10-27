@@ -28,12 +28,29 @@ Future<T?> showBlurredDialog<T>(
   );
 }
 
-/// Tarjeta blanca con borde azul y, opcionalmente, una cabecera azul con
-/// el [title]. Solo dibuja; no sabe qué contiene.
+/// Tarjeta blanca con borde de color [accent] (azul por defecto) y,
+/// opcionalmente, una cabecera de ese mismo color con el [title].
+/// Solo dibuja; no sabe qué contiene.
 class DialogCard extends StatelessWidget {
-  const DialogCard({super.key, this.title, required this.child});
+  const DialogCard({
+    super.key,
+    this.title,
+    this.accent = AppColors.authAccent,
+    this.shadowColor = AppColors.headerBorder,
+    this.headerShadow = true,
+    required this.child,
+  });
 
   final String? title;
+
+  /// Color del borde y de la cabecera.
+  final Color accent;
+
+  /// Color de la sombra que rodea a la tarjeta.
+  final Color shadowColor;
+
+  /// Si es false, la cabecera no proyecta sombra sobre el contenido.
+  final bool headerShadow;
   final Widget child;
 
   static const double _radius = 24;
@@ -56,15 +73,12 @@ class DialogCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   borderRadius: BorderRadius.circular(_radius),
-                  border: Border.all(
-                    color: AppColors.authAccent,
-                    width: _borderWidth,
-                  ),
-                  boxShadow: const [
+                  border: Border.all(color: accent, width: _borderWidth),
+                  boxShadow: [
                     BoxShadow(
-                      color: AppColors.headerBorder,
+                      color: shadowColor,
                       blurRadius: 8,
-                      offset: Offset(0, 4),
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -74,7 +88,12 @@ class DialogCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (title != null) _Header(title: title),
+                      if (title != null)
+                        _Header(
+                          title: title,
+                          color: accent,
+                          showShadow: headerShadow,
+                        ),
                       child,
                     ],
                   ),
@@ -89,23 +108,31 @@ class DialogCard extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.title});
+  const _Header({
+    required this.title,
+    required this.color,
+    required this.showShadow,
+  });
 
   final String title;
+  final Color color;
+  final bool showShadow;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: const BoxDecoration(
-        color: AppColors.authAccent,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.headerBorder,
-            blurRadius: 4,
-            offset: Offset(0, 3),
-          ),
-        ],
+      decoration: BoxDecoration(
+        color: color,
+        boxShadow: showShadow
+            ? const [
+                BoxShadow(
+                  color: AppColors.headerBorder,
+                  blurRadius: 4,
+                  offset: Offset(0, 3),
+                ),
+              ]
+            : null,
       ),
       child: Text(
         title,
