@@ -76,6 +76,15 @@ class GameCodec {
     'minigamesWon': p.minigamesWon,
     'negativeTiles': p.negativeTiles,
     'purchases': p.purchases,
+    'diceRolled': p.diceRolled,
+    'diceTotal': p.diceTotal,
+    'maxRolls': p.maxRolls,
+    'positiveTiles': p.positiveTiles,
+    'specialTiles': p.specialTiles,
+    'mainPathsTaken': p.mainPathsTaken,
+    'shortcutsTaken': p.shortcutsTaken,
+    'laps': p.laps,
+    'mapDiamonds': p.mapDiamonds,
   };
 
   PlayerState _decodePlayer(String id, Map<Object?, Object?> data) {
@@ -92,6 +101,15 @@ class GameCodec {
       minigamesWon: _int(data['minigamesWon']),
       negativeTiles: _int(data['negativeTiles']),
       purchases: _int(data['purchases']),
+      diceRolled: _int(data['diceRolled']),
+      diceTotal: _int(data['diceTotal']),
+      maxRolls: _int(data['maxRolls']),
+      positiveTiles: _int(data['positiveTiles']),
+      specialTiles: _int(data['specialTiles']),
+      mainPathsTaken: _int(data['mainPathsTaken']),
+      shortcutsTaken: _int(data['shortcutsTaken']),
+      laps: _int(data['laps']),
+      mapDiamonds: _int(data['mapDiamonds']),
     );
   }
 
