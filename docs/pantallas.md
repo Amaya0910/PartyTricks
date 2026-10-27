@@ -55,7 +55,7 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 | Tienda | `shop_screen.dart` | En desarrollo | Tienda de Tricks: cofres (50, 100, 150) y cosméticos con precio |
 | Vestuario | `wardrobe_screen.dart` | En desarrollo | Foto del rostro y categorías: Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos, Boca |
 | Stats | `stats_screen.dart` | En desarrollo | Estadísticas de partidas, minijuegos y tiempo |
-| Amigos | `friends_screen.dart` | Base | Lista de amigos, invitar a jugar y chat |
+| Amigos | `friends_screen.dart` | En desarrollo | Solicitudes, lista de amigos, chat e invitaciones |
 
 **Estado:** _Base_ = pantalla provisional con un texto; _En desarrollo_ = ya tiene interfaz, pero faltan datos o funciones.
 
@@ -82,7 +82,9 @@ Archivo: `lobby_screen.dart`.
 - Muestra el **código de la sala** en cuadritos (por ejemplo ABC-234), los **jugadores** con su espacio (el creador lleva una estrella y el propio jugador aparece como "(tú)") y la **cuenta regresiva de 1:30**.
 - El teléfono del creador decide cuándo empieza o se cierra la sala (ver `diseno_juego.md`, sección 4.3).
 - Si se cierra por falta de jugadores, muestra "¡Se ha terminado el tiempo! Invita a tus amigos a jugar" y el botón **Regresar a menú**.
+- El botón **Invitar a amigos** abre la lista de amigos con casillas (los que ya están en la sala no aparecen). Cada invitado recibe la invitación en el chat y, si está en el menú principal, un aviso emergente (ver 7.3).
 - El botón **Salir** saca al jugador de la sala.
+- Los jugadores aparecen con su nombre de usuario real.
 - Cuando la sala arranca, todos pasan al tablero.
 
 ### 3.2 Tablero de juego
@@ -156,9 +158,36 @@ Archivo: `stats_screen.dart`.
 
 ## 7. Amigos
 
-- **Lista de amigos**, cada uno con un botón para invitarlo a jugar (`Jugamos?`).
-- Botón **+** para agregar a alguien con su código de amistad.
-- **Chat** con un amigo (campo "Presiona para escribir"). El chat solo está en el menú principal, no dentro de las partidas.
+Archivos: `friends_screen.dart` y `chat_view.dart`. La lista y el chat van en la misma tarjeta, dentro de la pestaña Amigos, como en el mockup. Los colores están en `AppColors`, sección "Amigos y chat" (todos reutilizan colores que ya existían).
+
+### 7.1 Tus amigos
+
+- Cabecera azul **Tus amigos** y, debajo, **Tu código** con un botón para copiarlo.
+- **Solicitudes (N):** las que te enviaron, con Aceptar (✓) y Rechazar (✗).
+- **Amigos:** foto, nombre, nivel (corona) y el último mensaje. Un punto azul avisa si hay mensajes sin leer. El chat más reciente va primero.
+- **Enviadas:** tus solicitudes que aún no aceptan, con la opción de cancelarlas.
+- Botón **+**: pide el código de amistad del otro jugador (mismo diálogo de 6 cuadritos que "Unirse a Party").
+  - Si el otro ya te había enviado una solicitud, quedan como amigos de una vez.
+  - Mensajes: código no válido, tu propio código, no existe, ya son amigos, ya enviaste la solicitud.
+- El botón atrás del celular cierra el chat antes de salir de la app.
+
+### 7.2 Chat
+
+- Cabecera verde con la flecha para volver, la foto, el nombre, el nivel y el menú **⋮**.
+- Mensajes: los tuyos a la derecha en azul y los del amigo a la izquierda en gris, con la hora (`14:05`, o `27/10 14:05` si no es de hoy).
+- Campo **Presiona para escribir**, de máximo 200 caracteres. Se marca como leído mientras está abierto.
+- Menú ⋮:
+  - **Eliminar amigo** (pide confirmación).
+  - **Bloquear** (pide confirmación): deja de ser amigo y ya no puede escribirte, enviarte solicitudes ni invitarte. Se desbloquea en Ajustes.
+  - **Reportar**: se elige el motivo y se guarda para que lo revise un adulto o el docente.
+- El chat solo está en el menú principal, no dentro de las partidas.
+
+### 7.3 Invitaciones a una party
+
+- Se envían desde **Tu party** (sala de espera) con **Invitar a amigos**.
+- Llegan como mensaje del chat con un botón que cambia según la sala: **Unirse**, **La party ya empezó** o **La party se cerró**. Quien invita ve "Invitación enviada".
+- Además, sale un aviso emergente **¡Te invitaron!** con Unirse y Ahora no. Solo si el invitado está en el menú principal (no en una sala ni en una partida) y la party aún espera jugadores.
+- Al unirse, entra a la sala de espera como con un código.
 
 ---
 

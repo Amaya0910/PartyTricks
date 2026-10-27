@@ -70,12 +70,21 @@ Definido en código, en `lib/models/chest.dart` (`ChestType`). Se compran con **
 
 El mockup repite el nombre "Cofre Party" en el tercer cofre; el nombre final está por definir.
 
-### 2.4 Amistad y chat
+### 2.4 Amigos, chat e invitaciones
 
-| Entidad | Campos |
-|---|---|
-| Amistad | Los dos jugadores y la fecha en que se agregaron |
-| Mensaje | Remitente, texto y fecha (se ordenan por fecha) |
+Viven en Cloud Firestore (ver `decisiones.md`, D-22). Las fechas se guardan en milisegundos, como en las salas. El **id de pareja** es el de los dos uid en orden alfabético unidos con `_` (`PairId`), así entre dos jugadores hay una sola amistad y un solo chat.
+
+| Colección | Documento | Campos | Para qué |
+|---|---|---|---|
+| `publicProfiles` | `{uid}` | `username`, `friendCode`, `experience`, `photoUrl` | Lo que ven los demás (sin el correo). La app lo mantiene igual al perfil |
+| `friendships` | `{id de pareja}` | `members` (los dos uid), `requestedBy`, `status` (`pending` o `accepted`), `createdAt` | Solicitud y amistad |
+| `chats` | `{id de pareja}` | `members`, `lastMessage` (copia del último mensaje), `lastReadAt` (uid → fecha) | Lista de amigos: último mensaje y sin leer |
+| `chats/{id}/messages` | automático | `senderId`, `text`, `sentAt`, `type` (`text` o `invite`) y, en invitaciones, `roomId` y `roomCode` | Mensajes |
+| `invites` | automático | `fromUid`, `fromName`, `toUid`, `roomId`, `roomCode`, `sentAt`, `seen` | Aviso emergente de invitación |
+| `blocks` | `{bloqueador}_{bloqueado}` | `blocker`, `blocked`, `createdAt` | Bloqueos |
+| `reports` | automático | `reporterUid`, `reportedUid`, `reason`, `chatId`, `createdAt` | Reportes para revisar |
+
+El nivel de la corona se calcula con `ExperienceCalculator` a partir de `experience`.
 
 ### 2.5 Sala
 
@@ -156,6 +165,7 @@ Los modelos viven en `lib/models/`. Hoy existen:
 | `player_stats.dart` | Estadísticas del jugador: une los grupos de `stats/` |
 | `stats/` | Un archivo por grupo de estadísticas (ver 2.8), `stats_section.dart` (tarjetas de la pantalla) y `stats_map.dart` (lectura segura de Firestore) |
 | `match_summary.dart` | Lo que un jugador se lleva de una partida terminada, para sumarlo a sus estadísticas |
+| `social/` | Amigos y chat: `public_profile.dart`, `friendship.dart`, `chat_message.dart`, `chat_summary.dart`, `party_invite.dart`, `report_reason.dart` y `time_map.dart` (fechas en milisegundos) |
 
 El estado de la partida (`GameState`, `PlayerState`) y sus acciones están en `lib/services/game_engine/`, porque forman parte de las reglas del juego y no dependen de Firebase.
 
@@ -165,7 +175,8 @@ Los modelos de datos de este documento que faltan se agregarán a esa carpeta a 
 
 ## 4. Pendientes
 
-- [ ] Estructura exacta de las colecciones de Firestore para amigos, chat y catálogo de cosméticos (la de la cuenta ya está en 2.1).
+- [x] Estructura de las colecciones de Firestore para amigos y chat (ver 2.4).
+- [ ] Estructura del catálogo de cosméticos.
 - [ ] Reglas de seguridad (que cada jugador solo lea y modifique lo suyo, incluidos `diamonds`, `coins` y `extraDice`; ver D-18). En `stats/{uid}`, solo su dueño lee y escribe (ver D-21). En `usernames`, permitir leer solo por nombre exacto y no listar (ver `decisiones.md`, D-17).
 - [x] Forma de garantizar que el nombre de usuario y el código de amistad sean únicos (colecciones `usernames` y `friendCodes` con transacción; ver D-16).
 - [x] Estructura de las salas y de la partida en Realtime Database (ver D-14 y D-15).
