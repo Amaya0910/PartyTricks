@@ -3,11 +3,13 @@ import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/services/game_engine/random_source.dart';
 import 'package:party_tricks/services/shop/chest_roller.dart';
 import 'package:party_tricks/services/shop/shop_service.dart';
+import 'package:party_tricks/services/stats/firestore_stats_document.dart';
 
 /// Compras sobre el perfil `users/{uid}` de Cloud Firestore.
 ///
-/// Cobrar y dar el premio van en una sola transacción, así nunca se cobra
-/// sin premio ni se gasta dos veces el mismo diamante.
+/// Cobrar, dar el premio y sumarlo a las estadísticas (`stats/{uid}`) van
+/// en una sola transacción, así nunca se cobra sin premio ni se gasta dos
+/// veces el mismo diamante.
 class FirebaseShopService implements ShopService {
   FirebaseShopService(
     this._firestore,
@@ -46,6 +48,11 @@ class FirebaseShopService implements ShopService {
           if (outcome == ChestOutcome.dice)
             'extraDice': _int(data['extraDice']) + 1,
         });
+        transaction.set(
+          FirestoreStatsDocument.ref(_firestore, uid),
+          FirestoreStatsDocument.chestIncrements(chest, outcome),
+          SetOptions(merge: true),
+        );
         return outcome;
       });
     } on FirebaseException catch (e) {
