@@ -8,6 +8,7 @@ import 'package:party_tricks/screens/shop_screen.dart';
 import 'package:party_tricks/screens/stats_screen.dart';
 import 'package:party_tricks/screens/wardrobe_screen.dart';
 import 'package:party_tricks/widgets/app_navigation_bar.dart';
+import 'package:party_tricks/widgets/app_usage_tracker.dart';
 
 /// Estructura principal: el fondo del juego, la sección activa encima
 /// y la barra de navegación abajo.
@@ -21,38 +22,43 @@ class MainShellScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(navigationControllerProvider);
 
-    return Scaffold(
-      // El contenido llega hasta el borde inferior, por detrás de la barra.
-      extendBody: true,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Fondo común a todas las secciones; las colinas quedan ancladas abajo.
-          Image.asset(
-            'assets/images/Fondo_Principal.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.bottomCenter,
-          ),
-          // IndexedStack conserva el estado de cada sección al cambiar de pestaña.
-          IndexedStack(
-            index: selected.index,
-            children: AppSection.values.map(_screenFor).toList(),
-          ),
-        ],
-      ),
-      bottomNavigationBar: AppNavigationBar(
-        selected: selected,
-        onSelected: ref.read(navigationControllerProvider.notifier).select,
+    // Mide el tiempo en la app y la racha mientras hay sesión iniciada.
+    return AppUsageTracker(
+      child: Scaffold(
+        // El contenido llega hasta el borde inferior, por detrás de la barra.
+        extendBody: true,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Fondo común a todas las secciones; las colinas quedan ancladas
+            // abajo.
+            Image.asset(
+              'assets/images/Fondo_Principal.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.bottomCenter,
+            ),
+            // IndexedStack conserva el estado de cada sección al cambiar de
+            // pestaña.
+            IndexedStack(
+              index: selected.index,
+              children: AppSection.values.map(_screenFor).toList(),
+            ),
+          ],
+        ),
+        bottomNavigationBar: AppNavigationBar(
+          selected: selected,
+          onSelected: ref.read(navigationControllerProvider.notifier).select,
+        ),
       ),
     );
   }
 
   // El switch es exhaustivo: si se agrega una sección, Dart avisa que falta aquí.
   Widget _screenFor(AppSection section) => switch (section) {
-        AppSection.shop => const ShopScreen(),
-        AppSection.wardrobe => const WardrobeScreen(),
-        AppSection.home => const HomeScreen(),
-        AppSection.stats => const StatsScreen(),
-        AppSection.friends => const FriendsScreen(),
-      };
+    AppSection.shop => const ShopScreen(),
+    AppSection.wardrobe => const WardrobeScreen(),
+    AppSection.home => const HomeScreen(),
+    AppSection.stats => const StatsScreen(),
+    AppSection.friends => const FriendsScreen(),
+  };
 }
