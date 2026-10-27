@@ -115,6 +115,81 @@ void main() {
     },
   );
 
+  group('contadores para las estadísticas', () {
+    test('cuenta los dados, la suma y el número máximo', () {
+      // Beto saca 6 (máximo) y cae en la bifurcación; Ana saca 2.
+      final engine = engineWith([diamondFar, 6, 2]);
+      var state = engine.start(initialRolls: rolls, totalRounds: 2);
+      state = engine.apply(state, const RollDice('b'));
+      state = engine.apply(state, const ChooseBranch('b', 0));
+      state = engine.apply(state, const RollDice('a'));
+
+      final beto = state.players['b']!;
+      expect(beto.diceRolled, 1);
+      expect(beto.diceTotal, 6);
+      expect(beto.maxRolls, 1);
+      final ana = state.players['a']!;
+      expect(ana.diceRolled, 1);
+      expect(ana.diceTotal, 2);
+      expect(ana.maxRolls, 0);
+    });
+
+    test('cuenta el camino elegido en la bifurcación', () {
+      final engine = engineWith([diamondFar, 6, 6]);
+      var state = engine.start(initialRolls: rolls, totalRounds: 2);
+      state = engine.apply(state, const RollDice('b'));
+      state = engine.apply(state, const ChooseBranch('b', 0));
+      state = engine.apply(state, const RollDice('a'));
+      state = engine.apply(state, const ChooseBranch('a', 1));
+
+      expect(state.players['b']!.mainPathsTaken, 1);
+      expect(state.players['b']!.shortcutsTaken, 0);
+      expect(state.players['a']!.shortcutsTaken, 1);
+      expect(state.players['a']!.mainPathsTaken, 0);
+    });
+
+    test('cuenta el tipo de casilla donde cae', () {
+      // Beto cae en la 2 (positiva); Ana en la 3 (especial, efecto 0).
+      final engine = engineWith([diamondFar, 2, 3, 0]);
+      var state = engine.start(initialRolls: rolls, totalRounds: 2);
+      state = engine.apply(state, const RollDice('b'));
+      state = engine.apply(state, const RollDice('a'));
+
+      expect(state.players['b']!.positiveTiles, 1);
+      expect(state.players['b']!.specialTiles, 0);
+      expect(state.players['a']!.specialTiles, 1);
+      expect(state.players['a']!.positiveTiles, 0);
+    });
+
+    test('cuenta los diamantes del mapa', () {
+      // El diamante empieza en la casilla 2 y reaparece en la 1.
+      final engine = engineWith([1, 4, 0]);
+      var state = engine.start(initialRolls: rolls, totalRounds: 2);
+      state = engine.apply(state, const RollDice('b'));
+
+      expect(state.players['b']!.mapDiamonds, 1);
+    });
+
+    test('cuenta una vuelta al pasar por la salida', () {
+      const nearEnd = PlayerState(id: 'b', username: 'Beto', position: 28);
+      final engine = engineWith([3]);
+      const state = GameState(
+        players: {
+          'b': nearEnd,
+          'a': PlayerState(id: 'a', username: 'Ana'),
+        },
+        turnOrder: ['b', 'a'],
+        totalRounds: 2,
+        diamondTileId: 41,
+      );
+
+      final next = engine.apply(state, const RollDice('b'));
+
+      expect(next.players['b']!.position, 1);
+      expect(next.players['b']!.laps, 1);
+    });
+  });
+
   test('no deja jugar fuera de turno', () {
     final engine = engineWith([diamondFar]);
     final state = engine.start(initialRolls: rolls, totalRounds: 2);
