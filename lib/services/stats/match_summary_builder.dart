@@ -17,6 +17,7 @@ class MatchSummaryBuilder {
     required String playerId,
     bool isHost = false,
     bool isPublic = false,
+    bool playedWithFriend = false,
     Duration playingTime = Duration.zero,
     Duration minigameTime = Duration.zero,
   }) {
@@ -44,6 +45,7 @@ class MatchSummaryBuilder {
         for (final other in game.players.values)
           if (other.id != playerId) other.id: other.username,
       },
+      playedWithFriend: playedWithFriend,
       playingTime: playingTime,
       minigameTime: minigameTime,
     );

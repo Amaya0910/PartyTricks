@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/models/stats/social_stats.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/social/social_providers.dart';
 import 'package:party_tricks/services/stats/match_summary_builder.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
 import 'package:party_tricks/services/stats/stats_providers.dart';
@@ -35,12 +36,14 @@ class StatsController {
   }) async {
     final uid = _uid;
     if (uid == null) return false;
+    final friends = _ref.read(friendUidsProvider);
     final summary = _summaries.build(
       matchId: roomId,
       game: game,
       playerId: uid,
       isHost: isHost,
       isPublic: isPublic,
+      playedWithFriend: game.players.keys.any(friends.contains),
       playingTime: tracker.playingTime,
       minigameTime: tracker.minigameTime,
     );
