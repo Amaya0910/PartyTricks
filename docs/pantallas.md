@@ -89,15 +89,22 @@ Archivo: `lobby_screen.dart`.
 
 ### 3.2 Tablero de juego
 
-Archivos: `board_screen.dart` y `board_view.dart`.
+Archivos: `board_screen.dart`, `lib/widgets/map/` (mapa dibujado) y `board_view.dart` (tablero de cuadritos de respaldo).
 
-- Arriba, el **tablero** de 42 casillas en una cuadrícula de 9×8 (provisional hasta tener el dibujo): salida, positivas, negativas, especiales y tiendas, con el diamante y las fichas de colores de cada jugador.
-- Abajo, un panel con la **ronda actual**, la lista de jugadores (monedas y diamantes) y el botón de lo que toca hacer:
+- Arriba, el **mapa dibujado** (ver `decisiones.md`, D-25), que ocupa casi toda la pantalla:
+  - Fondo, caminitos de piedra entre casillas, plataformas de pasto con su marca (inicio, negativa, especial), tiendas detrás de su casilla y el diamante.
+  - Se puede **mover y hacer zoom**. La cámara sigue a tu personaje cuando camina.
+  - Se ven **todos los jugadores** (por ahora su foto en un círculo con su color). Avanzan **saltando de casilla en casilla**; si varios están en la misma casilla, se ponen uno al lado del otro.
+  - Al empezar se ven unas 5 casillas de ancho; al alejar del todo, el mapa llena la pantalla.
+  - En una **bifurcación**, en tu turno, aparecen **dos flechas** sobre los caminos; tocas la del camino que quieres.
+  - Si el mapa no carga o le faltan casillas, se muestra el tablero de cuadritos de antes para que se pueda seguir jugando.
+- Abajo, un panel con la **ronda actual**, la lista de jugadores (monedas y diamantes) y lo que toca hacer:
   - **Lanzar dado** (cuando es tu turno).
-  - **Seguir** o **Atajo** (cuando llegas a una bifurcación).
+  - "Toca una flecha en el mapa para elegir el camino" (cuando llegas a una bifurcación). Con el tablero de respaldo salen los botones **Seguir** y **Atajo**.
   - **Simular minijuego** (solo el creador; provisional hasta tener minijuegos).
 - Al terminar la última ronda se muestra el ganador en el panel. La pantalla de resultados llega en `feature/results-xp`.
 - Todavía no se puede salir a mitad de partida (llega con `feature/disconnections`).
+- Pendiente: monedas animadas en las casillas positivas, minimapa, puentes, decoraciones y las hojas de animación del personaje.
 
 ---
 
