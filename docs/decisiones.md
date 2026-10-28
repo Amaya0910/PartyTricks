@@ -132,7 +132,7 @@
 - **Estado:** Propuesta (por confirmar con Isabella)
 - **Decisión:** las salas viven en Realtime Database: `rooms/{id}/meta` (código, pública o privada, creador, jugadores máximos, rondas, estado y fin de la espera), `rooms/{id}/players/{uid}`, `roomCodes/{código}` para buscar por código y `publicLobby/{id}` para las salas públicas que esperan jugadores. El código tiene 6 caracteres sin letras que se confunden (O/0, I/1). El teléfono del creador decide cuándo arranca o se cierra la sala, y una transacción evita que dos jugadores entren al último puesto a la vez.
 - **Actualizado (D-22):** las salas ya usan el uid y el nombre de usuario real de la cuenta (`room_providers.dart`). Solo si no hay sesión se entra como usuario anónimo con el nombre "Jugador XXXX". Al arrancar la partida todos pasan al tablero.
-- **Pendientes:** reglas de seguridad de Realtime Database, borrar salas viejas y qué pasa si el creador se sale (va en `feature/disconnections`).
+- **Pendientes:** ~~reglas de seguridad de Realtime Database~~ (hechas en `database.rules.json`, D-24), borrar salas viejas y qué pasa si el creador se sale (va en `feature/disconnections`).
 
 ## D-15. Partida en vivo y pantalla del tablero
 
@@ -277,3 +277,22 @@
 - **Pendientes:**
   - Activar los sonidos y las notificaciones cuando existan.
   - Más idiomas.
+
+## D-24. Reglas de seguridad de Realtime Database
+
+- **Fecha:** 2026-10-28
+- **Estado:** Propuesta (por confirmar con Isabella)
+- **Decisión:** las reglas están en `database.rules.json` y `firebase.json` ahora apunta a las dos reglas (`database` y `firestore`), para subirlas con `firebase deploy --only database,firestore`. Todo está cerrado salvo lo que la app usa:
+  - **Leer:** cualquier usuario con sesión (también el anónimo) lee `roomCodes`, `publicLobby` y `rooms/{id}`. Hace falta porque las invitaciones del chat leen salas en las que el jugador todavía no está. Sin sesión no se lee nada.
+  - **`roomCodes/{código}`:** se crea solo si está libre; lo borra solo el creador de la sala a la que apunta. El código debe tener 6 caracteres del alfabeto de `RoomCodeGenerator`.
+  - **`publicLobby/{id}`:** lo escribe solo el creador y solo si la sala es pública; el valor es `true`.
+  - **`rooms/{id}/meta`:** se crea solo si el código ya está reservado para esa sala y el creador es quien escribe. Después solo el creador la cambia, y no puede cambiar el código, el creador, si es pública, el cupo ni las rondas. Se revisan los tipos y rangos (2-6 jugadores, 5-25 rondas, estados `waiting`/`playing`/`closed`).
+  - **`rooms/{id}/players/{uid}`:** cada jugador escribe y borra solo lo suyo, y solo entra mientras la sala espera. Para la transacción de `_join` se permite escribir la lista completa solo a quien todavía no está y queda dentro; no puede cambiar los datos de los demás ni agregar a otros.
+  - **`rooms/{id}/game`:** solo lo escribe el creador (anfitrión).
+  - **`rooms/{id}/actions/{id}`:** solo las mandan los jugadores de la sala mientras se juega. `roll` y `branch` deben llevar el uid propio en `playerId`; `minigame` solo la manda el anfitrión. Solo el anfitrión las borra.
+  - `reactions`, `results` y cualquier otra ruta quedan cerradas hasta que existan.
+- **Motivo:** el modo de prueba deja que cualquiera borre todo, se haga anfitrión o cambie la partida, y además vence alrededor del 2026-11-16. Las reglas siguen las rutas que ya usa el código (D-14 y D-15) sin cambiar nada en Dart.
+- **Alternativas:** abrir la lectura solo a los jugadores de la sala (rompe las invitaciones) o pasar la entrada a la sala a Cloud Functions (más seguro, pero necesita el plan Blaze).
+- **Riesgos que quedan:** las reglas de Realtime Database no pueden contar hijos, así que el cupo de la sala lo controla la transacción de la app, y alguien con una app modificada podría, al entrar, sacar a otros de la sala de espera o pasarse del cupo. El anfitrión sigue siendo de confianza: si su teléfono hace trampa, las reglas no lo detectan. Las salas viejas no se borran.
+- **Pendientes:** en `feature/disconnections` hay que dejar que otro jugador tome `meta/hostUid` (hoy las reglas lo bloquean) y abrir `players/{uid}/connected` para `onDisconnect` (ya lo permite, porque es del propio jugador).
+- **Cómo se probaron:** con el emulador de Realtime Database y 25 casos (los flujos de la app y los ataques de arriba), todos como se esperaba.
