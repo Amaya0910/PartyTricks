@@ -159,4 +159,13 @@ void main() {
 
     expect(find.text('Escribe tu correo o nombre de usuario.'), findsNothing);
   });
+
+  testWidgets('"Continuar con Google" llama al servicio', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.text('Continuar con Google'));
+    await tester.pumpAndSettle();
+
+    expect(service.googleCalls, 1);
+  });
 }
