@@ -7,10 +7,12 @@ import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/game_engine/award_calculator.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/map/map_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/board_view.dart';
+import 'package:party_tricks/widgets/map/board_map_view.dart';
 
 /// Pantalla de la partida: el tablero, los jugadores y lo que toca hacer.
 ///
@@ -85,6 +87,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     );
     final game = ref.watch(gameProvider(widget.roomId)).value;
     final me = ref.watch(roomIdentityProvider).value;
+    final mapView = game == null || me == null ? null : _mapView(game, me.uid);
     return PopScope(
       // Salir a mitad de partida llega con feature/disconnections.
       canPop: game?.phase == GamePhase.finished,
@@ -95,18 +98,24 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               ? const Center(child: Text('Preparando la partida...'))
               : Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: BoardView(
-                        board: ref.watch(boardProvider),
-                        state: game,
-                      ),
-                    ),
                     Expanded(
+                      child:
+                          mapView ??
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: BoardView(
+                              board: ref.watch(boardProvider),
+                              state: game,
+                            ),
+                          ),
+                    ),
+                    SizedBox(
+                      height: _Panel.height,
                       child: _Panel(
                         game: game,
                         myId: me.uid,
                         isHost: widget.isHost,
+                        branchButtons: mapView == null,
                         onAction: _send,
                       ),
                     ),
@@ -114,6 +123,30 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                 ),
         ),
       ),
+    );
+  }
+
+  /// El mapa dibujado, o null si todavía no carga o le faltan casillas. En
+  /// ese caso se muestra el tablero de cuadritos para que se pueda jugar.
+  Widget? _mapView(GameState game, String myId) {
+    final map = ref.watch(boardMapProvider);
+    final texture = ref.watch(pathTextureProvider).value;
+    final board = ref.watch(boardProvider);
+    if (map.hasError) debugPrint('Mapa: ${map.error}');
+    final loaded = map.value;
+    if (loaded == null || texture == null) return null;
+    final missing = loaded.missingTiles(board.tiles.map((tile) => tile.id));
+    if (missing.isNotEmpty) {
+      debugPrint('Mapa: faltan las casillas $missing');
+      return null;
+    }
+    return BoardMapView(
+      map: loaded,
+      board: board,
+      pathTexture: texture,
+      state: game,
+      myId: myId,
+      onChooseBranch: (branch) => _send(ChooseBranch(myId, branch)),
     );
   }
 }
@@ -124,12 +157,20 @@ class _Panel extends StatelessWidget {
     required this.game,
     required this.myId,
     required this.isHost,
+    required this.branchButtons,
     required this.onAction,
   });
+
+  /// Alto del panel debajo del mapa.
+  static const height = 230.0;
 
   final GameState game;
   final String myId;
   final bool isHost;
+
+  /// Botones Seguir y Atajo, solo si no se ve el mapa dibujado (en el mapa
+  /// se elige con las flechas).
+  final bool branchButtons;
   final void Function(GameAction action) onAction;
 
   @override
@@ -182,6 +223,11 @@ class _Panel extends StatelessWidget {
       GamePhase.rolling => Text(
         '${lastRoll}Turno de $current',
         textAlign: TextAlign.center,
+      ),
+      GamePhase.choosingBranch when myTurn && !branchButtons => const Text(
+        'Toca una flecha en el mapa para elegir el camino',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontWeight: FontWeight.w600),
       ),
       GamePhase.choosingBranch when myTurn => Row(
         children: [
