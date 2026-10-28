@@ -21,7 +21,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   /// casi todo escondido. Ajústalo hasta que se vea como quieres.
   static const double _hiddenFraction = 0.6;
 
-  static const double _cardHeight = 470;
+  /// Alto de la tarjeta (incluye el botón de Google).
+  static const double _cardHeight = 530;
   static const double _cardMaxWidth = 360;
 
   bool _showRegister = false;

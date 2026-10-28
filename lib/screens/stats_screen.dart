@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/stats_presenter.dart';
 import 'package:party_tricks/models/player_stats.dart';
 import 'package:party_tricks/models/stats/stats_section.dart';
+import 'package:party_tricks/screens/settings_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/stats/stats_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
@@ -25,6 +26,7 @@ class StatsScreen extends ConsumerWidget {
           username: profile?.username ?? '',
           coins: profile?.coins ?? 0,
           diamonds: profile?.diamonds ?? 0,
+          onAvatarTap: () => Navigator.of(context).push(SettingsScreen.route()),
         ),
         Expanded(
           child: statsAsync.when(

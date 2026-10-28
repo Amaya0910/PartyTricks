@@ -207,4 +207,27 @@ class AppColors {
   /// Botón Aceptar y Rechazar de las solicitudes.
   static const Color accept = activeButton;
   static const Color reject = authError;
+
+  // ---------------------------------------------------------------------------
+  // Ajustes (todos reutilizan colores que ya existían)
+  // ---------------------------------------------------------------------------
+
+  /// Cabeceras moradas de las tarjetas (Cuenta, Preferencias, Más opciones).
+  static const Color settingsAccent = statsPurple;
+
+  /// Fondo translúcido detrás de las tarjetas.
+  static const Color settingsPanel = headerPanel;
+
+  /// Borde de cada fila.
+  static const Color settingsRowBorder = authField;
+
+  /// Interruptores encendidos y botón Confirmar.
+  static const Color settingsOn = inactiveButton;
+
+  /// Botones Copiar y Recargar del código.
+  static const Color settingsCopy = accept;
+  static const Color settingsReload = statsDarkBlue;
+
+  /// Cerrar sesión.
+  static const Color settingsDanger = authError;
 }

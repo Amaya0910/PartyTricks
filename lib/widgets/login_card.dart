@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/widgets/auth_card_face.dart';
 import 'package:party_tricks/widgets/auth_text_field.dart';
+import 'package:party_tricks/widgets/google_sign_in_button.dart';
 
 /// Cara de inicio de sesión. Si sale bien, no navega: la app cambia sola de
 /// pantalla cuando aparece el perfil del jugador (ver `AppGate`).
@@ -46,6 +47,11 @@ class _LoginCardState extends ConsumerState<LoginCard> {
       isLoading: form.isLoading,
       onSubmit: _submit,
       onSwitch: widget.onShowRegister,
+      secondaryAction: GoogleSignInButton(
+        onPressed: form.isLoading
+            ? null
+            : ref.read(authControllerProvider.notifier).signInWithGoogle,
+      ),
       fields: [
         AuthTextField(
           controller: _identifier,
