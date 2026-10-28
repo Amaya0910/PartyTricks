@@ -48,6 +48,33 @@ class AuthController extends Notifier<AuthFormState> {
     );
   }
 
+  /// Entra con Google. Devuelve true si entró (aunque falte elegir el
+  /// nombre de usuario: de eso se encarga `AppGate`) y false si se canceló
+  /// o falló.
+  Future<bool> signInWithGoogle() async {
+    state = const AuthFormState(isLoading: true);
+    try {
+      final result = await _service.signInWithGoogle();
+      state = const AuthFormState();
+      return result != GoogleSignInResult.cancelled;
+    } on AuthException catch (e) {
+      state = AuthFormState(errorMessage: e.message);
+      return false;
+    } catch (_) {
+      state = const AuthFormState(
+        errorMessage: 'No se pudo entrar con Google. Intenta de nuevo.',
+      );
+      return false;
+    }
+  }
+
+  /// Quien entró con Google por primera vez elige su nombre de usuario.
+  Future<bool> completeProfile(String username) {
+    final error = AuthValidators.username(username);
+    if (error != null) return _reject(error);
+    return _run(() => _service.completeProfile(username: username));
+  }
+
   Future<void> signOut() => _service.signOut();
 
   /// Quita el mensaje de error (por ejemplo, al cambiar de pantalla).
