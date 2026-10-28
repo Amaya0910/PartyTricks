@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:party_tricks/models/auth_user.dart';
 import 'package:party_tricks/models/user_profile.dart';
 import 'package:party_tricks/services/auth/auth_service.dart';
+import 'package:party_tricks/services/auth/firebase_error_messages.dart';
 import 'package:party_tricks/services/auth/friend_code_generator.dart';
+import 'package:party_tricks/services/auth/google_id_token_source.dart';
 
 /// Se usa dentro de la transacción cuando el código de amistad ya existe.
 class _FriendCodeTaken implements Exception {
@@ -32,16 +35,15 @@ class FirebaseAuthService implements AuthService {
     required this._auth,
     required this._firestore,
     required this._codeGenerator,
+    required this._google,
   });
 
   static const int _maxCodeAttempts = 5;
 
-  static const String _wrongCredentials =
-      'Correo, usuario o contraseña incorrectos.';
-
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
   final FriendCodeGenerator _codeGenerator;
+  final GoogleIdTokenSource _google;
 
   CollectionReference<Map<String, dynamic>> get _users =>
       _firestore.collection('users');
@@ -91,6 +93,23 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
+  Stream<AuthUser?> watchAuthUser() {
+    // userChanges (y no authStateChanges) también avisa al recargar el
+    // usuario, por ejemplo cuando verifica el correo.
+    return _auth.userChanges().map(_toAuthUser);
+  }
+
+  AuthUser? _toAuthUser(User? user) {
+    if (user == null) return null;
+    return AuthUser(
+      uid: user.uid,
+      email: user.email ?? '',
+      emailVerified: user.emailVerified,
+      providers: {for (final info in user.providerData) info.providerId},
+    );
+  }
+
+  @override
   Future<UserProfile> register({
     required String email,
     required String password,
@@ -111,11 +130,13 @@ class FirebaseAuthService implements AuthService {
     }
 
     try {
-      return await _createProfile(
+      final profile = await _createProfile(
         uid: user.uid,
         email: cleanEmail,
         username: cleanUsername,
       );
+      await _sendVerificationQuietly(user);
+      return profile;
     } on _UsernameTaken {
       await _undoRegistration(user);
       throw const AuthException('Ese nombre de usuario ya está en uso.');
@@ -154,7 +175,10 @@ class FirebaseAuthService implements AuthService {
         await _auth.signOut();
         throw const AuthException('Esta cuenta no tiene perfil de jugador.');
       }
-      final profile = UserProfile.fromMap(snapshot.id, data);
+      final profile = await _syncEmail(
+        UserProfile.fromMap(snapshot.id, data),
+        user,
+      );
       await _publishEmailForUsernameLogin(profile);
       return profile;
     } on FirebaseException catch (e) {
@@ -165,7 +189,116 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
-  Future<void> signOut() => _auth.signOut();
+  Future<GoogleSignInResult> signInWithGoogle() async {
+    final String? idToken;
+    try {
+      idToken = await _google.idToken();
+    } catch (error) {
+      debugPrint('Google: $error');
+      throw const AuthException(
+        'No se pudo abrir Google. Revisa tu conexión e intenta de nuevo.',
+      );
+    }
+    if (idToken == null) return GoogleSignInResult.cancelled;
+
+    try {
+      // Si el correo ya tenía cuenta con contraseña, Firebase entra a esa
+      // misma cuenta (mismo uid), así que conserva su perfil.
+      final credential = await _auth.signInWithCredential(
+        GoogleAuthProvider.credential(idToken: idToken),
+      );
+      final user = credential.user!;
+      final snapshot = await _users.doc(user.uid).get();
+      final data = snapshot.data();
+      if (data == null) return GoogleSignInResult.needsUsername;
+      final profile = await _syncEmail(
+        UserProfile.fromMap(snapshot.id, data),
+        user,
+      );
+      await _publishEmailForUsernameLogin(profile);
+      return GoogleSignInResult.signedIn;
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_messageFor(e));
+    } on FirebaseException catch (e) {
+      debugPrint('Google: error de Firestore ${e.code} ${e.message}');
+      await signOut();
+      throw AuthException(_firestoreMessage(e));
+    }
+  }
+
+  @override
+  Future<UserProfile> completeProfile({required String username}) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw const AuthException('Tu sesión se cerró. Entra de nuevo.');
+    }
+    try {
+      return await _createProfile(
+        uid: user.uid,
+        email: user.email ?? '',
+        username: username.trim(),
+      );
+    } on _UsernameTaken {
+      throw const AuthException('Ese nombre de usuario ya está en uso.');
+    } on FirebaseException catch (e) {
+      debugPrint('Elegir nombre: error de Firestore ${e.code} ${e.message}');
+      throw AuthException(_firestoreMessage(e));
+    }
+  }
+
+  @override
+  Future<void> sendEmailVerification() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    try {
+      await user.sendEmailVerification();
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_messageFor(e));
+    }
+  }
+
+  @override
+  Future<bool> reloadEmailVerified() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    try {
+      await user.reload();
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_messageFor(e));
+    }
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
+  @override
+  Future<void> signOut() async {
+    try {
+      await _google.signOut();
+    } catch (_) {
+      // Si no había sesión de Google, no importa.
+    }
+    await _auth.signOut();
+  }
+
+  /// Si el jugador cambió su correo (en Ajustes, con el enlace de
+  /// verificación), el perfil todavía tiene el viejo: se actualiza aquí.
+  Future<UserProfile> _syncEmail(UserProfile profile, User user) async {
+    final email = user.email;
+    if (email == null || email.isEmpty || email == profile.email) {
+      return profile;
+    }
+    await _users.doc(user.uid).update({'email': email});
+    return profile.copyWith(email: email);
+  }
+
+  /// El correo de verificación no es crítico: si falla, el jugador puede
+  /// pedirlo otra vez desde el aviso.
+  Future<void> _sendVerificationQuietly(User user) async {
+    try {
+      await user.sendEmailVerification();
+    } catch (error) {
+      debugPrint('No se pudo enviar el correo de verificación: $error');
+    }
+  }
 
   /// Devuelve el correo para autenticar: el mismo texto si es un correo, o el
   /// que está guardado junto al nombre de usuario (sin distinguir mayúsculas).
@@ -177,7 +310,7 @@ class FirebaseAuthService implements AuthService {
       final snapshot = await _usernames.doc(text.toLowerCase()).get();
       final email = snapshot.data()?['email'] as String?;
       if (email == null || email.isEmpty) {
-        throw const AuthException(_wrongCredentials);
+        throw const AuthException(FirebaseErrorMessages.wrongCredentials);
       }
       return email;
     } on FirebaseException catch (e) {
@@ -248,38 +381,9 @@ class FirebaseAuthService implements AuthService {
     }
   }
 
-  String _messageFor(FirebaseAuthException error) {
-    switch (error.code) {
-      case 'email-already-in-use':
-        return 'Ese correo ya tiene una cuenta.';
-      case 'invalid-email':
-        return 'El correo no es válido.';
-      case 'weak-password':
-        return 'La contraseña es muy débil.';
-      case 'user-not-found':
-      case 'wrong-password':
-      case 'invalid-credential':
-        return _wrongCredentials;
-      case 'user-disabled':
-        return 'Esta cuenta está deshabilitada.';
-      case 'too-many-requests':
-        return 'Demasiados intentos. Espera un momento e intenta de nuevo.';
-      case 'network-request-failed':
-        return 'Sin conexión. Revisa tu internet.';
-      default:
-        return 'No se pudo completar la operación. Intenta de nuevo.';
-    }
-  }
+  String _messageFor(FirebaseAuthException error) =>
+      FirebaseErrorMessages.auth(error);
 
-  String _firestoreMessage(FirebaseException error) {
-    switch (error.code) {
-      case 'permission-denied':
-        return 'Sin permiso para usar la base de datos. '
-            'Revisa las reglas de Firestore.';
-      case 'unavailable':
-        return 'Sin conexión con la base de datos. Revisa tu internet.';
-      default:
-        return 'No se pudo acceder a tu perfil. Intenta de nuevo.';
-    }
-  }
+  String _firestoreMessage(FirebaseException error) =>
+      FirebaseErrorMessages.firestore(error);
 }

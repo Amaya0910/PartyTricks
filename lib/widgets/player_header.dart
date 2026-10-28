@@ -19,7 +19,7 @@ class PlayerHeader extends StatelessWidget {
   final int coins;
   final int diamonds;
 
-  /// Se usará para abrir la pantalla de ajustes (la llave del mockup).
+  /// Abre la pantalla de Ajustes (la llave del mockup).
   final VoidCallback? onAvatarTap;
 
   /// Desenfoque del fondo detrás de toda la cabecera.

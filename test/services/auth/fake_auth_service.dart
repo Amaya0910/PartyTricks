@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:party_tricks/models/auth_user.dart';
 import 'package:party_tricks/models/user_profile.dart';
 import 'package:party_tricks/services/auth/auth_service.dart';
 
@@ -14,6 +15,17 @@ class FakeAuthService implements AuthService {
   int registerCalls = 0;
   int signInCalls = 0;
   int signOutCalls = 0;
+  int googleCalls = 0;
+  int verificationEmails = 0;
+
+  /// Lo que devuelve [signInWithGoogle].
+  GoogleSignInResult googleResult = GoogleSignInResult.signedIn;
+
+  /// Lo que devuelve [reloadEmailVerified].
+  bool emailVerified = false;
+
+  /// El último nombre que llegó a [completeProfile].
+  String? completedUsername;
 
   /// Lo último que se mandó como correo o nombre de usuario al iniciar sesión.
   String? lastIdentifier;
@@ -21,8 +33,14 @@ class FakeAuthService implements AuthService {
   final StreamController<UserProfile?> _profiles =
       StreamController<UserProfile?>.broadcast();
 
+  final StreamController<AuthUser?> _authUsers =
+      StreamController<AuthUser?>.broadcast();
+
   @override
   Stream<UserProfile?> watchProfile() => _profiles.stream;
+
+  @override
+  Stream<AuthUser?> watchAuthUser() => _authUsers.stream;
 
   @override
   Future<UserProfile> register({
@@ -44,6 +62,32 @@ class FakeAuthService implements AuthService {
     lastIdentifier = identifier;
     await _beforeResult();
     return _profileFor(email: 'jugador@correo.com', username: 'jugador');
+  }
+
+  @override
+  Future<GoogleSignInResult> signInWithGoogle() async {
+    googleCalls++;
+    await _beforeResult();
+    return googleResult;
+  }
+
+  @override
+  Future<UserProfile> completeProfile({required String username}) async {
+    completedUsername = username;
+    await _beforeResult();
+    return _profileFor(email: 'jugador@gmail.com', username: username);
+  }
+
+  @override
+  Future<void> sendEmailVerification() async {
+    await _beforeResult();
+    verificationEmails++;
+  }
+
+  @override
+  Future<bool> reloadEmailVerified() async {
+    await _beforeResult();
+    return emailVerified;
   }
 
   @override
