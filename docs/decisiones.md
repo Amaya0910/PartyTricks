@@ -296,3 +296,26 @@
 - **Riesgos que quedan:** las reglas de Realtime Database no pueden contar hijos, así que el cupo de la sala lo controla la transacción de la app, y alguien con una app modificada podría, al entrar, sacar a otros de la sala de espera o pasarse del cupo. El anfitrión sigue siendo de confianza: si su teléfono hace trampa, las reglas no lo detectan. Las salas viejas no se borran.
 - **Pendientes:** en `feature/disconnections` hay que dejar que otro jugador tome `meta/hostUid` (hoy las reglas lo bloquean) y abrir `players/{uid}/connected` para `onDisconnect` (ya lo permite, porque es del propio jugador).
 - **Cómo se probaron:** con el emulador de Realtime Database y 25 casos (los flujos de la app y los ataques de arriba), todos como se esperaba.
+
+## D-25. Mapa dibujado armado en Tiled
+
+- **Fecha:** 2026-10-28
+- **Estado:** Aceptada (Brayan está de acuerdo)
+- **Decisión:**
+  - El tablero se muestra como un **mapa dibujado** en vista ¾, con piezas reutilizables (ver `docs/arte_imagenes.md`). El mundo mide 2880 × 4320 px.
+  - El mapa se arma en **Tiled** (gratis) y la app lee **directamente** el archivo que guarda, `assets/maps/mapa_01/mapa.tmj`, sin script de conversión. Se esperan conjuntos de patrones **incrustados** de tipo colección de imágenes, una capa de objetos `casillas` con la propiedad entera `casilla` en cada plataforma, y otras capas de objetos para tiendas, puentes y decoraciones.
+  - El archivo de Tiled **solo dice dónde va cada cosa**. Los tipos de casilla y cómo se conectan están en `buildDefaultBoard()` (`board_layout.dart`), que pasó al primer mapa: camino principal de la 0 a la 31, desvío A (1 → 32…36 → 8) y desvío B (13 → 37…41 → 23), tiendas en 17 y 36, 4 especiales y 14 negativas fijas. Si al mapa le falta alguna casilla, la app muestra el tablero de cuadritos.
+  - Las pruebas del motor usan su propio tablero (`test/services/game_engine/test_board.dart`, el de antes), para que cambiar el mapa no las rompa.
+  - El código pone solo las marcas de casilla, el caminito de piedra (la textura repetida entre cada casilla y las siguientes, que se bifurca solo), el diamante, las flechas de las bifurcaciones y el personaje.
+  - Se ven **todos los jugadores**; la cámara sigue al tuyo. Cada uno camina saltando de casilla en casilla por el camino más corto entre su posición anterior y la nueva. Si varios comparten casilla, se ponen uno al lado del otro.
+  - En las bifurcaciones se elige tocando una de **dos flechas** que apuntan a cada camino. Reemplazan los botones Seguir y Atajo (que se quedan solo en el tablero de respaldo).
+  - Se hace con widgets de Flutter (`InteractiveViewer` + `Stack`), no con Flame (D-11). La parte fija va en un `RepaintBoundary` para que mover la cámara sea liviano.
+- **En el código:** `lib/models/map/board_map.dart`, `lib/services/map/` (`TiledMapParser`, `BoardWalk`, `MapAssets` y `map_providers.dart`) y `lib/widgets/map/` (`BoardMapView`, `MapScenery` y `MapPathsPainter`). `board_screen.dart` cambia la vista y el panel.
+- **Motivo:** leer el archivo de Tiled tal cual permite cambiar el mapa sin tocar código, y separar las pruebas del motor del mapa real permite cambiar el mapa sin romperlas.
+- **Alternativas:** escribir las coordenadas a mano en un JSON propio (más errores) o usar Flame (otra dependencia sin beneficio para un tablero por turnos).
+- **Pendientes:**
+  - Monedas animadas en las casillas positivas (crecen, suben y desaparecen solo para ti).
+  - Minimapa.
+  - Hojas de animación del personaje en lugar del círculo con la foto.
+  - Más mapas: el anfitrión sortearía uno y lo guardaría en la partida (toca el estado de Brayan).
+
