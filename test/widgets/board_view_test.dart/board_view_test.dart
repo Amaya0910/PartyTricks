@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/widgets/board_view.dart';
+import '../../services/game_engine/test_board.dart';
 
 void main() {
-  final board = buildDefaultBoard();
+  final board = buildTestBoard();
   final cells = defaultBoardCells();
 
   test('cada casilla tiene su propia celda dentro de la cuadrícula', () {
