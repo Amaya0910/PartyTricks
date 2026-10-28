@@ -76,7 +76,7 @@
 ## D-09. Flujo de trabajo en Git
 
 - **Estado:** Aceptada
-- **Decisión:** ramas `main` y `develop`, una rama por tarea (`feature/...`, `docs/...`, `fix/...`), commits con prefijo y Pull Request revisado por la otra persona.
+- **Decisión:** ramas `main` y `develop`, una rama por tarea (`feature/...`, `fix/...`), una rama permanente para la documentación (ver D-20), commits con prefijo y Pull Request revisado por la otra persona.
 - **Detalle completo:** ver `roles_y_ramas.md`.
 
 ## D-10. Foto del rostro opcional y chat moderable
@@ -101,7 +101,6 @@
   - Hacer una prueba corta de Flame con el minijuego más sencillo antes de decidir.
   - Cuando se defina la lista de minijuegos, anotar cuáles usan Flame.
 
-  
 ## D-12. Configuración del proyecto de Firebase
 
 - **Fecha:** 2026-10-17
@@ -109,11 +108,11 @@
 - **Decisión:** proyecto `party-tricks` (plan Spark, gratis) con apps Android e iOS registradas con el identificador `com.partytricks.app`. Se activaron Authentication (correo y contraseña), Cloud Firestore (ubicación `nam5`) y Realtime Database (`us-central1`), ambas en modo de prueba. La configuración la genera `flutterfire configure` en `lib/firebase_options.dart`, y `main.dart` inicia Firebase antes de abrir la app.
 - **Motivo:** el identificador `com.example` no se acepta en tiendas y cambiarlo después obliga a registrar las apps otra vez. Correo y contraseña es lo que pide el diseño del juego.
 - **Pendientes:**
-  - Escribir las reglas de seguridad antes de que venza el modo de prueba (30 días).
-  - Storage pide el plan Blaze (de pago); se decide cuando llegue `feature/wardrobe-avatar`.
+  - Escribir las reglas de seguridad antes de que venza el modo de prueba (30 días desde el 2026-10-17, es decir, hacia el **2026-11-16**).
+  - Storage pide el plan Blaze (de pago); se decide cuando llegue `feature/player-profile` con la foto del rostro.
   - Para entrar a la consola de Firebase, pedir acceso a Brayan.
 
-  ## D-13. Motor del juego y valores provisionales
+## D-13. Motor del juego y valores provisionales
 
 - **Fecha:** 2026-10-17
 - **Estado:** Propuesta (por confirmar con Isabella)
@@ -132,7 +131,7 @@
 - **Fecha:** 2026-10-17
 - **Estado:** Propuesta (por confirmar con Isabella)
 - **Decisión:** las salas viven en Realtime Database: `rooms/{id}/meta` (código, pública o privada, creador, jugadores máximos, rondas, estado y fin de la espera), `rooms/{id}/players/{uid}`, `roomCodes/{código}` para buscar por código y `publicLobby/{id}` para las salas públicas que esperan jugadores. El código tiene 6 caracteres sin letras que se confunden (O/0, I/1). El teléfono del creador decide cuándo arranca o se cierra la sala, y una transacción evita que dos jugadores entren al último puesto a la vez.
-- **Provisional:** mientras no exista `feature/auth`, las salas usan un usuario anónimo de Firebase con el nombre "Jugador XXXX". Se cambia en `room_providers.dart` cuando esté el inicio de sesión. Al arrancar la partida se muestra un mensaje; el tablero llega en `feature/board-turns`.
+- **Actualizado (D-22):** las salas ya usan el uid y el nombre de usuario real de la cuenta (`room_providers.dart`). Solo si no hay sesión se entra como usuario anónimo con el nombre "Jugador XXXX". Al arrancar la partida todos pasan al tablero.
 - **Pendientes:** reglas de seguridad de Realtime Database, borrar salas viejas y qué pasa si el creador se sale (va en `feature/disconnections`).
 
 ## D-15. Partida en vivo y pantalla del tablero
@@ -157,7 +156,7 @@
 - **Alternativas:** consultar el nombre solo en el perfil (no garantiza la unicidad si dos personas se registran a la vez) o usar Cloud Functions (requiere el plan Blaze).
 - **Pendientes:**
   - Botón de cerrar sesión, cambiar contraseña y recuperarla.
-  - Cambiar `room_providers.dart` para que las salas usen el nombre de usuario real en vez del anónimo provisional (ver D-14).
+  - ~~Cambiar `room_providers.dart` para que las salas usen el nombre de usuario real~~ (hecho en D-22).
   - Reglas de seguridad de Firestore.
 
 ## D-17. Inicio de sesión con correo o nombre de usuario
@@ -168,4 +167,113 @@
 - **Motivo:** es lo que pide el mockup de la pantalla de acceso.
 - **Riesgo:** la búsqueda ocurre antes de tener sesión, así que `usernames` debe poder leerse sin iniciar sesión. Si las reglas permitieran listar la colección, cualquiera vería los correos de todos los jugadores, y hay jugadores menores (ver D-10).
 - **Alternativas:** iniciar solo con correo (más simple y sin exponer correos) o Cloud Functions que conviertan el nombre en correo sin mostrarlo (requiere el plan Blaze).
-- **Pendiente (antes de terminar el modo de prueba):** en las reglas de Firestore, permitir leer un documento de `usernames` solo por su nombre exacto (`get`), nunca listar la colección (`list`), y que solo su dueño pueda escribirlo. Se coordina con Brayan, que configura las reglas.
+- **Hecho (D-22):** en `firestore.rules`, `usernames` solo se lee por nombre exacto (`get`), nunca se lista (`list`), y solo su dueño lo escribe.
+
+## D-18. Tienda de cofres con diamantes
+
+- **Fecha:** 2026-10-26
+- **Estado:** Propuesta (por confirmar con Brayan)
+- **Decisión:** los cofres (Básico 50, Party 100 y Diamante 150) se compran con los **diamantes de la cuenta**. Los premios son: cosmético aleatorio, nada, 100 monedas o dado extra. Las probabilidades salen del mockup y viven en `lib/models/chest.dart`. El sorteo está en `ChestRoller`, que usa `RandomSource` para poder probarlo. `FirebaseShopService` cobra y entrega el premio en **una sola transacción** de Firestore sobre `users/{uid}`. El dado extra se guarda en el campo `extraDice` del perfil.
+- **En el código:** `lib/models/chest.dart`, `lib/services/shop/` (interfaz `ShopService`, versión con Firebase, `ChestRoller` y proveedores), `ShopController`, y los widgets `chest_dialog.dart` y `chest_visuals.dart`. Las imágenes están en `assets/images/cofres/`.
+- **Motivo:** una transacción evita cobrar sin dar premio o gastar dos veces el mismo diamante. Entregar el servicio por interfaz permite probar sin Firebase.
+- **Provisional:**
+  - El tercer cofre se llama "Cofre Diamante" porque el mockup lo repite como "Cofre Party".
+  - El premio "cosmético" todavía no se guarda: falta el catálogo (hay un `TODO` en `firebase_shop_service.dart`).
+  - La tienda aún no tiene ítems (cosméticos a la venta).
+- **Riesgo:** el cobro lo calcula el celular del jugador. Las reglas de Firestore deben impedir que un jugador edite por su cuenta `diamonds`, `coins` y `extraDice`; si no, puede hacer trampa.
+- **Pendientes:** catálogo de cosméticos e ítems de la tienda. Las reglas de Firestore ya están (`firestore.rules`, D-22), pero dejan que el dueño escriba `diamonds`, `coins` y `extraDice`: evitarlo del todo necesita Cloud Functions.
+
+## D-19. Vestuario con datos provisionales
+
+- **Fecha:** 2026-10-26
+- **Estado:** Propuesta
+- **Decisión:** `WardrobeController` guarda la categoría activa (`CosmeticCategory`: camisa, pantalón, zapatos, cabello, nariz, ojos y boca). Los cosméticos que se muestran son un mapa fijo en `wardrobe_screen.dart` (solo "Camisa 1"). Si la categoría no tiene ítems, se muestra su mensaje de "Aún no tienes...".
+- **Motivo:** permite construir y revisar la interfaz del mockup antes de que exista el catálogo de cosméticos.
+- **Pendientes:** reemplazar el mapa por los cosméticos desbloqueados del perfil, poder equiparlos, armar el personaje y conectar el botón "Foto" (hoy muestra "La cámara llega pronto").
+
+## D-20. Una rama permanente para la documentación
+
+- **Fecha:** 2026-10-26
+- **Estado:** Aceptada
+- **Decisión:** toda la documentación se actualiza en una sola rama, `docs/documentacion-completa`, que no se borra. Antes de editar se trae `develop` a esa rama, y los cambios se unen a `develop` con Pull Request. Las demás ramas ya unidas se borran.
+- **Motivo:** mantener la menor cantidad de ramas posible y tener un lugar fijo para actualizar los documentos.
+- **Alternativas:** crear una rama `docs/<tema>` nueva en cada actualización (más ramas que limpiar).
+- **Detalle:** comandos en `roles_y_ramas.md`, sección 3.
+
+## D-21. Estadísticas del jugador
+
+- **Fecha:** 2026-10-27
+- **Estado:** Propuesta (por confirmar con Brayan)
+- **Decisión:** las estadísticas viven en Cloud Firestore, en `stats/{uid}`, aparte del perfil, con un mapa por grupo (partidas, premios finales, minijuegos, tablero, tienda, social y tiempo). Cada jugador guarda las suyas:
+  - **Partida:** al terminar, `BoardScreen` arma un `MatchSummary` (con `MatchSummaryBuilder` y `AwardCalculator`) y `StatsCalculator` lo suma. La suma y una marca en `stats/{uid}/matches/{id de la sala}` van en **una sola transacción**, así una partida nunca se cuenta dos veces. Como hay un minijuego por ronda, los minijuegos jugados son las rondas.
+  - **Tablero:** el motor cuenta en `PlayerState` los dados, el número máximo, el tipo de casilla, el camino elegido, las vueltas y los diamantes del mapa. Son solo contadores: no cambian las reglas.
+  - **Cofres:** `FirebaseShopService` suma el cofre, el gasto y el premio en la **misma transacción de la compra**, con `FieldValue.increment`.
+  - **Tiempo jugando y en minijuegos:** lo mide `MatchTimeTracker` con los cambios de fase.
+  - **Tiempo en la app:** `AppUsageTracker` envuelve a `MainShellScreen` y cuenta mientras la app está en primer plano. Se guarda con `FieldValue.increment` cada minuto y al pasar a segundo plano.
+  - **Racha:** `StreakCalculator` cuenta los días seguidos en que se abre la app, con la fecha del celular.
+  - **Social:** `StatsController.recordSocial` queda listo para invitaciones y mensajes (`feature/friends-chat`).
+- **En el código:** `lib/models/player_stats.dart`, `lib/models/stats/`, `lib/models/match_summary.dart`, `lib/services/stats/` (interfaz `StatsService`, versión con Firebase, `FirestoreStatsDocument`, calculadoras, formato y proveedores), `StatsController`, `StatsPresenter`, `StatsScreen` y los widgets `stats_card.dart` y `app_usage_tracker.dart`. En el motor: `game_state.dart`, `game_engine.dart` y `game_codec.dart`.
+- **Motivo:** un grupo por clase evita una clase gigante y deja cada parte con una sola responsabilidad. `FirestoreStatsDocument` es el único lugar que conoce la ruta y los incrementos, así la tienda y el servicio no se separan. Las calculadoras y el presentador no dependen de Firebase ni del reloj real, así que se prueban solos.
+- **Provisional:**
+  - El mejor puntaje y los minijuegos por tipo quedan vacíos hasta que existan minijuegos (hoy se simula al ganador).
+  - Las compras en tiendas del mapa quedan en 0 hasta `feature/map-shop-items`.
+  - Invitaciones, mensajes y partidas con amigos quedan en 0 hasta `feature/friends-chat`.
+- **Riesgo:** como el resto de la partida (ver D-04), las estadísticas las escribe el celular del jugador. Para el proyecto de aula es aceptable.
+- **Pendientes:**
+  - ~~Reglas de Firestore para `stats/{uid}`~~ (hechas en `firestore.rules`, D-22).
+  - Cuando llegue `feature/results-xp`, la pantalla de resultados puede reutilizar `MatchSummaryBuilder`.
+
+## D-22. Amigos, chat e invitaciones
+
+- **Fecha:** 2026-10-27
+- **Estado:** Propuesta (por confirmar con Brayan)
+- **Decisión:**
+  - **Perfil público:** lo que ven los demás vive en `publicProfiles/{uid}` (nombre, código, experiencia y foto), **sin el correo**, porque hay jugadores menores (D-10). `PublicProfilePublisher` lo mantiene igual al perfil cada vez que este cambia, y solo escribe si algo cambió.
+  - **Amistad por solicitud:** se envía con el código de amistad (`friendCodes/{código}` → uid). Entre dos jugadores hay un solo documento, `friendships/{id de pareja}`, con estado `pending` o `accepted`; se crea en una transacción. Si los dos se envían solicitud, queda aceptada. Rechazar, cancelar y eliminar borran el documento.
+  - **Chat:** `chats/{id de pareja}` guarda el último mensaje y hasta cuándo leyó cada uno (para el punto de "sin leer"); los mensajes van en `chats/{id}/messages`. El mensaje y el resumen se escriben juntos en un `WriteBatch`. Máximo 200 caracteres. Solo se puede escribir a amigos.
+  - **Invitaciones:** desde **Tu party**, con **Invitar a amigos**. Cada invitación se guarda en `invites` (para el aviso emergente) y como mensaje del chat de tipo `invite`, en la misma escritura. El botón del mensaje cambia según el estado de la sala en Realtime Database. El aviso solo sale en el menú principal y si la party aún espera jugadores.
+  - **Bloquear y reportar:** bloquear crea `blocks/{bloqueador}_{bloqueado}` y borra la amistad en la misma escritura. Quien está bloqueado no puede escribir, enviar solicitudes ni invitar; no se le dice que lo bloquearon. Reportar guarda el caso en `reports` para que lo revise un adulto o el docente.
+  - **Estadísticas:** se suman los mensajes enviados, las invitaciones enviadas y aceptadas, y las partidas con al menos un amigo (D-21).
+  - **Nombre en la sala:** `roomIdentityProvider` usa el uid y el nombre de usuario real de la cuenta, para que los amigos se reconozcan en la sala.
+- **En el código:** `lib/models/social/`, `lib/services/social/` (una interfaz y su versión con Firebase por tema: `ProfileDirectory`, `FriendsService`, `ChatService`, `InviteService` y `ModerationService`; `FirestoreSocialPaths` es el único lugar que conoce las rutas; lógica pura en `PairId`, `ChatRules`, `FriendsSections`, `ChatFormat` e `InviteStatus`), los controladores `FriendsController`, `ChatController`, `InviteController`, `ModerationController` y `PublicProfileController`, las pantallas `friends_screen.dart` y `chat_view.dart`, y los widgets de amigos, chat y diálogos.
+- **Motivo:** un servicio por tema deja cada clase con una sola responsabilidad y permite probar los controladores con servicios falsos. Las reglas del negocio (solo a amigos, bloqueos, límites) viven en los controladores y en `ChatRules`, no en la interfaz.
+- **Alternativas:** guardar los amigos dentro de cada perfil (cada jugador tendría que escribir en el perfil del otro) o usar notificaciones push para las invitaciones (necesitan Cloud Functions y el plan Blaze).
+- **Riesgo:** las reglas de Firestore son las que de verdad impiden que alguien lea chats ajenos o escriba sin ser amigo. Sin ellas, cualquiera con la app modificada podría hacerlo.
+- **Reglas de Firestore:** están en `firestore.rules`, en la raíz del proyecto, y se publican desde la consola de Firebase (Firestore Database → Reglas). Cubren todas las colecciones de Firestore, no solo las de amigos:
+  - `users` y `stats`: solo su dueño.
+  - `usernames` y `friendCodes`: solo por nombre o código exacto, nunca la lista.
+  - `publicProfiles`: lo leen todos los jugadores con sesión; lo escribe su dueño.
+  - `friendships`: solo los dos jugadores de la pareja; aceptar solo cambia el estado.
+  - `chats` y sus mensajes: solo la pareja; los mensajes solo entre amigos, a nombre propio, de máximo 200 caracteres y si el otro no te bloqueó.
+  - `invites`: solo a amigos que no te bloquearon; el invitado solo puede marcarlas como vistas.
+  - `blocks`: los crea y los borra quien bloquea.
+  - `reports`: se pueden crear, pero nadie los lee desde la app.
+- **Pendientes:**
+  - ~~Lista de bloqueados para desbloquear~~: hecha en Ajustes → Más opciones → Jugadores bloqueados (D-23).
+  - Foto de perfil en el perfil público (llega con la foto del rostro).
+  - Ver si un amigo está conectado.
+
+## D-23. Ajustes, verificación del correo e inicio con Google
+
+- **Fecha:** 2026-10-27
+- **Estado:** Propuesta (por confirmar con Brayan)
+- **Decisión:**
+  - **Ajustes** se abre al tocar la foto de perfil en Inicio o en Stats. Tiene cuatro bloques, como en el mockup: el código de amistad, la cuenta, las preferencias y "Más opciones".
+  - **Código de amistad:** se puede copiar y recargar. Recargar reserva un código nuevo en `friendCodes` y libera el viejo en la misma transacción. Los amigos actuales se conservan; el código viejo deja de servir para agregarte.
+  - **Nombre de usuario:** se puede cambiar **una vez cada 30 días** (`AccountRules.usernameCooldown`). La fecha del último cambio se guarda en `users/{uid}.usernameChangedAt`. El nombre nuevo se reserva en `usernames` y el viejo se borra en la misma transacción; el perfil público se actualiza solo (D-22).
+  - **Correo y contraseña:** los dos piden la contraseña actual, porque Firebase lo exige. El correo nuevo se cambia con `verifyBeforeUpdateEmail`: el cambio se aplica cuando el jugador abre el enlace, y al iniciar sesión otra vez la app copia el correo nuevo al perfil y a `usernames`. Las cuentas que solo usan Google no tienen estas dos opciones.
+  - **Verificación del correo:** al registrarse se envía el enlace. **Se puede jugar sin verificar**: Inicio y Ajustes muestran un aviso con **Reenviar** y **Ya lo verifiqué** hasta que el correo esté verificado. Las cuentas que ya existían también lo ven. Las cuentas de Google no lo ven, porque Google ya verifica el correo.
+  - **Inicio con Google** (`google_sign_in` 7): botón "Continuar con Google" en la tarjeta de inicio de sesión. Si el correo ya tenía cuenta con contraseña, Firebase une las dos formas de entrar en la misma cuenta (mismo uid). Quien entra con Google por primera vez elige su nombre de usuario en una pantalla aparte (`ChooseUsernameScreen`), que crea el perfil, el nombre y el código como en el registro.
+  - **Preferencias** (notificaciones, sonido, efectos de sonido): se guardan en el celular con `shared_preferences`, no en Firestore. Por ahora no hay sonidos ni notificaciones; los interruptores quedan listos para cuando existan. El idioma es solo español.
+  - **Más opciones:** Acerca de, Términos y condiciones, Política de privacidad (textos en `LegalDocument`, con contacto del equipo de Party Tricks: Isabella Amaya y Brayan Vasquez), Jugadores bloqueados (con **Desbloquear**) y Cerrar sesión.
+- **En el código:** `lib/screens/settings_screen.dart`, `change_password_screen.dart`, `legal_screen.dart`, `blocked_players_screen.dart` y `choose_username_screen.dart`; los controladores `AccountController` y `PreferencesController`; los servicios `AccountService` (y `FirebaseAccountService`), `PreferencesService` (y `SharedPreferencesService`) y `GoogleIdTokenSource`; las reglas puras en `AccountRules`; los mensajes de error de Firebase en `FirebaseErrorMessages`; los modelos `AuthUser`, `AppPreferences` y `LegalDocument`; los widgets `settings_section.dart`, `code_digits.dart`, `text_fields_dialog.dart`, `verify_email_banner.dart` y `google_sign_in_button.dart`.
+- **Motivo:** los cambios de la cuenta van en `AccountService`, separado de `AuthService` (registro e inicio), para que cada clase tenga una sola responsabilidad. Google se pide a través de `GoogleIdTokenSource` para poder probar el servicio sin el paquete. Las preferencias en el celular evitan escrituras a Firestore por cosas que solo importan en ese dispositivo.
+- **Alternativas:** obligar a verificar el correo antes de jugar (más seguro, pero frena a quien quiere probar el juego), guardar las preferencias en Firestore (sirve entre celulares, pero hoy no hace falta) o dejar cambiar el nombre sin límite (permite confundir a los demás jugadores).
+- **Configuración necesaria:**
+  - Activar el proveedor **Google** en Firebase Authentication.
+  - Agregar las huellas **SHA-1** y **SHA-256** de cada computador que compile la app (Configuración del proyecto → Android) y volver a descargar `google-services.json`.
+  - En iOS: `GoogleService-Info.plist`, `GIDClientID` y el esquema de URL `REVERSED_CLIENT_ID` en `Info.plist`.
+- **Riesgo:** el límite de 30 días para cambiar el nombre lo revisa la app, no las reglas de Firestore; alguien con la app modificada podría saltárselo.
+- **Pendientes:**
+  - Activar los sonidos y las notificaciones cuando existan.
+  - Más idiomas.

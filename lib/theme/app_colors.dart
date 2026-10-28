@@ -170,4 +170,64 @@ class AppColors {
   static const Color chestPartyStrong = Color(0xFFB09868);
   static const Color chestDiamondCard = Color(0xFFC688FF);
   static const Color chestDiamondStrong = Color(0xFF8E62B6);
+
+  // ---------------------------------------------------------------------------
+  // Estadísticas
+  // ---------------------------------------------------------------------------
+
+  /// Cabecera y borde de las tarjetas de la pantalla Stats. Se repiten en
+  /// orden: azul, azul oscuro y morado. Solo el azul oscuro es nuevo; los
+  /// otros reutilizan colores que ya existían.
+  static const Color statsBlue = authAccent;
+  static const Color statsDarkBlue = Color(0xFF5381A5);
+  static const Color statsPurple = chestDiamondStrong;
+
+  /// Etiquetas y números de las filas.
+  static const Color statsText = wardrobeInk;
+
+  // ---------------------------------------------------------------------------
+  // Amigos y chat (todos reutilizan colores que ya existían)
+  // ---------------------------------------------------------------------------
+
+  /// Borde de la tarjeta "Tus amigos" y del chat.
+  static const Color friendsBorder = statsDarkBlue;
+
+  /// Cabecera "Tus amigos", burbujas propias y botón "+".
+  static const Color friendsAccent = authAccent;
+
+  /// Cabecera del chat y recuadro de la foto de cada amigo.
+  static const Color chatHeader = avatarBackground;
+
+  /// Burbujas del amigo y campo para escribir.
+  static const Color chatField = authField;
+
+  /// Punto de mensajes sin leer.
+  static const Color unreadDot = blueStrong;
+
+  /// Botón Aceptar y Rechazar de las solicitudes.
+  static const Color accept = activeButton;
+  static const Color reject = authError;
+
+  // ---------------------------------------------------------------------------
+  // Ajustes (todos reutilizan colores que ya existían)
+  // ---------------------------------------------------------------------------
+
+  /// Cabeceras moradas de las tarjetas (Cuenta, Preferencias, Más opciones).
+  static const Color settingsAccent = statsPurple;
+
+  /// Fondo translúcido detrás de las tarjetas.
+  static const Color settingsPanel = headerPanel;
+
+  /// Borde de cada fila.
+  static const Color settingsRowBorder = authField;
+
+  /// Interruptores encendidos y botón Confirmar.
+  static const Color settingsOn = inactiveButton;
+
+  /// Botones Copiar y Recargar del código.
+  static const Color settingsCopy = accept;
+  static const Color settingsReload = statsDarkBlue;
+
+  /// Cerrar sesión.
+  static const Color settingsDanger = authError;
 }

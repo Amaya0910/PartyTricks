@@ -16,6 +16,7 @@ class AuthCardFace extends StatelessWidget {
     required this.onSwitch,
     this.errorMessage,
     this.isLoading = false,
+    this.secondaryAction,
   });
 
   final String title;
@@ -26,6 +27,9 @@ class AuthCardFace extends StatelessWidget {
   final VoidCallback onSwitch;
   final String? errorMessage;
   final bool isLoading;
+
+  /// Otra forma de entrar, debajo del botón principal (Google).
+  final Widget? secondaryAction;
 
   static const double _borderWidth = 3;
   static const double _radius = 28;
@@ -86,6 +90,10 @@ class AuthCardFace extends StatelessWidget {
                     isLoading: isLoading,
                     onPressed: onSubmit,
                   ),
+                  if (secondaryAction != null) ...[
+                    const SizedBox(height: 8),
+                    secondaryAction!,
+                  ],
                   TextButton(
                     onPressed: isLoading ? null : onSwitch,
                     style: TextButton.styleFrom(

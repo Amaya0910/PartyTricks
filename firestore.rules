@@ -1,0 +1,174 @@
+rules_version = '2';
+
+// Reglas de Cloud Firestore de Party Tricks.
+// Ver docs/decisiones.md: D-16 y D-17 (cuentas), D-18 (tienda), D-21
+// (estadísticas) y D-22 (amigos, chat e invitaciones).
+//
+// Las salas y la partida viven en Realtime Database: tienen sus propias
+// reglas aparte.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------------
+    // Funciones de ayuda
+    // ---------------------------------------------------------------------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Los ids de pareja son "uidA_uidB" (en orden alfabético).
+    function inPair(pairId) {
+      return signedIn() && request.auth.uid in pairId.split('_');
+    }
+
+    // El otro jugador de la pareja.
+    function otherOf(pairId) {
+      let parts = pairId.split('_');
+      return parts[0] == request.auth.uid ? parts[1] : parts[0];
+    }
+
+    function areFriends(pairId) {
+      let path = /databases/$(database)/documents/friendships/$(pairId);
+      return exists(path) && get(path).data.status == 'accepted';
+    }
+
+    // Si [blocker] bloqueó al jugador que hace la petición.
+    function blockedBy(blocker) {
+      return exists(
+        /databases/$(database)/documents/blocks/$(blocker + '_' + request.auth.uid)
+      );
+    }
+
+    // ---------------------------------------------------------------------
+    // Cuentas (D-16, D-17, D-18)
+    // ---------------------------------------------------------------------
+
+    // Perfil privado: solo su dueño (tiene el correo).
+    match /users/{uid} {
+      allow read, write: if isUser(uid);
+    }
+
+    // Reserva del nombre de usuario. Se lee sin sesión para poder iniciar
+    // sesión con el nombre, pero solo por nombre exacto (get), nunca la
+    // lista completa: tiene correos y hay jugadores menores.
+    match /usernames/{name} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isUser(request.resource.data.uid);
+      allow update, delete: if isUser(resource.data.uid);
+    }
+
+    // Reserva del código de amistad. Se busca por código exacto para
+    // agregar amigos.
+    match /friendCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if isUser(request.resource.data.uid);
+      allow delete: if isUser(resource.data.uid);
+    }
+
+    // ---------------------------------------------------------------------
+    // Estadísticas (D-21)
+    // ---------------------------------------------------------------------
+
+    match /stats/{uid} {
+      allow read, write: if isUser(uid);
+
+      match /matches/{matchId} {
+        allow read, write: if isUser(uid);
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Amigos, chat e invitaciones (D-22)
+    // ---------------------------------------------------------------------
+
+    // Lo que ven los demás: sin correo.
+    match /publicProfiles/{uid} {
+      allow read: if signedIn();
+      allow write: if isUser(uid);
+    }
+
+    // Solicitudes y amistades. "get" va por id (así se puede leer aunque
+    // todavía no exista, al enviar la solicitud); "list" va por members
+    // (la consulta de la lista de amigos).
+    match /friendships/{pairId} {
+      allow get: if inPair(pairId);
+      allow list: if signedIn() && request.auth.uid in resource.data.members;
+
+      allow create: if inPair(pairId)
+        && request.resource.data.requestedBy == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.members.hasAll(pairId.split('_'))
+        && !blockedBy(otherOf(pairId));
+
+      // Aceptar: solo se puede cambiar el estado.
+      allow update: if inPair(pairId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status']);
+
+      // Rechazar, cancelar, eliminar o bloquear.
+      allow delete: if inPair(pairId);
+    }
+
+    match /chats/{pairId} {
+      allow get, write: if inPair(pairId);
+      allow list: if signedIn() && request.auth.uid in resource.data.members;
+
+      match /messages/{messageId} {
+        allow read: if inPair(pairId);
+        // Solo entre amigos, a nombre propio, de máximo 200 caracteres y si
+        // el otro no te bloqueó.
+        allow create: if inPair(pairId)
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 200
+          && areFriends(pairId)
+          && !blockedBy(otherOf(pairId));
+      }
+    }
+
+    match /invites/{inviteId} {
+      // El invitado ve sus invitaciones y solo puede marcarlas como vistas.
+      allow read: if signedIn() && resource.data.toUid == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.toUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['seen']);
+
+      // Solo a amigos que no te bloquearon.
+      allow create: if signedIn()
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid != request.auth.uid
+        && areFriends(
+             request.auth.uid < request.resource.data.toUid
+               ? request.auth.uid + '_' + request.resource.data.toUid
+               : request.resource.data.toUid + '_' + request.auth.uid)
+        && !blockedBy(request.resource.data.toUid);
+    }
+
+    // Bloqueos: el id es "bloqueador_bloqueado".
+    match /blocks/{blockId} {
+      // Se consulta por id para saber si alguien te bloqueó.
+      allow get: if signedIn();
+      allow list: if signedIn() && resource.data.blocker == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.blocker == request.auth.uid
+        && blockId == request.auth.uid + '_' + request.resource.data.blocked;
+      allow delete: if signedIn() && resource.data.blocker == request.auth.uid;
+    }
+
+    // Reportes: se pueden crear, pero nadie los lee desde la app (los
+    // revisa un adulto o el docente en la consola de Firebase).
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.reporterUid == request.auth.uid;
+    }
+  }
+}

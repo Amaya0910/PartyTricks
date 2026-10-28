@@ -15,6 +15,15 @@ class PlayerState {
     this.minigamesWon = 0,
     this.negativeTiles = 0,
     this.purchases = 0,
+    this.diceRolled = 0,
+    this.diceTotal = 0,
+    this.maxRolls = 0,
+    this.positiveTiles = 0,
+    this.specialTiles = 0,
+    this.mainPathsTaken = 0,
+    this.shortcutsTaken = 0,
+    this.laps = 0,
+    this.mapDiamonds = 0,
   });
 
   final String id;
@@ -33,6 +42,29 @@ class PlayerState {
   final int negativeTiles;
   final int purchases;
 
+  // Contadores para las estadísticas del jugador (decisiones.md, D-21).
+
+  /// Veces que lanzó el dado y suma de lo que sacó.
+  final int diceRolled;
+  final int diceTotal;
+
+  /// Veces que sacó el número más alto del dado (6, o 3 y 12 con efectos).
+  final int maxRolls;
+
+  /// Casillas positivas y especiales donde cayó (las negativas van arriba).
+  final int positiveTiles;
+  final int specialTiles;
+
+  /// En las bifurcaciones: veces que siguió el camino principal o el atajo.
+  final int mainPathsTaken;
+  final int shortcutsTaken;
+
+  /// Vueltas completas al mapa (veces que pasó por la salida).
+  final int laps;
+
+  /// Diamantes recogidos en el mapa.
+  final int mapDiamonds;
+
   /// Suma o resta monedas sin bajar de cero.
   PlayerState addCoins(int delta) {
     final total = coins + delta;
@@ -48,6 +80,15 @@ class PlayerState {
     int? minigamesWon,
     int? negativeTiles,
     int? purchases,
+    int? diceRolled,
+    int? diceTotal,
+    int? maxRolls,
+    int? positiveTiles,
+    int? specialTiles,
+    int? mainPathsTaken,
+    int? shortcutsTaken,
+    int? laps,
+    int? mapDiamonds,
   }) {
     return PlayerState(
       id: id,
@@ -61,6 +102,15 @@ class PlayerState {
       minigamesWon: minigamesWon ?? this.minigamesWon,
       negativeTiles: negativeTiles ?? this.negativeTiles,
       purchases: purchases ?? this.purchases,
+      diceRolled: diceRolled ?? this.diceRolled,
+      diceTotal: diceTotal ?? this.diceTotal,
+      maxRolls: maxRolls ?? this.maxRolls,
+      positiveTiles: positiveTiles ?? this.positiveTiles,
+      specialTiles: specialTiles ?? this.specialTiles,
+      mainPathsTaken: mainPathsTaken ?? this.mainPathsTaken,
+      shortcutsTaken: shortcutsTaken ?? this.shortcutsTaken,
+      laps: laps ?? this.laps,
+      mapDiamonds: mapDiamonds ?? this.mapDiamonds,
     );
   }
 }

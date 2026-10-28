@@ -172,6 +172,74 @@ void main() {
     expect(container.read(authControllerProvider).errorMessage, isNull);
   });
 
+  group('signInWithGoogle', () {
+    test('devuelve true si entró', () async {
+      final ok = await container
+          .read(authControllerProvider.notifier)
+          .signInWithGoogle();
+
+      expect(ok, isTrue);
+      expect(service.googleCalls, 1);
+      expect(container.read(authControllerProvider).isLoading, isFalse);
+    });
+
+    test('devuelve true si falta elegir el nombre', () async {
+      service.googleResult = GoogleSignInResult.needsUsername;
+
+      final ok = await container
+          .read(authControllerProvider.notifier)
+          .signInWithGoogle();
+
+      expect(ok, isTrue);
+    });
+
+    test('si se cancela devuelve false sin mostrar error', () async {
+      service.googleResult = GoogleSignInResult.cancelled;
+
+      final ok = await container
+          .read(authControllerProvider.notifier)
+          .signInWithGoogle();
+
+      expect(ok, isFalse);
+      expect(container.read(authControllerProvider).errorMessage, isNull);
+    });
+
+    test('muestra el mensaje del servicio', () async {
+      service.nextError = const AuthException('Sin conexión.');
+
+      final ok = await container
+          .read(authControllerProvider.notifier)
+          .signInWithGoogle();
+
+      expect(ok, isFalse);
+      expect(
+        container.read(authControllerProvider).errorMessage,
+        'Sin conexión.',
+      );
+    });
+  });
+
+  group('completeProfile', () {
+    test('con un nombre válido crea el perfil', () async {
+      final ok = await container
+          .read(authControllerProvider.notifier)
+          .completeProfile('tay_01');
+
+      expect(ok, isTrue);
+      expect(service.completedUsername, 'tay_01');
+    });
+
+    test('con un nombre inválido no llama al servicio', () async {
+      final ok = await container
+          .read(authControllerProvider.notifier)
+          .completeProfile('a');
+
+      expect(ok, isFalse);
+      expect(service.completedUsername, isNull);
+      expect(container.read(authControllerProvider).errorMessage, isNotNull);
+    });
+  });
+
   test('signOut llama al servicio', () async {
     await container.read(authControllerProvider.notifier).signOut();
 

@@ -4,12 +4,14 @@ import 'package:party_tricks/controllers/room_controller.dart';
 import 'package:party_tricks/models/play_option.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/screens/lobby_screen.dart';
+import 'package:party_tricks/screens/settings_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/rooms/room_service.dart';
 import 'package:party_tricks/widgets/create_room_dialog.dart';
 import 'package:party_tricks/widgets/join_code_dialog.dart';
 import 'package:party_tricks/widgets/play_menu_dialog.dart';
 import 'package:party_tricks/widgets/player_header.dart';
+import 'package:party_tricks/widgets/verify_email_banner.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 
 /// Pantalla de inicio. El fondo lo pone MainShellScreen.
@@ -67,7 +69,9 @@ class HomeScreen extends ConsumerWidget {
           username: profile?.username ?? '',
           coins: profile?.coins ?? 0,
           diamonds: profile?.diamonds ?? 0,
+          onAvatarTap: () => Navigator.of(context).push(SettingsScreen.route()),
         ),
+        const VerifyEmailBanner(),
         // Reemplazar por el personaje armado con los cosméticos.
         const Expanded(
           child: Center(

@@ -11,6 +11,7 @@ class UserProfile {
     this.coins = 0,
     this.diamonds = 0,
     this.extraDice = 0,
+    this.usernameChangedAt,
   });
 
   /// Identificador de Firebase Authentication.
@@ -35,8 +36,12 @@ class UserProfile {
   /// Dados extra consumibles que ganó en los cofres.
   final int extraDice;
 
+  /// Última vez que cambió el nombre de usuario en Ajustes (null si nunca).
+  final DateTime? usernameChangedAt;
+
   /// El [uid] es el id del documento, por eso no va dentro del mapa.
   factory UserProfile.fromMap(String uid, Map<String, dynamic> map) {
+    final changed = map['usernameChangedAt'];
     return UserProfile(
       uid: uid,
       email: map['email'] as String? ?? '',
@@ -46,6 +51,9 @@ class UserProfile {
       coins: (map['coins'] as num?)?.toInt() ?? 0,
       diamonds: (map['diamonds'] as num?)?.toInt() ?? 0,
       extraDice: (map['extraDice'] as num?)?.toInt() ?? 0,
+      usernameChangedAt: changed is num
+          ? DateTime.fromMillisecondsSinceEpoch(changed.toInt())
+          : null,
     );
   }
 
@@ -58,24 +66,31 @@ class UserProfile {
       'coins': coins,
       'diamonds': diamonds,
       'extraDice': extraDice,
+      if (usernameChangedAt != null)
+        'usernameChangedAt': usernameChangedAt!.millisecondsSinceEpoch,
     };
   }
 
   UserProfile copyWith({
+    String? email,
+    String? username,
+    String? friendCode,
     int? experience,
     int? coins,
     int? diamonds,
     int? extraDice,
+    DateTime? usernameChangedAt,
   }) {
     return UserProfile(
       uid: uid,
-      email: email,
-      username: username,
-      friendCode: friendCode,
+      email: email ?? this.email,
+      username: username ?? this.username,
+      friendCode: friendCode ?? this.friendCode,
       experience: experience ?? this.experience,
       coins: coins ?? this.coins,
       diamonds: diamonds ?? this.diamonds,
       extraDice: extraDice ?? this.extraDice,
+      usernameChangedAt: usernameChangedAt ?? this.usernameChangedAt,
     );
   }
 }
