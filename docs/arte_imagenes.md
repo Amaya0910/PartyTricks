@@ -11,10 +11,10 @@
   - **PNG** si la imagen lleva transparencia.
   - **WebP con calidad 85** para fondos grandes sin transparencia.
 - **Lienzo en Krita:** 72 ppp, RGB, 8 bits. Los ppp no importan en pantalla, solo los píxeles.
-- **Estilo** (el que ya tienes):
+- **Estilo**:
   - Contorno negro grueso en todas las piezas, de **mínimo 2 px en el tamaño exportado**. Los fondos no llevan contorno.
   - Colores planos, con máximo 3 tonos por objeto: base, claro y oscuro.
-  - Reutiliza los colores que ya tienes: el café, la piel, el azul del diamante y el dorado de la moneda. Si necesitas uno nuevo, anótalo, porque luego se pasa a `AppColors`.
+  - Reutilizamos los colores que ya tenemos: el café, la piel, el azul del diamante y el dorado de la moneda. Si se agrega uno nuevo, se anota, porque luego se pasa a `AppColors`.
 - **Nombres:** en minúsculas, sin tildes ni espacios y con guion bajo. Las variantes se numeran con dos cifras, por ejemplo `plataforma_01.png`.
 - **Ancla:** es el punto que el código usa para colocar la imagen. En Krita pon guías en ese punto.
 - **Volteo:** no dibujes versiones al revés. El código voltea las imágenes.
