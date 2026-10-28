@@ -7,9 +7,7 @@
 ## 1. Reglas para todas las imágenes
 
 - **Un solo tamaño por imagen.** Dibuja en grande y exporta al tamaño de la tabla. No hacen falta carpetas `2.0x/` ni `3.0x/`; el código reduce la imagen y controla la memoria (`cacheWidth`). Si en un celular viejo va lento, se baja a 2x.
-- **Formato:**
-  - **PNG** si la imagen lleva transparencia.
-  - **WebP con calidad 85** para fondos grandes sin transparencia.
+- **Formato:** PNG para todo. Los fondos grandes pueden pasar a WebP más adelante si la app pesa demasiado, sin redibujarlos.
 - **Lienzo en Krita:** 72 ppp, RGB, 8 bits. Los ppp no importan en pantalla, solo los píxeles.
 - **Estilo** (el que ya tienes):
   - Contorno negro grueso en todas las piezas, de **mínimo 2 px en el tamaño exportado**. Los fondos no llevan contorno.
@@ -25,8 +23,8 @@
 ```
 assets/
 ├── images/
-│   ├── Fondo_Principal.webp       (rehacer, ver sección 3)
-│   ├── Fondo_Carga.webp           (reexportar, ver sección 3)
+│   ├── Fondo_Principal.png        (rehacer, ver sección 3)
+│   ├── Fondo_Carga.png            (reexportar, ver sección 3)
 │   ├── logo_arranque.png
 │   ├── cofres/                    los 3 cofres
 │   ├── juego/                     moneda, diamante y dados
@@ -39,7 +37,7 @@ assets/
 │   │   └── miniaturas/
 │   └── iconos/                    barra de navegación y marcador del jugador
 ├── maps/
-│   └── mapa_01/                   mapa.json, fondo.webp y minimapa.webp (una carpeta por mapa)
+│   └── mapa_01/                   mapa.json, fondo.png y minimapa.png (una carpeta por mapa)
 └── icon/                          ícono de la app
 ```
 
@@ -47,11 +45,9 @@ assets/
 
 | Hecho | Archivo | Carpeta | Exportar a (px) | Formato | Notas |
 |---|---|---|---|---|---|
-| [ ] | `Fondo_Principal.webp` | `assets/images/` | 1080 × 2346 | WebP | El actual (440 × 956) se ve borroso en celulares de 1080 px. Mejor **redibujarlo**; si no, reescalarlo y repasar los bordes |
-| [ ] | `Fondo_Carga.webp` | `assets/images/` | 1440 × 2560 | WebP | Mismo dibujo. Pon el logo y los textos en el **80 % central**, porque en celulares altos se recorta de los lados |
-| [ ] | `fondo.webp` | `assets/maps/mapa_01/` | 1440 × 2160 | WebP | El mundo del mapa mide 2880 × 4320 y el código muestra el fondo al doble. Formas planas y suaves. Bajo los puentes se sugiere río o agua, con el azul de `Fondo_Principal` |
-
-> Al pasar los fondos a WebP hay que cambiar en el código las rutas `Fondo_Principal.png` y `Fondo_Carga.png` por `.webp`.
+| [ ] | `Fondo_Principal.png` | `assets/images/` | 1080 × 2346 | PNG | El actual (440 × 956) se ve borroso en celulares de 1080 px. Mejor **redibujarlo**; si no, reescalarlo y repasar los bordes |
+| [ ] | `Fondo_Carga.png` | `assets/images/` | 1440 × 2560 | PNG | Mismo dibujo. Pon el logo y los textos en el **80 % central**, porque en celulares altos se recorta de los lados |
+| [ ] | `fondo.png` | `assets/maps/mapa_01/` | 1440 × 2160 | PNG | El mundo del mapa mide 2880 × 4320 y el código muestra el fondo al doble. Formas planas y suaves. Bajo los puentes se sugiere río o agua, con el azul de `Fondo_Principal` |
 
 ## 4. Mapa: piezas reutilizables
 
@@ -94,7 +90,7 @@ Carpeta: `assets/images/mapa/decoraciones/`. Todas con el **ancla en el centro i
 
 | Hecho | Archivo | Carpeta | Tamaño (px) | Formato | Notas |
 |---|---|---|---|---|---|
-| [ ] | `minimapa.webp` | `assets/maps/mapa_01/` | 512 × 512 | WebP | Versión reducida del mapa completo |
+| [ ] | `minimapa.png` | `assets/maps/mapa_01/` | 512 × 512 | PNG | Versión reducida del mapa completo |
 | [ ] | `marcador_jugador.png` | `assets/images/iconos/` | 96 × 96 | PNG | Marco circular para la foto de cada jugador en el minimapa |
 | [ ] | `mapa.json` | `assets/maps/mapa_01/` | — | JSON | Posición de casillas, puentes y decoraciones. Se arma en **Tiled** (gratis) y un script lo convierte |
 
