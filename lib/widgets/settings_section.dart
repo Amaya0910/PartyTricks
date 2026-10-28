@@ -104,32 +104,38 @@ class SettingsTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppColors.settingsRowBorder, width: 2),
           ),
+          // La etiqueta y el valor se reparten el ancho y bajan de línea si
+          // no caben, para que nada se salga en pantallas angostas.
           child: Row(
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+              Expanded(
+                flex: 3,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: value == null
-                    ? const SizedBox.shrink()
-                    : Text(
-                        value,
-                        textAlign: TextAlign.right,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.authText,
-                        ),
-                      ),
-              ),
+              if (value != null) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.right,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.authText,
+                    ),
+                  ),
+                ),
+              ],
               if (trailing != null)
                 trailing!
               else if (icon != null) ...[
