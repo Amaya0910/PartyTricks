@@ -11,8 +11,7 @@
 - **Lienzo en Krita:** 72 ppp, RGB, 8 bits. Los ppp no importan en pantalla, solo los píxeles.
 - **Estilo:**
   - **Sin contorno** en el escenario del mapa: plataformas, marcas, tienda, puentes, decoraciones, textura del camino y fondos.
-  - **Con contorno negro** (mínimo 2 px en el tamaño exportado) en lo que se mueve o se toca: personaje, cosméticos, moneda, diamante, cofres y dados.
-  - Colores planos, con máximo 3 tonos por objeto: base, claro y oscuro.
+  - **Con contorno negro** (mínimo 2 px en el tamaño exportado): personaje, cosméticos, flecha de bifurcación y marcas que lo necesiten. Moneda, diamante y dados van sin contorno.  - Colores planos, con máximo 3 tonos por objeto: base, claro y oscuro.
   - **Luz desde arriba a la izquierda:** los brillos van arriba a la izquierda y las sombras abajo a la derecha, en todas las piezas.
   - Reutiliza los colores que ya tienes: el verde del pasto, el café de la tierra, la piel, el azul del diamante y el dorado de la moneda. Si necesitas uno nuevo, anótalo, porque luego se pasa a `AppColors`.
 - **Nombres:** en minúsculas, sin tildes ni espacios y con guion bajo. Las variantes se numeran con dos cifras, por ejemplo `plataforma_01.png`.
@@ -148,8 +147,9 @@ Carpeta: `assets/images/mapa/decoraciones/`. Todas con el **ancla en el centro i
 | [ ] | `mapa.json` | `assets/maps/mapa_01/` | — | JSON | Posición de casillas, tienda, puentes y decoraciones. Se arma en **Tiled** (gratis) y un script lo convierte |
 
 El mapa tiene 42 casillas:
-- un camino principal cíclico, de la 0 a la 29;
-- 3 caminos alternos (30-33, 34-37 y 38-41) que salen en las casillas 5, 15 y 24 y vuelven en la 10, 20 y 29.
+- un camino principal cíclico, de la 0 a la 31;
+- 2 desvíos: 1 → 32 a 36 → 8, y 13 → 37 a 41 → 23;
+- tiendas en las casillas 17 y 36.  
 
 Los caminos alternos miden lo mismo que el principal: dibújalos como ruta paralela (desvío o isla), no como atajo recto.
 
@@ -157,10 +157,10 @@ Los caminos alternos miden lo mismo que el principal: dibújalos como ruta paral
 
 | Hecho | Archivo | Carpeta | Exportar a (px) | Notas |
 |---|---|---|---|---|
-| [ ] | `Cofre_Basico.png`, `Cofre_Party.png`, `Cofre_Diamante.png` | `assets/images/cofres/` | 512 × 512 | Ya existen a 1080. Recorta el margen vacío y reduce |
-| [ ] | `moneda.png` | `assets/images/juego/` | 256 × 256 | Ya la tienes a 1080; solo reduce |
-| [ ] | `diamante.png` | `assets/images/juego/` | 384 × 384 | Ya lo tienes a 1080; solo reduce |
-| [ ] | `dado_1.png` a `dado_6.png` | `assets/images/juego/` | 192 × 192 cada uno | Una imagen por cara |
+| [x] | `Cofre_Basico.png`, `Cofre_Party.png`, `Cofre_Diamante.png` | `assets/images/cofres/` | 512 × 512 | Ya existen a 1080. Recorta el margen vacío y reduce |
+| [x] | `moneda.png` | `assets/images/juego/` | 256 × 256 | Moneda dorada con el símbolo de pesos |
+| [x] | `diamante.png` | `assets/images/juego/` | 384 × 384 | Diamante azul |
+| [x] | `dado_1.png` a `dado_6.png` | `assets/images/juego/` | 192 × 192 cada uno | Cara 1 con un punto, 2 a 5 en números romanos y 6 con un diamante |
 
 ## 7. Personaje
 
