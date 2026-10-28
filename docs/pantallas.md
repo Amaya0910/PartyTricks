@@ -193,14 +193,32 @@ Archivos: `friends_screen.dart` y `chat_view.dart`. La lista y el chat van en la
 
 ## 8. Cuenta y configuración
 
-Pantallas que aparecen en el mockup (todavía no están construidas):
+Se abre al tocar la foto de perfil en **Inicio** o en **Stats** (ver `decisiones.md`, D-23). Botón **Volver** arriba a la izquierda y, si falta, el aviso de verificar el correo.
 
-| Pantalla | Contenido |
+| Bloque | Contenido |
 |---|---|
-| Perfil / cuenta | Código del jugador (copiar y recargar), nombre de usuario, correo y botón de cambiar contraseña |
-| Preferencias | Notificaciones, sonido, efectos de sonido e idioma (Español) |
-| Más opciones | Acerca de, Términos y condiciones, Política de privacidad |
-| Cambiar contraseña | Contraseña actual, nueva y confirmación (mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo; ver `decisiones.md`, D-16) |
+| Tu código | Los 6 caracteres del código de amistad, con **Copiar** (al portapapeles) y **Recargar** (pide confirmación y crea uno nuevo) |
+| Cuenta | Nombre de usuario (se cambia una vez cada 30 días), correo (pide la contraseña actual y envía un enlace al correo nuevo) y **Cambiar contraseña**. Las cuentas que solo usan Google no ven el cambio de contraseña ni de correo |
+| Preferencias | Notificaciones, sonido y efectos de sonido (se guardan en el celular) e idioma (por ahora solo español) |
+| Más opciones | Acerca de, Términos y condiciones, Política de privacidad, Jugadores bloqueados y **Cerrar sesión** (pide confirmación) |
+
+### 8.1 Cambiar contraseña
+
+Tarjeta con cabecera morada **CAMBIAR CONTRASEÑA**: contraseña actual, nueva y confirmación, cada una con el ojo para mostrarla. Abajo, la ayuda (mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo; ver D-16) y el botón verde **Confirmar**. Los errores salen sobre el botón.
+
+### 8.2 Textos legales
+
+Acerca de, Términos y condiciones y Política de privacidad se muestran en una pantalla con secciones. Los textos están en `lib/models/legal_document.dart`.
+
+### 8.3 Jugadores bloqueados
+
+Lista de los jugadores que bloqueaste, con su foto y nombre, y el botón **Desbloquear**. Desbloquear no los vuelve amigos: hay que enviar otra solicitud.
+
+### 8.4 Verificación del correo e inicio con Google
+
+- **Aviso de verificación:** en Inicio y en Ajustes, mientras el correo no esté verificado. Botones **Reenviar** y **Ya lo verifiqué**. Se puede jugar sin verificar.
+- **Continuar con Google:** botón debajo de **Entrar a la party** en la tarjeta de inicio de sesión.
+- **Elige tu nombre:** la primera vez que alguien entra con Google, una tarjeta le pide el nombre de usuario (botón **Entrar a la party**) o le deja **Usar otra cuenta**.
 
 ---
 
@@ -215,4 +233,4 @@ Pantallas que se deducen del diseño del juego y que **aún no aparecen en el mo
 - [ ] Resultados de la partida.
 - [ ] Mensaje "Lo sentimos, no quedan jugadores :(" con el botón **[Regresar a menú]**.
 - [ ] Tienda de ítems (cosméticos a la venta).
-- [ ] Perfil, preferencias y cambio de contraseña (ver sección 8).
+- [x] Ajustes: cuenta, preferencias, cambio de contraseña, textos legales y bloqueados (ver sección 8).

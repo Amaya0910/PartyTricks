@@ -58,7 +58,7 @@ Se prefieren **pocas ramas, una por área grande**: no se crea una rama por cada
 | Rama | Qué incluye | Depende de |
 | --- | --- | --- |
 | `feature/ui` | Toda la interfaz visual: barra de navegación y pantallas base (Inicio, Tienda, Vestuario, Stats, Amigos), diálogos (incluido "Alista tu party"), widgets reutilizables, colores en `AppColors` y ajustes al mockup | — |
-| `feature/auth` | Registro, inicio de sesión y perfil con código de amistad | `chore/firebase-setup` |
+| `feature/auth` | Registro, inicio de sesión, perfil con código de amistad, Ajustes, verificación del correo e inicio con Google | `chore/firebase-setup` |
 | `feature/player-profile` | Vestuario, cosméticos, foto del rostro, estadísticas, nivel y experiencia | `feature/auth` |
 | `feature/game-shop` | Tienda del juego: cofres, cosméticos y dados extra | `feature/auth` |
 | `feature/friends-chat` | Amigos por código y chat | `feature/auth` |
@@ -181,7 +181,7 @@ Una tarea está terminada cuando:
 | --- | --- | --- |
 | `chore/firebase-setup` | Brayan | 🟢 Listo |
 | `feature/ui` | Isabella | 🟡 En proceso (se reabre con cada lote de cambios visuales) |
-| `feature/auth` | Isabella | 🟢 Listo |
+| `feature/auth` | Isabella | 🟢 Listo (incluye Ajustes, verificación del correo e inicio con Google) |
 | `feature/rooms-lobby` | Brayan | 🟢 Listo |
 | `feature/game-engine` | Brayan | 🟢 Listo |
 | `feature/player-profile` | Isabella | 🟡 En proceso (vestuario y estadísticas listos; faltan cosméticos desbloqueados, foto, nivel y experiencia) |

@@ -28,7 +28,8 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | `uid` | id del documento | Identificador de Authentication |
 | `correo` | `email` | Para iniciar sesión |
 | `nombreUsuario` | `username` | Único sin distinguir mayúsculas; lo ven los demás jugadores. De 3 a 16 caracteres: letras, números y guion bajo |
-| `codigoAmistad` | `friendCode` | Único; 6 caracteres sin letras que se confunden (O/0, I/1); para que otros te agreguen |
+| `codigoAmistad` | `friendCode` | Único; 6 caracteres sin letras que se confunden (O/0, I/1); para que otros te agreguen. Se puede cambiar desde Ajustes |
+| `nombreCambiadoEn` | `usernameChangedAt` | Fecha del último cambio de nombre, en milisegundos. Solo existe si lo ha cambiado; se puede cambiar una vez cada 30 días (ver D-23) |
 | `experiencia` | `experience` | XP acumulada, empieza en 0; el nivel se calcula a partir de ella |
 | `monedas` | `coins` | Monedas de la cuenta, empiezan en 0 |
 | `diamantes` | `diamonds` | Diamantes de la cuenta, empiezan en 0 |
@@ -45,7 +46,9 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | `usernames` | `{nombre en minúsculas}` | `uid` y `email` | Reservar el nombre de usuario (único) y permitir iniciar sesión con él (ver D-17) |
 | `friendCodes` | `{código}` | `uid` | Reservar el código de amistad (único) |
 
-El perfil y las dos reservas se crean en la misma transacción al registrarse. Si el nombre o el código ya existen, la transacción falla y no se guarda nada.
+El perfil y las dos reservas se crean en la misma transacción al registrarse (o al elegir el nombre después de entrar con Google). Si el nombre o el código ya existen, la transacción falla y no se guarda nada. Cambiar el nombre o el código desde Ajustes también es una transacción: reserva el nuevo, borra el viejo y actualiza el perfil.
+
+Las preferencias de Ajustes (notificaciones, sonido, efectos e idioma) **no** van en Firestore: se guardan en el celular con `shared_preferences` (ver D-23).
 
 ### 2.2 Cosmético
 
@@ -158,7 +161,10 @@ Los modelos viven en `lib/models/`. Hoy existen:
 | `loading_state.dart` | Estado de la pantalla de carga |
 | `play_option.dart` | Opciones del menú de Jugar |
 | `room.dart` | Sala de juego: configuración, jugadores y cuándo arranca o se cierra |
-| `user_profile.dart` | Perfil del jugador (correo, nombre de usuario, código de amistad, experiencia, monedas, diamantes y dados extra) |
+| `user_profile.dart` | Perfil del jugador (correo, nombre de usuario y fecha de su último cambio, código de amistad, experiencia, monedas, diamantes y dados extra) |
+| `auth_user.dart` | La sesión: uid, correo, si está verificado y con qué entra (contraseña o Google) |
+| `app_preferences.dart` | Preferencias de Ajustes guardadas en el celular |
+| `legal_document.dart` | Textos de Acerca de, Términos y condiciones y Política de privacidad |
 | `auth_form_state.dart` | Estado de los formularios de inicio de sesión y registro (cargando y mensaje de error) |
 | `chest.dart` | Cofres de la tienda: precio, probabilidades, imagen y premios posibles |
 | `cosmetic_category.dart` | Categorías de cosméticos del Vestuario, con su etiqueta y mensaje de "sin ítems" |
@@ -177,7 +183,7 @@ Los modelos de datos de este documento que faltan se agregarán a esa carpeta a 
 
 - [x] Estructura de las colecciones de Firestore para amigos y chat (ver 2.4).
 - [ ] Estructura del catálogo de cosméticos.
-- [ ] Reglas de seguridad (que cada jugador solo lea y modifique lo suyo, incluidos `diamonds`, `coins` y `extraDice`; ver D-18). En `stats/{uid}`, solo su dueño lee y escribe (ver D-21). En `usernames`, permitir leer solo por nombre exacto y no listar (ver `decisiones.md`, D-17).
+- [x] Reglas de seguridad de Firestore, en `firestore.rules` (ver `decisiones.md`, D-22). Pendiente: impedir que un jugador edite por su cuenta `diamonds`, `coins` y `extraDice` (necesita Cloud Functions; ver D-18).
 - [x] Forma de garantizar que el nombre de usuario y el código de amistad sean únicos (colecciones `usernames` y `friendCodes` con transacción; ver D-16).
 - [x] Estructura de las salas y de la partida en Realtime Database (ver D-14 y D-15).
 - [ ] Qué se guarda para permitir reconexión a una partida.
