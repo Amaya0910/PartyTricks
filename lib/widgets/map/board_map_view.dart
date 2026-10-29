@@ -6,6 +6,7 @@ import 'package:party_tricks/models/map/board_map.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/map/board_walk.dart';
+import 'package:party_tricks/services/map/coin_tracker.dart';
 import 'package:party_tricks/services/map/map_assets.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/map/map_scenery.dart';
@@ -17,6 +18,9 @@ import 'package:party_tricks/widgets/profile_avatar.dart';
 ///   camina.
 /// - Se ven todos los jugadores. Avanzan saltando de casilla en casilla y,
 ///   si comparten casilla, se ponen uno al lado del otro.
+/// - Las casillas positivas tienen una moneda. Cuando tu personaje pasa por
+///   ahí, crece, sube y desaparece solo para ti; vuelve en la siguiente
+///   ronda.
 /// - En una bifurcación, en tu turno, salen dos flechas para elegir camino.
 class BoardMapView extends StatefulWidget {
   const BoardMapView({
@@ -44,8 +48,9 @@ class BoardMapView extends StatefulWidget {
 
 class _BoardMapViewState extends State<BoardMapView>
     with TickerProviderStateMixin {
-  /// Ancho del mundo que se ve en la pantalla al empezar (unas 5 casillas).
-  static const _visibleWidth = 2000.0;
+  /// Ancho del mundo que se ve en la pantalla al empezar (unas 4 casillas).
+  /// Más grande = más lejos; desde unos 2700 ya se ve casi todo el mapa.
+  static const _visibleWidth = 1100.0;
   static const _hopDuration = Duration(milliseconds: 320);
   static const _hopHeight = 70.0;
   static const _tokenSize = 130.0;
@@ -57,10 +62,25 @@ class _BoardMapViewState extends State<BoardMapView>
   /// Distancia del centro de la bifurcación a cada flecha.
   static const _arrowDistance = 230.0;
 
+  static const _coinSize = 110.0;
+  static const _diamondSize = 150.0;
+
+  /// Qué tan arriba del centro del pasto flotan la moneda y el diamante.
+  static const _floatHeight = 40.0;
+  static const _coinPop = Duration(milliseconds: 550);
+
   final _camera = TransformationController();
 
   /// Un caminante por jugador, en el orden de turnos.
   final Map<String, _Walker> _walkers = {};
+
+  late final _coins = CoinTracker([
+    for (final tile in widget.board.tiles)
+      if (tile.type == TileType.positive) tile.id,
+  ])..onRound(widget.state.round);
+
+  /// Monedas que se están desapareciendo ahora.
+  final Map<int, AnimationController> _popping = {};
 
   Size _viewport = Size.zero;
   bool _placedCamera = false;
@@ -79,6 +99,7 @@ class _BoardMapViewState extends State<BoardMapView>
   @override
   void didUpdateWidget(BoardMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _coins.onRound(widget.state.round);
     _syncWalkers();
   }
 
@@ -86,6 +107,9 @@ class _BoardMapViewState extends State<BoardMapView>
   void dispose() {
     for (final walker in _walkers.values) {
       walker.dispose();
+    }
+    for (final pop in _popping.values) {
+      pop.dispose();
     }
     _camera.dispose();
     super.dispose();
@@ -103,6 +127,7 @@ class _BoardMapViewState extends State<BoardMapView>
           anchorOf: _anchorOf,
           controller: AnimationController(vsync: this, duration: _hopDuration),
           onHop: id == widget.myId ? _followMe : null,
+          onArrive: id == widget.myId ? _collectCoin : null,
           onIdle: () => setState(() {}), // Para mostrar las flechas.
         ),
       );
@@ -111,6 +136,20 @@ class _BoardMapViewState extends State<BoardMapView>
   }
 
   void _followMe() => _follow(_feetOf(widget.myId));
+
+  /// Tu personaje llegó a [tile]: si hay moneda, la hace desaparecer.
+  void _collectCoin(int tile) {
+    if (!_coins.collect(tile)) return;
+    final pop = AnimationController(vsync: this, duration: _coinPop);
+    pop.addStatusListener((status) {
+      if (status != AnimationStatus.completed) return;
+      setState(() => _popping.remove(tile));
+      // Se libera después del cuadro, fuera de su propio aviso.
+      WidgetsBinding.instance.addPostFrameCallback((_) => pop.dispose());
+    });
+    setState(() => _popping[tile] = pop);
+    pop.forward();
+  }
 
   /// Dónde van los pies de un jugador ahora: con el saltito entre casillas y
   /// corrido a un lado si comparte casilla con otros.
@@ -144,7 +183,7 @@ class _BoardMapViewState extends State<BoardMapView>
       _viewport.height,
       mapSize.height,
     );
-    _camera.value = Matrix4.diagonal3Values(scale, scale, 1)
+    _camera.value = Matrix4.diagonal3Values(scale, scale, scale)
       ..setTranslationRaw(dx, dy, 0);
   }
 
@@ -152,9 +191,15 @@ class _BoardMapViewState extends State<BoardMapView>
     _viewport = viewport;
     if (_placedCamera || viewport.isEmpty) return;
     _placedCamera = true;
-    final scale = max(viewport.width / _visibleWidth, _minScale(viewport));
-    _camera.value = Matrix4.diagonal3Values(scale, scale, 1);
-    if (_walkers.containsKey(widget.myId)) _followMe();
+    // Se aplica después del primer cuadro, cuando el visor ya está armado.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final scale = max(viewport.width / _visibleWidth, _minScale(viewport));
+      // El zoom va también en z: getMaxScaleOnAxis() mira los tres ejes y,
+      // con z en 1, devolvería 1 y la cámara volvería al tamaño normal.
+      _camera.value = Matrix4.diagonal3Values(scale, scale, scale);
+      if (_walkers.containsKey(widget.myId)) _followMe();
+    });
   }
 
   /// Lo más lejos que se puede alejar: el mapa llena la pantalla.
@@ -187,14 +232,20 @@ class _BoardMapViewState extends State<BoardMapView>
                     board: widget.board,
                     pathTexture: widget.pathTexture,
                   ),
+                  ..._coinWidgets(),
                   if (_diamondAnchor() case final diamond?)
                     Positioned(
-                      left: diamond.dx - 60,
-                      top: diamond.dy - 130,
-                      child: const Icon(
-                        Icons.diamond,
-                        size: 120,
-                        color: AppColors.diamond,
+                      left: diamond.dx - _diamondSize / 2,
+                      top: diamond.dy - _floatHeight - _diamondSize,
+                      width: _diamondSize,
+                      height: _diamondSize,
+                      child: Image.asset(
+                        MapAssets.diamond,
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.diamond,
+                          size: _diamondSize,
+                          color: AppColors.diamond,
+                        ),
                       ),
                     ),
                   ..._arrows(),
@@ -205,6 +256,55 @@ class _BoardMapViewState extends State<BoardMapView>
           ),
         );
       },
+    );
+  }
+
+  /// Las monedas que se ven y las que están desapareciendo. La del diamante
+  /// no se dibuja para que no se encimen.
+  List<Widget> _coinWidgets() {
+    final diamondTile = widget.state.diamondTileId;
+    return [
+      for (final tile in _coins.tiles)
+        if (tile != diamondTile && widget.map.tiles.containsKey(tile))
+          if (_popping[tile] case final pop?)
+            AnimatedBuilder(
+              key: ValueKey('moneda-$tile'),
+              animation: pop,
+              builder: (context, child) {
+                final t = Curves.easeOut.transform(pop.value);
+                return _coinAt(
+                  tile,
+                  scale: 1 + 0.5 * t,
+                  rise: 90 * t,
+                  opacity: 1 - t,
+                  child: child!,
+                );
+              },
+              child: const _Coin(),
+            )
+          else if (_coins.isVisible(tile))
+            _coinAt(tile, child: const _Coin()),
+    ];
+  }
+
+  Widget _coinAt(
+    int tile, {
+    required Widget child,
+    double scale = 1,
+    double rise = 0,
+    double opacity = 1,
+  }) {
+    final anchor = _anchorOf(tile);
+    return Positioned(
+      key: ValueKey('moneda-$tile'),
+      left: anchor.dx - _coinSize / 2,
+      top: anchor.dy - _floatHeight - _coinSize - rise,
+      width: _coinSize,
+      height: _coinSize,
+      child: Opacity(
+        opacity: opacity.clamp(0, 1).toDouble(),
+        child: Transform.scale(scale: scale, child: child),
+      ),
     );
   }
 
@@ -305,13 +405,16 @@ class _Walker {
     required this.controller,
     required this.onIdle,
     this.onHop,
+    this.onArrive,
   }) : tile = start,
        _from = anchorOf(start),
        _to = anchorOf(start) {
     controller
       ..addListener(() => onHop?.call())
       ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) _nextHop();
+        if (status != AnimationStatus.completed) return;
+        onArrive?.call(tile);
+        _nextHop();
       });
   }
 
@@ -321,6 +424,9 @@ class _Walker {
 
   /// Solo para tu personaje: la cámara lo sigue.
   final VoidCallback? onHop;
+
+  /// Solo para tu personaje: recoge la moneda de cada casilla que pisa.
+  final void Function(int tile)? onArrive;
 
   /// Casilla a la que llegó o hacia la que está saltando.
   int tile;
@@ -380,6 +486,23 @@ class _Token extends StatelessWidget {
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       child: const ProfileAvatar(
         size: _BoardMapViewState._tokenSize - _ring * 2,
+      ),
+    );
+  }
+}
+
+/// Moneda flotando sobre una casilla positiva.
+class _Coin extends StatelessWidget {
+  const _Coin();
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      MapAssets.coin,
+      errorBuilder: (_, _, _) => const Icon(
+        Icons.monetization_on,
+        size: _BoardMapViewState._coinSize,
+        color: AppColors.coin,
       ),
     );
   }
