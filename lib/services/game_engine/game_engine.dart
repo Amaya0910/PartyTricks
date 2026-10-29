@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/random_source.dart';
+import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
 import 'package:party_tricks/services/game_engine/turn_order_resolver.dart';
 
@@ -14,6 +17,7 @@ class GameEngine {
     required this.board,
     required this.random,
     this.tileEffects = const TileEffects(),
+    this.itemRules = const ItemRules(),
     this.startingCoins = 10,
     this.minigameCoins = 10,
   });
@@ -21,6 +25,7 @@ class GameEngine {
   final BoardLayout board;
   final RandomSource random;
   final TileEffects tileEffects;
+  final ItemRules itemRules;
   final int startingCoins;
   final int minigameCoins;
 
@@ -53,6 +58,9 @@ class GameEngine {
         playerId,
         branch,
       ),
+      BuyItem(:final playerId, :final item) => _buy(state, playerId, item),
+      LeaveShop(:final playerId) => _leaveShop(state, playerId),
+      UseItem(:final playerId, :final item) => _useItem(state, playerId, item),
       FinishMinigame(:final winnerIds) => _finishMinigame(state, winnerIds),
     };
   }
@@ -76,13 +84,92 @@ class GameEngine {
         break;
     }
     final roll = random.rollDie(sides);
+    // Los ítems activados se gastaron al usarlos; aquí solo hacen efecto.
+    final extraDie = player.activeItems.where((item) => item.isExtraDie);
+    final extraRoll = extraDie.isEmpty
+        ? 0
+        : random.rollDie(extraDie.first.extraDieSides);
+    final boost = player.activeItems.contains(ShopItem.movementBoost)
+        ? itemRules.boostSteps
+        : 0;
+    // Las estadísticas de dados solo cuentan el dado normal.
     player = player.copyWith(
       clearPendingEffect: true,
+      activeItems: const [],
       diceRolled: player.diceRolled + 1,
       diceTotal: player.diceTotal + roll,
       maxRolls: roll == sides ? player.maxRolls + 1 : null,
     );
-    return _move(state.withPlayer(player).copyWith(lastRoll: roll), roll);
+    final rolled = state
+        .withPlayer(player)
+        .copyWith(lastRoll: roll, lastExtraRoll: extraRoll, lastBoost: boost);
+    return _move(rolled, roll + extraRoll + boost);
+  }
+
+  /// Por qué el jugador del turno no puede comprar [item], o null si puede.
+  /// La pantalla lo usa para desactivar el botón con el motivo.
+  String? whyCannotBuy(GameState state, ShopItem item) {
+    final player = state.currentPlayer;
+    if (player.coins < item.price) return 'No te alcanzan las monedas';
+    if (player.itemCount(item) >= itemRules.maxPerItem) {
+      return 'Ya tienes ${itemRules.maxPerItem}';
+    }
+    return null;
+  }
+
+  /// Por qué el jugador del turno no puede usar [item], o null si puede.
+  String? whyCannotUse(GameState state, ShopItem item) {
+    final player = state.currentPlayer;
+    if (item.passive) return 'Se usa solo';
+    if (player.itemCount(item) == 0) return 'No tienes';
+    if (item == ShopItem.trap) {
+      final tile = board.tile(player.position);
+      if (tile.type == TileType.start || tile.type == TileType.shop) {
+        return 'No se puede poner en esta casilla';
+      }
+      if (state.traps.containsKey(tile.id)) return 'Ya hay una trampa aquí';
+      return null;
+    }
+    // Un solo dado extra y un solo impulso por tirada.
+    final repeated = player.activeItems.any(
+      (active) => active == item || (active.isExtraDie && item.isExtraDie),
+    );
+    return repeated ? 'Ya tienes uno activo' : null;
+  }
+
+  GameState _buy(GameState state, String playerId, ShopItem item) {
+    _checkTurn(state, playerId, GamePhase.shopping);
+    final problem = whyCannotBuy(state, item);
+    if (problem != null) throw StateError('${item.name}: $problem');
+    final player = state.currentPlayer;
+    return state.withPlayer(
+      player
+          .addCoins(-item.price)
+          .addItem(item, 1)
+          .copyWith(purchases: player.purchases + 1),
+    );
+  }
+
+  GameState _leaveShop(GameState state, String playerId) {
+    _checkTurn(state, playerId, GamePhase.shopping);
+    return _nextTurn(state);
+  }
+
+  GameState _useItem(GameState state, String playerId, ShopItem item) {
+    _checkTurn(state, playerId, GamePhase.rolling);
+    final problem = whyCannotUse(state, item);
+    if (problem != null) throw StateError('${item.name}: $problem');
+    final player = state.currentPlayer;
+    if (item == ShopItem.trap) {
+      return state
+          .withPlayer(player.consumeItem(item))
+          .copyWith(traps: {...state.traps, player.position: player.id});
+    }
+    return state.withPlayer(
+      player
+          .consumeItem(item)
+          .copyWith(activeItems: [...player.activeItems, item]),
+    );
   }
 
   GameState _chooseBranch(GameState state, String playerId, int branch) {
@@ -118,8 +205,9 @@ class GameEngine {
     return _land(current);
   }
 
-  /// Mueve al jugador una casilla. Si pasa por el diamante, se lo lleva.
-  /// Si llega a la salida, completó una vuelta.
+  /// Mueve al jugador una casilla. Si pasa por el diamante, se lo lleva; si
+  /// pasa por la trampa de otro, salta. Si llega a la salida, completó una
+  /// vuelta.
   GameState _step(GameState state, int tileId) {
     var player = state.currentPlayer.copyWith(position: tileId);
     if (tileId == BoardLayout.startId) {
@@ -127,22 +215,56 @@ class GameEngine {
     }
     var diamondTileId = state.diamondTileId;
     if (tileId == diamondTileId) {
+      var won = 1;
+      if (player.itemCount(ShopItem.diamondBoost) > 0) {
+        won++;
+        player = player.consumeItem(ShopItem.diamondBoost);
+      }
       player = player.copyWith(
-        diamonds: player.diamonds + 1,
-        mapDiamonds: player.mapDiamonds + 1,
+        diamonds: player.diamonds + won,
+        mapDiamonds: player.mapDiamonds + won,
       );
       diamondTileId = _randomDiamondTile(exclude: tileId);
     }
-    return state.withPlayer(player).copyWith(diamondTileId: diamondTileId);
+    final moved = state
+        .withPlayer(player)
+        .copyWith(diamondTileId: diamondTileId);
+    return _springTrap(moved, tileId);
   }
 
-  /// Aplica el efecto de la casilla donde cayó y pasa el turno.
+  /// La trampa de otro jugador le roba monedas al que pasa, salvo que tenga
+  /// escudo. En los dos casos la trampa se gasta. La propia no hace nada.
+  GameState _springTrap(GameState state, int tileId) {
+    final ownerId = state.traps[tileId];
+    final victim = state.currentPlayer;
+    if (ownerId == null || ownerId == victim.id) return state;
+    final traps = {...state.traps}..remove(tileId);
+    if (victim.itemCount(ShopItem.shield) > 0) {
+      return state
+          .withPlayer(victim.consumeItem(ShopItem.shield))
+          .copyWith(traps: traps);
+    }
+    final stolen = min(victim.coins, itemRules.trapCoins);
+    var next = state.withPlayer(victim.addCoins(-stolen));
+    final owner = next.players[ownerId];
+    if (owner != null) next = next.withPlayer(owner.addCoins(stolen));
+    return next.copyWith(traps: traps);
+  }
+
+  /// Aplica el efecto de la casilla donde cayó y pasa el turno. Si cayó en
+  /// una tienda, el turno sigue hasta que salga de ella.
   GameState _land(GameState state) {
-    final player = state.currentPlayer;
+    var player = state.currentPlayer;
     final tile = board.tile(player.position);
     final outcome = tileEffects.resolve(tile.type, random);
+    var coinDelta = outcome.coinDelta;
+    if (tile.type == TileType.negative &&
+        player.itemCount(ShopItem.shield) > 0) {
+      coinDelta = 0;
+      player = player.consumeItem(ShopItem.shield);
+    }
     final updated = player
-        .addCoins(outcome.coinDelta)
+        .addCoins(coinDelta)
         .copyWith(
           pendingEffect: outcome.pendingEffect,
           negativeTiles: tile.type == TileType.negative
@@ -155,7 +277,11 @@ class GameEngine {
               ? player.specialTiles + 1
               : null,
         );
-    return _nextTurn(state.withPlayer(updated).copyWith(stepsLeft: 0));
+    final landed = state.withPlayer(updated).copyWith(stepsLeft: 0);
+    if (tile.type == TileType.shop) {
+      return landed.copyWith(phase: GamePhase.shopping);
+    }
+    return _nextTurn(landed);
   }
 
   /// Pasa al siguiente jugador; si ya jugaron todos, viene el minijuego.

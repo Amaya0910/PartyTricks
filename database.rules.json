@@ -57,10 +57,11 @@
         "actions": {
           "$actionId": {
             ".write": "auth != null && ((!data.exists() && newData.exists() && data.parent().parent().child('meta/status').val() === 'playing' && data.parent().parent().child('players/' + auth.uid).exists()) || (data.exists() && !newData.exists() && data.parent().parent().child('meta/hostUid').val() === auth.uid))",
-            ".validate": "(newData.child('type').val() === 'roll' && newData.child('playerId').val() === auth.uid) || (newData.child('type').val() === 'branch' && newData.child('playerId').val() === auth.uid && newData.child('branch').isNumber()) || (newData.child('type').val() === 'minigame' && newData.parent().parent().child('meta/hostUid').val() === auth.uid)",
+            ".validate": "(newData.child('type').val() === 'roll' && newData.child('playerId').val() === auth.uid) || (newData.child('type').val() === 'branch' && newData.child('playerId').val() === auth.uid && newData.child('branch').isNumber()) || ((newData.child('type').val() === 'buy' || newData.child('type').val() === 'useItem') && newData.child('playerId').val() === auth.uid && newData.child('item').isString()) || (newData.child('type').val() === 'leaveShop' && newData.child('playerId').val() === auth.uid) || (newData.child('type').val() === 'minigame' && newData.parent().parent().child('meta/hostUid').val() === auth.uid)",
             "type": { ".validate": "newData.isString()" },
             "playerId": { ".validate": "newData.isString()" },
             "branch": { ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)" },
+            "item": { ".validate": "newData.isString() && newData.val().matches(/^(extraDie3|extraDie6|extraDie9|movementBoost|trap|shield|diamondBoost)$/)" },
             "winnerIds": {
               "$index": { ".validate": "newData.isString()" }
             },

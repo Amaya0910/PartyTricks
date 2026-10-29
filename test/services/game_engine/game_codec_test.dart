@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_codec.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
 
 void main() {
@@ -107,5 +108,107 @@ void main() {
 
   test('rechaza acciones desconocidas', () {
     expect(() => codec.decodeAction({'type': 'trampa'}), throwsFormatException);
+    expect(
+      () => codec.decodeAction({'type': 'buy', 'playerId': 'a', 'item': 'x'}),
+      throwsFormatException,
+    );
+  });
+
+  group('tiendas e ítems', () {
+    test('la mochila, los ítems activos y las trampas se guardan', () {
+      const state = GameState(
+        players: {
+          'a': PlayerState(
+            id: 'a',
+            username: 'Ana',
+            inventory: {ShopItem.shield: 2, ShopItem.trap: 1},
+            activeItems: [ShopItem.extraDie9, ShopItem.movementBoost],
+            itemsUsed: 4,
+          ),
+        },
+        turnOrder: ['a'],
+        totalRounds: 5,
+        phase: GamePhase.shopping,
+        diamondTileId: 3,
+        lastRoll: 2,
+        lastExtraRoll: 7,
+        lastBoost: 3,
+        traps: {17: 'a', 4: 'b'},
+      );
+
+      final encoded = codec.encodeState(state);
+      // Claves de texto para que la base de datos no lo vuelva lista.
+      expect((encoded['traps'] as Map).keys, containsAll(['t17', 't4']));
+
+      final read = codec.decodeState(encoded);
+      expect(read.phase, GamePhase.shopping);
+      expect(read.lastExtraRoll, 7);
+      expect(read.lastBoost, 3);
+      expect(read.traps, {17: 'a', 4: 'b'});
+      final ana = read.players['a']!;
+      expect(ana.inventory, {ShopItem.shield: 2, ShopItem.trap: 1});
+      expect(ana.activeItems, [ShopItem.extraDie9, ShopItem.movementBoost]);
+      expect(ana.itemsUsed, 4);
+    });
+
+    test('una partida guardada antes de las tiendas se lee sin ítems', () {
+      final read = codec.decodeState({
+        'players': {
+          'a': {'username': 'Ana', 'position': 3, 'coins': 10},
+        },
+        'turnOrder': ['a'],
+        'totalRounds': 5,
+        'round': 1,
+        'turnIndex': 0,
+        'phase': 'rolling',
+        'diamondTileId': 41,
+      });
+
+      expect(read.traps, isEmpty);
+      expect(read.lastExtraRoll, 0);
+      expect(read.players['a']!.inventory, isEmpty);
+      expect(read.players['a']!.activeItems, isEmpty);
+      expect(read.players['a']!.itemsUsed, 0);
+    });
+
+    test('lee lo que la base de datos devuelve con otros tipos', () {
+      final read = codec.decodeState({
+        'players': {
+          'a': {
+            'username': 'Ana',
+            'inventory': {'shield': 1.0, 'trap': 0, 'cohete': 2},
+            // Una lista con huecos vuelve como mapa.
+            'activeItems': {'1': 'movementBoost'},
+          },
+        },
+        'turnOrder': ['a'],
+        'totalRounds': 5,
+        'phase': 'rolling',
+        'diamondTileId': 41,
+      });
+
+      final ana = read.players['a']!;
+      // Los ítems en 0 y los que esta versión no conoce no se cargan.
+      expect(ana.inventory, {ShopItem.shield: 1});
+      expect(ana.activeItems, [ShopItem.movementBoost]);
+    });
+
+    test('las acciones de la tienda se guardan y se leen igual', () {
+      final buy = codec.decodeAction(
+        codec.encodeAction(const BuyItem('a', ShopItem.diamondBoost)),
+      );
+      expect((buy as BuyItem).playerId, 'a');
+      expect(buy.item, ShopItem.diamondBoost);
+
+      final use = codec.decodeAction(
+        codec.encodeAction(const UseItem('a', ShopItem.trap)),
+      );
+      expect((use as UseItem).item, ShopItem.trap);
+
+      final leave = codec.decodeAction(
+        codec.encodeAction(const LeaveShop('a')),
+      );
+      expect((leave as LeaveShop).playerId, 'a');
+    });
   });
 }

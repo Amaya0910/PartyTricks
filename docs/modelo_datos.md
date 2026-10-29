@@ -113,8 +113,9 @@ Vive en Realtime Database, en `rooms/{id}/game` (ver D-15).
 | `rondaActual` y `turnoActual` | Dónde va la partida |
 | `jugadores` | Por jugador: posición, monedas, diamantes, efecto pendiente y conteos para los premios finales |
 | `casillaDiamante` | Casilla donde está el diamante |
-| `fase` | Lanzando, eligiendo camino, minijuego o terminada |
-| `ítems y trampas` | _(por construir, `feature/map-shop-items`)_ Casillas con trampa colocada, quién la puso y los dados extra comprados |
+| `fase` | Lanzando, eligiendo camino, en la tienda, minijuego o terminada |
+| `traps` | Casillas con trampa colocada y quién la puso (ver `map_shop_items.md`) |
+| Por jugador: `inventory`, `activeItems`, `itemsUsed` | Mochila con los ítems comprados, los activados para la próxima tirada y cuántos gastó |
 
 Conteos que se guardan para los **diamantes finales**: minijuegos ganados, casillas negativas pisadas, monedas al final y compras hechas.
 

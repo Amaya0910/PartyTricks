@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/widgets/board_view.dart';
-import '../../services/game_engine/test_board.dart';
+import '../services/game_engine/test_board.dart';
 
 void main() {
   final board = buildTestBoard();
@@ -55,5 +55,25 @@ void main() {
     expect(find.byIcon(Icons.diamond), findsOneWidget);
     expect(find.byIcon(Icons.storefront), findsNWidgets(2));
     expect(find.byIcon(Icons.flag), findsOneWidget);
+  });
+
+  testWidgets('dibuja las trampas puestas', (tester) async {
+    const state = GameState(
+      players: {'a': PlayerState(id: 'a', username: 'Ana')},
+      turnOrder: ['a'],
+      totalRounds: 5,
+      diamondTileId: 17,
+      traps: {4: 'a', 9: 'a'},
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BoardView(board: board, state: state),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Icons.dangerous), findsNWidgets(2));
   });
 }

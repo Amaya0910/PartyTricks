@@ -61,23 +61,13 @@ class FirebaseGameService implements GameService {
     final updates = <String, Object?>{'actions/${action.key}': null};
     final current = await _game(roomId).get();
     if (current.value != null && action.value != null) {
-      final state = _codec.decodeState(current.value as Map<Object?, Object?>);
-      final next = _apply(
-        state,
-        _codec.decodeAction(action.value as Map<Object?, Object?>),
+      final next = hostApply(
+        _engine,
+        current.value as Map<Object?, Object?>,
+        action.value as Map<Object?, Object?>,
       );
-      if (next != null) updates['game'] = _codec.encodeState(next);
+      if (next != null) updates['game'] = next;
     }
     await _db.ref('rooms/$roomId').update(updates);
-  }
-
-  /// Devuelve null si la acción no vale ahora, por ejemplo si alguien tocó
-  /// el dado dos veces o no era su turno.
-  GameState? _apply(GameState state, GameAction action) {
-    try {
-      return _engine.apply(state, action);
-    } on StateError {
-      return null;
-    }
   }
 }
