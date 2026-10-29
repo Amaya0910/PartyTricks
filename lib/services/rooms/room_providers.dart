@@ -3,7 +3,9 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
+import 'package:party_tricks/services/rooms/disconnection_policy.dart';
 import 'package:party_tricks/services/rooms/firebase_room_service.dart';
+import 'package:party_tricks/services/rooms/presence_service.dart';
 import 'package:party_tricks/services/rooms/room_service.dart';
 
 /// Quién es el jugador para las salas.
@@ -38,3 +40,21 @@ final roomIdentityProvider = FutureProvider<RoomIdentity>((ref) async {
 final roomProvider = StreamProvider.family<Room?, String>(
   (ref, roomId) => ref.watch(roomServiceProvider).watchRoom(roomId),
 );
+
+final presenceServiceProvider = Provider<PresenceService>(
+  (ref) => FirebasePresenceService(FirebaseDatabase.instance),
+);
+
+/// Cuánto se espera a los desconectados. Se puede cambiar aquí (o en las
+/// pruebas) sin tocar la lógica.
+final disconnectionPolicyProvider = Provider<DisconnectionPolicy>(
+  (ref) => const DisconnectionPolicy(),
+);
+
+/// La sala de la partida en curso del jugador, si tiene una. Sirve para
+/// volver a ella si cerró la app.
+final activeGameProvider = StreamProvider<String?>((ref) {
+  final uid = ref.watch(userProfileProvider.select((p) => p.value?.uid));
+  if (uid == null) return Stream.value(null);
+  return ref.watch(roomServiceProvider).watchActiveGame(uid);
+});

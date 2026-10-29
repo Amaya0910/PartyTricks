@@ -101,7 +101,7 @@ Vive en Realtime Database, en `rooms/{id}` (ver D-14).
 | `maxJugadores` | Entre 2 y 6 |
 | `rondas` | Entre 5 y 25 |
 | `estado` | Esperando, en juego o cerrada |
-| `jugadores` | Lista con su presencia (conectado o no) |
+| `jugadores` | Lista con su presencia: `connected` y `lastSeen` (ver `disconnections.md`) |
 
 ### 2.6 Partida
 
@@ -127,7 +127,7 @@ Conteos que se guardan para los **diamantes finales**: minijuegos ganados, casil
 | `experienciaGanada` | Según la fórmula de `diseno_juego.md` (sección 11.1) |
 | `monedasYDiamantes` | Lo que sobra y pasa a la cuenta |
 
-Un jugador desconectado recibe 0 de experiencia, monedas y diamantes _(pendiente, `feature/disconnections`)_.
+Un jugador desconectado recibe 0 de experiencia, monedas y diamantes (`away` en la partida, ver `disconnections.md`).
 
 Cómo se guarda (ver `results_system.md`): la XP, monedas y diamantes se suman a `users/{uid}`, la marca `stats/{uid}/matches/{roomId}` guarda puesto y XP, y el anfitrión crea el registro `matchResults/{roomId}` para los rankings.
 

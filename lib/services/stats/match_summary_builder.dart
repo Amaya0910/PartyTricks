@@ -37,6 +37,7 @@ class MatchSummaryBuilder {
       diamonds: mine.diamonds,
       coins: player.coins,
       experience: mine.experience,
+      disconnected: mine.disconnected,
       rounds: game.round,
       isHost: isHost,
       isPublic: isPublic,

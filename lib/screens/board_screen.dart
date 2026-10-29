@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/results_controller.dart';
+import 'package:party_tricks/controllers/room_guard.dart';
 import 'package:party_tricks/controllers/stats_controller.dart';
 import 'package:party_tricks/screens/results_screen.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
@@ -13,13 +14,15 @@ import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/board_view.dart';
+import 'package:party_tricks/widgets/confirm_dialog.dart';
 import 'package:party_tricks/widgets/map_items_dialog.dart';
 import 'package:party_tricks/widgets/map/board_map_view.dart';
 
 /// Pantalla de la partida: el tablero, los jugadores y lo que toca hacer.
 ///
-/// En el teléfono del creador también corre el anfitrión, que aplica las
-/// acciones de todos.
+/// En el teléfono del anfitrión también corre el que aplica las acciones de
+/// todos. Si el anfitrión se va, otro jugador toma su lugar ([RoomGuard]) y
+/// su teléfono empieza a aplicarlas; [isHost] solo dice quién empieza.
 class BoardScreen extends ConsumerStatefulWidget {
   const BoardScreen({super.key, required this.roomId, required this.isHost});
 
@@ -39,24 +42,108 @@ class BoardScreen extends ConsumerStatefulWidget {
 class _BoardScreenState extends ConsumerState<BoardScreen> {
   void Function()? _stopHost;
 
+  /// Presencia, cambio de anfitrión y turnos de los desconectados.
+  RoomGuard? _guard;
+  String? _myUid;
+
   /// Mide la partida para las estadísticas (tiempo jugando y en minijuegos).
   final _timeTracker = MatchTimeTracker();
 
   /// Para guardar la partida en las estadísticas una sola vez.
   bool _statsRecorded = false;
 
+  bool get _isHost => _stopHost != null;
+
   @override
   void initState() {
     super.initState();
-    if (widget.isHost) {
-      _stopHost = ref.read(gameServiceProvider).runHost(widget.roomId);
-    }
+    if (widget.isHost) _setHosting(true);
+    ref.listenManual(
+      roomIdentityProvider,
+      (_, next) => _onIdentity(next.value?.uid),
+      fireImmediately: true,
+    );
+    ref.listenManual(roomProvider(widget.roomId), (_, next) {
+      final room = next.value;
+      _guard?.update(room: room);
+      final uid = _myUid;
+      if (room != null && uid != null) _setHosting(room.hostUid == uid);
+    }, fireImmediately: true);
   }
 
   @override
   void dispose() {
     _stopHost?.call();
+    _guard?.dispose();
     super.dispose();
+  }
+
+  void _onIdentity(String? uid) {
+    if (uid == null || _myUid != null) return;
+    _myUid = uid;
+    final rooms = ref.read(roomServiceProvider);
+    // Para volver a la partida si se cierra la app.
+    rooms.setActiveGame(uid, widget.roomId).catchError((Object error) {
+      debugPrint('No se pudo guardar la partida en curso: $error');
+    });
+    _guard = RoomGuard(
+      roomId: widget.roomId,
+      uid: uid,
+      rooms: rooms,
+      presence: ref.read(presenceServiceProvider),
+      policy: ref.read(disconnectionPolicyProvider),
+      onSkipTurn: (playerId) => ref
+          .read(gameServiceProvider)
+          .sendAction(widget.roomId, SkipTurn(playerId)),
+    )..start();
+    final room = ref.read(roomProvider(widget.roomId)).value;
+    _guard!.update(
+      room: room,
+      game: ref.read(gameProvider(widget.roomId)).value,
+    );
+    if (room != null) _setHosting(room.hostUid == uid);
+  }
+
+  /// Empieza o deja de aplicar las acciones de todos. Las que llegaron
+  /// mientras no había anfitrión siguen en la fila y se aplican al empezar.
+  void _setHosting(bool host) {
+    if (host == _isHost) return;
+    if (host) {
+      _stopHost = ref.read(gameServiceProvider).runHost(widget.roomId);
+    } else {
+      _stopHost!.call();
+      _stopHost = null;
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Salir de la sala: deja de ser su partida en curso. Si era el último en
+  /// la sala, la sala se borra.
+  Future<void> _leave() async {
+    final uid = _myUid;
+    if (uid != null) {
+      final rooms = ref.read(roomServiceProvider);
+      try {
+        await rooms.setActiveGame(uid, null);
+        await rooms.leave(roomId: widget.roomId, uid: uid);
+      } catch (error) {
+        debugPrint('No se pudo salir de la sala: $error');
+      }
+    }
+    if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  /// A mitad de partida se pregunta antes de salir.
+  Future<void> _confirmLeave() async {
+    final leave = await ConfirmDialog.show(
+      context,
+      title: 'Salir',
+      message:
+          'Si sales, la partida sigue sin ti y no ganas XP ni premios. '
+          'Tus turnos se saltan.',
+      confirmLabel: 'Salir de la partida',
+    );
+    if (leave) await _leave();
   }
 
   void _send(GameAction action) {
@@ -89,11 +176,11 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
           roomId: widget.roomId,
           game: game,
           tracker: _timeTracker,
-          isHost: widget.isHost,
+          isHost: _isHost,
           isPublic: isPublic,
         );
     final hostUid = room?.hostUid ?? ref.read(roomIdentityProvider).value?.uid;
-    if (widget.isHost && hostUid != null) {
+    if (_isHost && hostUid != null) {
       ref
           .read(resultsControllerProvider)
           .saveFinishedMatch(
@@ -107,26 +194,24 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(
-      gameProvider(widget.roomId),
-      (_, next) => _onGameChanged(next.value),
-    );
+    ref.listen(gameProvider(widget.roomId), (_, next) {
+      _guard?.update(game: next.value);
+      _onGameChanged(next.value);
+    });
     // Se escucha la sala para tenerla cargada al terminar (si es pública y
     // quién es el anfitrión); si no, Riverpod la pausa y llega vacía.
     ref.watch(roomProvider(widget.roomId));
     final game = ref.watch(gameProvider(widget.roomId)).value;
     final me = ref.watch(roomIdentityProvider).value;
     if (game != null && me != null && game.phase == GamePhase.finished) {
-      return ResultsScreen(
-        game: game,
-        myId: me.uid,
-        onExit: () => Navigator.of(context).popUntil((route) => route.isFirst),
-      );
+      return ResultsScreen(game: game, myId: me.uid, onExit: _leave);
     }
     final mapView = game == null || me == null ? null : _mapView(game, me.uid);
     return PopScope(
-      // Salir a mitad de partida llega con feature/disconnections.
-      canPop: game?.phase == GamePhase.finished,
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
       child: Scaffold(
         backgroundColor: AppColors.screenBackground,
         body: SafeArea(
@@ -150,7 +235,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                       child: _Panel(
                         game: game,
                         myId: me.uid,
-                        isHost: widget.isHost,
+                        isHost: _isHost,
                         branchButtons: mapView == null,
                         onAction: _send,
                         onOpenItems: (mode) => _openItems(me.uid, mode),

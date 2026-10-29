@@ -52,16 +52,53 @@ class GameEngine {
   /// Aplica [action]. Lanza [StateError] si no se puede hacer en este momento.
   GameState apply(GameState state, GameAction action) {
     return switch (action) {
-      RollDice(:final playerId) => _roll(state, playerId),
+      RollDice(:final playerId) => _roll(_back(state, playerId), playerId),
       ChooseBranch(:final playerId, :final branch) => _chooseBranch(
-        state,
+        _back(state, playerId),
         playerId,
         branch,
       ),
-      BuyItem(:final playerId, :final item) => _buy(state, playerId, item),
-      LeaveShop(:final playerId) => _leaveShop(state, playerId),
-      UseItem(:final playerId, :final item) => _useItem(state, playerId, item),
+      BuyItem(:final playerId, :final item) => _buy(
+        _back(state, playerId),
+        playerId,
+        item,
+      ),
+      LeaveShop(:final playerId) => _leaveShop(
+        _back(state, playerId),
+        playerId,
+      ),
+      UseItem(:final playerId, :final item) => _useItem(
+        _back(state, playerId),
+        playerId,
+        item,
+      ),
+      SkipTurn(:final playerId) => _skip(state, playerId),
       FinishMinigame(:final winnerIds) => _finishMinigame(state, winnerIds),
+    };
+  }
+
+  /// Si el que juega estaba marcado como ausente, ya volvió.
+  GameState _back(GameState state, String playerId) {
+    final player = state.players[playerId];
+    if (player == null || !player.away) return state;
+    return state.withPlayer(player.copyWith(away: false));
+  }
+
+  GameState _skip(GameState state, String playerId) {
+    if (state.phase == GamePhase.minigame ||
+        state.phase == GamePhase.finished) {
+      throw StateError('No hay un turno que saltar (${state.phase.name})');
+    }
+    if (state.currentPlayerId != playerId) {
+      throw StateError('No es el turno de $playerId');
+    }
+    final player = state.currentPlayer;
+    final marked = state.withPlayer(
+      player.copyWith(away: true, missedTurns: player.missedTurns + 1),
+    );
+    return switch (state.phase) {
+      GamePhase.choosingBranch => _chooseBranch(marked, playerId, 0),
+      _ => _nextTurn(marked),
     };
   }
 

@@ -37,6 +37,9 @@ class PlayerResult {
   /// Diamantes finales que ganó.
   final List<FinalAward> awards;
 
+  /// Terminó la partida desconectado.
+  bool get disconnected => player.away;
+
   String get id => player.id;
   String get username => player.username;
   int get coins => player.coins;
@@ -97,6 +100,8 @@ class MatchResultsBuilder {
             place: result.places[player.id]!,
             players: players,
             rounds: game.round,
+            // Terminó desconectado: 0 de XP (diseno_juego.md, sección 11).
+            disconnected: player.away,
           ),
           awards: [
             for (final entry in result.awards.entries)
