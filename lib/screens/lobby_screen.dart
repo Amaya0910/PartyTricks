@@ -298,6 +298,10 @@ class _Waiting extends StatelessWidget {
                                     final player = players[index];
                                     return PlayerSlot(
                                       player: player,
+                                      index: index,
+                                      color:
+                                          AppColors.players[index %
+                                              AppColors.players.length],
                                       isMe: player.uid == myUid,
                                       isHost: player.uid == room.hostUid,
                                     );

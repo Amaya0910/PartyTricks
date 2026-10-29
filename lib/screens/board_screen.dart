@@ -15,6 +15,7 @@ import 'package:party_tricks/services/stats/match_time_tracker.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/board_view.dart';
 import 'package:party_tricks/widgets/confirm_dialog.dart';
+import 'package:party_tricks/widgets/dice_roll_overlay.dart';
 import 'package:party_tricks/widgets/map_items_dialog.dart';
 import 'package:party_tricks/widgets/map/board_map_view.dart';
 
@@ -51,6 +52,13 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
 
   /// Para guardar la partida en las estadísticas una sola vez.
   bool _statsRecorded = false;
+
+  /// Veces que lanzó cada jugador, para saber quién acaba de lanzar. Al
+  /// entrar (o volver) a la partida no se anima la tirada anterior.
+  Map<String, int>? _diceCounts;
+
+  /// La última tirada que se anima sobre el mapa.
+  DiceRoll? _roll;
 
   bool get _isHost => _stopHost != null;
 
@@ -165,6 +173,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   /// registro de partidas.
   void _onGameChanged(GameState? game) {
     if (game == null) return;
+    _watchDice(game);
     _timeTracker.onPhase(game.phase);
     if (game.phase != GamePhase.finished || _statsRecorded) return;
     _statsRecorded = true;
@@ -192,6 +201,33 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     }
   }
 
+  /// Si alguien acaba de lanzar, muestra su dado. Solo es visual: el
+  /// número ya viene en la partida.
+  void _watchDice(GameState game) {
+    final counts = _diceCountsOf(game);
+    final before = _diceCounts;
+    _diceCounts = counts;
+    if (before == null) return;
+    for (final (index, id) in game.turnOrder.indexed) {
+      if ((counts[id] ?? 0) <= (before[id] ?? 0)) continue;
+      setState(() {
+        _roll = DiceRoll(
+          serial: (_roll?.serial ?? 0) + 1,
+          username: game.players[id]!.username,
+          color: AppColors.players[index % AppColors.players.length],
+          value: game.lastRoll,
+          extra: game.lastExtraRoll,
+          boost: game.lastBoost,
+        );
+      });
+      return;
+    }
+  }
+
+  static Map<String, int> _diceCountsOf(GameState game) => {
+    for (final player in game.players.values) player.id: player.diceRolled,
+  };
+
   @override
   Widget build(BuildContext context) {
     ref.listen(gameProvider(widget.roomId), (_, next) {
@@ -203,6 +239,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     ref.watch(roomProvider(widget.roomId));
     final game = ref.watch(gameProvider(widget.roomId)).value;
     final me = ref.watch(roomIdentityProvider).value;
+    if (game != null) _diceCounts ??= _diceCountsOf(game);
     if (game != null && me != null && game.phase == GamePhase.finished) {
       return ResultsScreen(game: game, myId: me.uid, onExit: _leave);
     }
@@ -220,15 +257,20 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               : Column(
                   children: [
                     Expanded(
-                      child:
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
                           mapView ??
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: BoardView(
-                              board: ref.watch(boardProvider),
-                              state: game,
-                            ),
-                          ),
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: BoardView(
+                                  board: ref.watch(boardProvider),
+                                  state: game,
+                                ),
+                              ),
+                          DiceRollOverlay(roll: _roll),
+                        ],
+                      ),
                     ),
                     SizedBox(
                       height: _Panel.height,
