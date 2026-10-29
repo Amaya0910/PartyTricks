@@ -61,3 +61,30 @@ final class FinishMinigame extends GameAction {
 
   final List<String> winnerIds;
 }
+
+/// Un jugador juega el minijuego de la ronda [round] (diseno_juego.md,
+/// sección 9). [score] depende del minijuego:
+///
+/// - Para el Tiempo: ms que dejó correr el reloj.
+/// - Reacción: ms que tardó después del "¡YA!".
+/// - Globo Bomba: cuántas veces infla (1 a 3).
+///
+/// En Para el Tiempo y Reacción, `MinigameRules.noScore` (-1) es que no vale
+/// (se adelantó o no tocó a tiempo).
+final class MinigameMove extends GameAction {
+  const MinigameMove(this.playerId, this.round, this.score);
+
+  final String playerId;
+  final int round;
+  final int score;
+}
+
+/// Solo el anfitrión: se acabó el tiempo del paso [step] del minijuego de la
+/// ronda [round]. Cierra el minijuego con lo que haya o, en el Globo Bomba,
+/// infla 1 por quien no jugó.
+final class MinigameTimeout extends GameAction {
+  const MinigameTimeout(this.round, this.step);
+
+  final int round;
+  final int step;
+}

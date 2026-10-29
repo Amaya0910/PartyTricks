@@ -1,3 +1,4 @@
+import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
 
@@ -181,6 +182,8 @@ class GameState {
     this.lastExtraRoll = 0,
     this.lastBoost = 0,
     this.traps = const {},
+    this.minigame,
+    this.lastMinigame,
   });
 
   /// Jugadores por id.
@@ -214,6 +217,12 @@ class GameState {
   /// Trampas puestas: casilla -> id de quien la puso.
   final Map<int, String> traps;
 
+  /// El minijuego en curso, solo en la fase [GamePhase.minigame].
+  final MinigameState? minigame;
+
+  /// Cómo terminó el último minijuego, para mostrarlo a todos.
+  final MinigameResult? lastMinigame;
+
   String get currentPlayerId => turnOrder[turnIndex];
 
   PlayerState get currentPlayer => players[currentPlayerId]!;
@@ -234,6 +243,9 @@ class GameState {
     int? lastExtraRoll,
     int? lastBoost,
     Map<int, String>? traps,
+    MinigameState? minigame,
+    bool clearMinigame = false,
+    MinigameResult? lastMinigame,
   }) {
     return GameState(
       players: players ?? this.players,
@@ -248,6 +260,8 @@ class GameState {
       lastExtraRoll: lastExtraRoll ?? this.lastExtraRoll,
       lastBoost: lastBoost ?? this.lastBoost,
       traps: traps ?? this.traps,
+      minigame: clearMinigame ? null : minigame ?? this.minigame,
+      lastMinigame: lastMinigame ?? this.lastMinigame,
     );
   }
 }

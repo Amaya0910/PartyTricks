@@ -184,11 +184,38 @@ Hay **dos tiendas** en el mapa. Se compra con las **monedas de partida**. Todos 
 
 ## 9. Minijuegos
 
-- Se juega **uno por ronda**, al terminar los movimientos de todos.
-- Es **corto** y **aleatorio**.
-- El ganador recibe **monedas**.
-- Lista de minijuegos y su mecánica: **(por definir)**.
-- Tecnología **(propuesto)**: Flutter normal para los minijuegos simples y Flame solo para los de tiempo real que lo necesiten (ver `decisiones.md`, D-11).
+- Se juega **uno por ronda**, al terminar los movimientos de todos. El anfitrión **sortea** cuál sale.
+- Es **corto**: cada teléfono muestra primero una explicación de **3 segundos** con cuenta regresiva.
+- Juegan todos los que **no están ausentes** (ver sección 13). Quien estaba ausente al empezar lo ve desde fuera y no puede ganar.
+- El ganador recibe **10 monedas** (provisional) y suma un minijuego ganado, que cuenta para los diamantes finales (sección 10).
+- Si **nadie** hace una jugada válida, nadie gana.
+- **Empates** (Para el Tiempo y Reacción): los empatados lanzan **1d6**; gana el más alto. Si vuelven a empatar, se lanza otra vez entre ellos.
+- Al terminar, todos ven el resultado unos segundos: quién ganó, lo que hizo cada uno y el desempate, si lo hubo.
+- Tecnología: widgets de Flutter, sin Flame (D-11). Detalles técnicos en `decisiones.md`, D-26.
+
+### 9.1 Para el Tiempo
+
+- Sale un **objetivo al azar entre 4 y 19 segundos** (enteros).
+- El reloj se ve corriendo los **primeros 3 segundos** y luego **se esconde**.
+- Cada jugador toca **¡Ya!** cuando cree que se llegó al objetivo. Solo cuenta el **primer toque**.
+- Si no toca en **25 segundos**, su jugada no cuenta.
+- **Gana** la menor diferencia con el objetivo, por arriba o por abajo.
+
+### 9.2 Reacción
+
+- Sale **"Prepárate..."** y, tras una **espera al azar entre 2 y 7 segundos**, **"¡YA!"**.
+- Se toca el recuadro lo más rápido posible; se guarda cuánto tardó, en ms.
+- Si toca **antes** del "¡YA!", queda **eliminado**.
+- Si no toca en **10 segundos** después del "¡YA!", su jugada no cuenta.
+- **Gana** el que tardó menos.
+
+### 9.3 Globo Bomba
+
+- El globo aguanta un número **secreto de infladas, entre 30 y 70**.
+- **Por turnos**, en el orden de la partida, cada uno infla **1, 2 o 3** veces. Cada ronda empieza un jugador distinto.
+- Si el globo **revienta** en tu turno, quedas **eliminado** y sale un globo nuevo con otra capacidad secreta para los que quedan.
+- Si no inflas en **10 segundos**, se infla 1 vez por ti.
+- **Gana** el **último** que queda.
 
 ---
 
@@ -300,6 +327,8 @@ Cada nivel que sube el jugador da un premio:
 | Queda **un solo jugador** | No recibe premio y no se traslada a otra sala. Ve el mensaje **"Lo sentimos, no quedan jugadores :("** y el botón **[Regresar a menú]**, que lo lleva a la pantalla inicial |
 | Se desconecta el **creador de la sala** | **(propuesto)** la sala pasa a otro jugador para que la partida continúe |
 | Un jugador desconectado quiere volver a la partida | **(por definir)** |
+| Alguien se desconecta **durante un minijuego** | El minijuego no se queda esperando: al acabarse el tiempo, su jugada no cuenta (en el Globo Bomba se infla 1 por él). Si vuelve antes, puede jugar donde iba |
+| El **anfitrión** se desconecta durante un minijuego | El nuevo anfitrión sigue con el mismo minijuego: nadie pierde lo que ya jugó |
 
 ---
 

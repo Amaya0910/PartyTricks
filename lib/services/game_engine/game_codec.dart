@@ -1,5 +1,6 @@
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
 
@@ -7,7 +8,7 @@ import 'package:party_tricks/services/game_engine/tile_effects.dart';
 /// Database (`rooms/{id}/game` y `rooms/{id}/actions`), y de vuelta.
 ///
 /// Los campos que faltan se leen vacíos, así las partidas guardadas antes de
-/// las tiendas siguen funcionando.
+/// las tiendas o de los minijuegos siguen funcionando.
 class GameCodec {
   const GameCodec();
 
@@ -27,6 +28,14 @@ class GameCodec {
     // datos puede devolver el mapa como lista.
     'traps': {
       for (final entry in state.traps.entries) 't${entry.key}': entry.value,
+    },
+    'minigame': switch (state.minigame) {
+      final minigame? => _encodeMinigame(minigame),
+      null => null,
+    },
+    'lastMinigame': switch (state.lastMinigame) {
+      final result? => _encodeResult(result),
+      null => null,
     },
   };
 
@@ -54,6 +63,8 @@ class GameCodec {
         for (final entry in _map(data['traps']).entries)
           int.parse((entry.key as String).substring(1)): entry.value as String,
       },
+      minigame: _decodeMinigame(data['minigame']),
+      lastMinigame: _decodeResult(data['lastMinigame']),
     );
   }
 
@@ -80,6 +91,17 @@ class GameCodec {
       'type': 'minigame',
       'winnerIds': winnerIds,
     },
+    MinigameMove(:final playerId, :final round, :final score) => {
+      'type': 'minigameMove',
+      'playerId': playerId,
+      'round': round,
+      'score': score,
+    },
+    MinigameTimeout(:final round, :final step) => {
+      'type': 'minigameTimeout',
+      'round': round,
+      'step': step,
+    },
   };
 
   GameAction decodeAction(Map<Object?, Object?> data) {
@@ -96,6 +118,15 @@ class GameCodec {
       'minigame' => FinishMinigame([
         for (final id in data['winnerIds'] as List? ?? const []) id as String,
       ]),
+      'minigameMove' => MinigameMove(
+        data['playerId'] as String,
+        _int(data['round']),
+        _int(data['score']),
+      ),
+      'minigameTimeout' => MinigameTimeout(
+        _int(data['round']),
+        _int(data['step']),
+      ),
       final type => throw FormatException('Acción desconocida: $type'),
     };
   }
@@ -164,6 +195,79 @@ class GameCodec {
       missedTurns: _int(data['missedTurns']),
     );
   }
+
+  Map<String, Object?> _encodeMinigame(MinigameState minigame) => {
+    'type': minigame.type.name,
+    'round': minigame.round,
+    'players': minigame.players,
+    'step': minigame.step,
+    'targetMs': minigame.targetMs,
+    'delayMs': minigame.delayMs,
+    'capacity': minigame.capacity,
+    'pumps': minigame.pumps,
+    'turn': minigame.turn,
+    'scores': minigame.scores,
+    'out': minigame.out,
+  };
+
+  /// Un minijuego que esta versión no conoce se lee como ninguno.
+  MinigameState? _decodeMinigame(Object? value) {
+    if (value is! Map<Object?, Object?>) return null;
+    final type = MinigameType.byId(value['type']);
+    if (type == null) return null;
+    return MinigameState(
+      type: type,
+      round: _int(value['round']),
+      players: _strings(value['players']),
+      step: _int(value['step']),
+      targetMs: _int(value['targetMs']),
+      delayMs: _int(value['delayMs']),
+      capacity: _int(value['capacity']),
+      pumps: _int(value['pumps']),
+      turn: _int(value['turn']),
+      scores: _scores(value['scores']),
+      out: _strings(value['out']),
+    );
+  }
+
+  Map<String, Object?> _encodeResult(MinigameResult result) => {
+    'type': result.type.name,
+    'round': result.round,
+    'winnerIds': result.winnerIds,
+    'targetMs': result.targetMs,
+    'scores': result.scores,
+    'tiebreak': result.tiebreak,
+    'out': result.out,
+  };
+
+  MinigameResult? _decodeResult(Object? value) {
+    if (value is! Map<Object?, Object?>) return null;
+    final type = MinigameType.byId(value['type']);
+    if (type == null) return null;
+    return MinigameResult(
+      type: type,
+      round: _int(value['round']),
+      winnerIds: _strings(value['winnerIds']),
+      targetMs: _int(value['targetMs']),
+      scores: _scores(value['scores']),
+      tiebreak: {
+        for (final entry in _map(value['tiebreak']).entries)
+          entry.key as String: [
+            for (final roll in _list(entry.value)) _int(roll),
+          ],
+      },
+      out: _strings(value['out']),
+    );
+  }
+
+  List<String> _strings(Object? value) => [
+    for (final item in _list(value)) item as String,
+  ];
+
+  Map<String, int> _scores(Object? value) => {
+    for (final entry in _map(value).entries)
+      entry.key as String: _int(entry.value),
+  };
 
   ShopItem _item(Object? name) {
     final item = _knownItem(name);

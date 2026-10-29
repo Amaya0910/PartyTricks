@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/services/game/minigame_referee.dart';
+import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/rooms/disconnection_policy.dart';
 import 'package:party_tricks/services/rooms/presence_service.dart';
@@ -13,8 +15,9 @@ import 'package:party_tricks/services/rooms/room_service.dart';
 /// - Marca al jugador conectado (presencia).
 /// - Si el anfitrión se fue o lleva desconectado más de lo permitido, el
 ///   sucesor (el conectado que llegó primero) toma su lugar.
-/// - Si este teléfono es el anfitrión: avisa que la sala sigue viva y salta
-///   el turno de quien esté desconectado.
+/// - Si este teléfono es el anfitrión: avisa que la sala sigue viva, salta
+///   el turno de quien esté desconectado y cierra el minijuego cuando se
+///   acaba su tiempo ([MinigameReferee]).
 ///
 /// La pantalla le pasa la sala y la partida cada vez que cambian; [tick] se
 /// llama solo cada [interval] (y en las pruebas, a mano).
@@ -26,9 +29,11 @@ class RoomGuard {
     required this.presence,
     required this.policy,
     this.onSkipTurn,
+    this.onMinigameTimeout,
+    MinigameReferee? referee,
     this.interval = const Duration(seconds: 2),
     this.heartbeat = const Duration(minutes: 1),
-  });
+  }) : _referee = referee ?? MinigameReferee();
 
   final String roomId;
   final String uid;
@@ -38,6 +43,11 @@ class RoomGuard {
 
   /// Solo en la partida: cómo pedirle al motor que salte un turno.
   final Future<void> Function(String playerId)? onSkipTurn;
+
+  /// Solo en la partida: cómo pedirle al motor que cierre el minijuego (o
+  /// infle por quien no juega) cuando se acaba el tiempo.
+  final Future<void> Function(MinigameTimeout action)? onMinigameTimeout;
+  final MinigameReferee _referee;
 
   final Duration interval;
 
@@ -90,6 +100,11 @@ class RoomGuard {
         await rooms.touch(roomId);
       }
       final game = _game;
+      final closeMinigame = onMinigameTimeout;
+      if (game != null && closeMinigame != null) {
+        final timeout = _referee.check(game, now);
+        if (timeout != null) await closeMinigame(timeout);
+      }
       final skip = onSkipTurn;
       if (game == null || skip == null) return;
       if (!policy.shouldSkipTurn(room, game, now)) return;

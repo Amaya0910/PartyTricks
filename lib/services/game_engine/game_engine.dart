@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/game_engine/random_source.dart';
 import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
@@ -18,6 +19,8 @@ class GameEngine {
     required this.random,
     this.tileEffects = const TileEffects(),
     this.itemRules = const ItemRules(),
+    this.minigameRules = const MinigameRules(),
+    this.minigames = const [],
     this.startingCoins = 10,
     this.minigameCoins = 10,
   });
@@ -26,8 +29,17 @@ class GameEngine {
   final RandomSource random;
   final TileEffects tileEffects;
   final ItemRules itemRules;
+  final MinigameRules minigameRules;
+
+  /// Minijuegos que pueden salir; cada ronda se sortea uno. Sin ninguno, la
+  /// ronda espera un [FinishMinigame] con los ganadores (así funcionan las
+  /// pruebas de antes de los minijuegos).
+  final List<MinigameType> minigames;
   final int startingCoins;
   final int minigameCoins;
+
+  MinigameJudge get _judge =>
+      MinigameJudge(random: random, rules: minigameRules);
 
   /// Arma la partida con el orden de la tirada inicial.
   GameState start({
@@ -74,6 +86,13 @@ class GameEngine {
       ),
       SkipTurn(:final playerId) => _skip(state, playerId),
       FinishMinigame(:final winnerIds) => _finishMinigame(state, winnerIds),
+      MinigameMove(:final playerId, :final round, :final score) =>
+        _playMinigame(_back(state, playerId), playerId, round, score),
+      MinigameTimeout(:final round, :final step) => _minigameTimeout(
+        state,
+        round,
+        step,
+      ),
     };
   }
 
@@ -327,14 +346,71 @@ class GameEngine {
     if (next < state.turnOrder.length) {
       return state.copyWith(turnIndex: next, phase: GamePhase.rolling);
     }
-    return state.copyWith(turnIndex: 0, phase: GamePhase.minigame);
+    return _startMinigame(
+      state.copyWith(turnIndex: 0, phase: GamePhase.minigame),
+    );
   }
 
-  GameState _finishMinigame(GameState state, List<String> winnerIds) {
+  /// Sortea el minijuego de la ronda. Juegan los que no están ausentes.
+  GameState _startMinigame(GameState state) {
+    if (minigames.isEmpty) return state;
+    final type = minigames.length == 1
+        ? minigames.first
+        : minigames[random.nextInt(0, minigames.length - 1)];
+    final players = [
+      for (final id in state.turnOrder)
+        if (state.players[id]?.away == false) id,
+    ];
+    return _afterMinigame(state, _judge.start(type, state.round, players));
+  }
+
+  GameState _playMinigame(
+    GameState state,
+    String playerId,
+    int round,
+    int score,
+  ) {
+    final minigame = _currentMinigame(state, round);
+    return _afterMinigame(state, _judge.play(minigame, playerId, score));
+  }
+
+  GameState _minigameTimeout(GameState state, int round, int step) {
+    if (state.phase != GamePhase.minigame || state.round != round) {
+      throw StateError('No hay un minijuego de la ronda $round');
+    }
+    // Partida de antes de los minijuegos: se cierra la ronda sin ganador.
+    if (state.minigame == null) return _finishMinigame(state, const []);
+    final minigame = _currentMinigame(state, round);
+    return _afterMinigame(state, _judge.timeout(minigame, step));
+  }
+
+  MinigameState _currentMinigame(GameState state, int round) {
+    final minigame = state.minigame;
+    if (state.phase != GamePhase.minigame || minigame == null) {
+      throw StateError('No hay un minijuego en curso');
+    }
+    if (minigame.round != round) {
+      throw StateError('El minijuego es de la ronda ${minigame.round}');
+    }
+    return minigame;
+  }
+
+  /// Si el minijuego sigue, lo guarda; si terminó, paga a los ganadores.
+  GameState _afterMinigame(GameState state, MinigameOutcome outcome) {
+    final result = outcome.result;
+    if (result == null) return state.copyWith(minigame: outcome.state);
+    return _finishMinigame(state, result.winnerIds, result: result);
+  }
+
+  GameState _finishMinigame(
+    GameState state,
+    List<String> winnerIds, {
+    MinigameResult? result,
+  }) {
     if (state.phase != GamePhase.minigame) {
       throw StateError('No hay un minijuego en curso');
     }
-    var current = state;
+    var current = state.copyWith(clearMinigame: true, lastMinigame: result);
     for (final id in winnerIds.toSet()) {
       final winner = current.players[id];
       if (winner == null) throw StateError('El jugador $id no existe');
