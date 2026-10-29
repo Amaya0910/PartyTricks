@@ -11,9 +11,10 @@
 - **Lienzo en Krita:** 72 ppp, RGB, 8 bits. Los ppp no importan en pantalla, solo los píxeles.
 - **Estilo:**
   - **Sin contorno** en el escenario del mapa: plataformas, marcas, tienda, puentes, decoraciones, textura del camino y fondos.
-  - **Con contorno negro** (mínimo 2 px en el tamaño exportado): personaje, cosméticos, flecha de bifurcación y marcas que lo necesiten. Moneda, diamante y dados van sin contorno.  - Colores planos, con máximo 3 tonos por objeto: base, claro y oscuro.
+  - **Con contorno negro** (mínimo 2 px en el tamaño exportado): personaje, cosméticos, flecha de bifurcación y marcas que lo necesiten. Moneda, diamante y dados van sin contorno.
+  - Colores planos, con máximo 3 tonos por objeto: base, claro y oscuro.
   - **Luz desde arriba a la izquierda:** los brillos van arriba a la izquierda y las sombras abajo a la derecha, en todas las piezas.
-  - Reutiliza los colores que ya tienes: el verde del pasto, el café de la tierra, la piel, el azul del diamante y el dorado de la moneda. Si necesitas uno nuevo, anótalo, porque luego se pasa a `AppColors`.
+  - Reutilizamos los colores que ya tenemos: el verde del pasto, el café de la tierra, la piel, el azul del diamante y el dorado de la moneda. Si se agrega uno nuevo, se anota, porque luego se pasa a `AppColors`.
 - **Nombres:** en minúsculas, sin tildes ni espacios y con guion bajo. Las variantes se numeran con dos cifras, por ejemplo `plataforma_01.png`.
 - **Ancla:** es el punto que el código usa para colocar la imagen. En Krita pon guías en ese punto.
 - **Volteo:** no dibujes versiones al revés; el código puede voltear las imágenes. **Excepción:** las piezas con brillos o sombras de un solo lado (plataformas y tienda) **no se voltean**, porque la luz cambiaría de lado.

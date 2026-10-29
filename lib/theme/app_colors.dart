@@ -245,4 +245,21 @@ class AppColors {
 
   /// Cerrar sesión.
   static const Color settingsDanger = authError;
+
+  // ---------------------------------------------------------------------------
+  // Personaje y dado (provisionales hasta tener las hojas de animación)
+  // ---------------------------------------------------------------------------
+
+  /// Piel de la cara y las manos.
+  static const Color characterSkin = Color(0xFFFFD9B8);
+
+  /// Contorno negro del personaje (arte_imagenes.md, sección 1).
+  static const Color characterOutline = Color(0xFF1A1A1A);
+
+  /// Sombra en el piso y rubor de las mejillas.
+  static const Color characterShadow = Color(0x40000000);
+  static const Color characterBlush = Color(0x55FF7B7B);
+
+  /// Fondo oscuro detrás del dado mientras rueda.
+  static const Color diceScrim = Color(0x33000000);
 }

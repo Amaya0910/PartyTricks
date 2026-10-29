@@ -1,20 +1,35 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/party_character.dart';
 
-/// Espacio de un jugador en la sala de espera: recuadro verde con su foto
-/// y su nombre debajo. Si [player] es null, es un espacio libre.
+/// Espacio de un jugador en la sala de espera: recuadro verde con su
+/// personaje respirando (con su foto en la cara) y su nombre debajo. Si
+/// [player] es null, es un espacio libre.
 class PlayerSlot extends StatelessWidget {
   const PlayerSlot({
     super.key,
     this.player,
+    this.color = AppColors.blueStrong,
+    this.index = 0,
     this.isMe = false,
     this.isHost = false,
   });
 
   final RoomPlayer? player;
+
+  /// Color de la ropa del personaje.
+  final Color color;
+
+  /// Lugar en la sala; desfasa la respiración de cada personaje.
+  final int index;
   final bool isMe;
   final bool isHost;
+
+  /// Parte del recuadro que ocupa el personaje.
+  static const _characterShare = 0.9;
 
   @override
   Widget build(BuildContext context) {
@@ -33,13 +48,26 @@ class PlayerSlot extends StatelessWidget {
                 ? null
                 : Stack(
                     children: [
-                      Center(
-                        child: FractionallySizedBox(
-                          widthFactor: 0.8,
-                          child: AspectRatio(
-                            aspectRatio: 1,
-                            child: _Avatar(photoUrl: player.photoUrl),
-                          ),
+                      Positioned.fill(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final height = min(
+                              constraints.maxHeight * _characterShare,
+                              constraints.maxWidth *
+                                  _characterShare /
+                                  PartyCharacter.aspectRatio,
+                            );
+                            return Align(
+                              alignment: Alignment.bottomCenter,
+                              child: PartyCharacter(
+                                color: color,
+                                height: height,
+                                photoUrl: player.photoUrl,
+                                idle: true,
+                                idlePhase: index * 0.37 % 1,
+                              ),
+                            );
+                          },
                         ),
                       ),
                       if (isHost)
@@ -72,47 +100,6 @@ class PlayerSlot extends StatelessWidget {
                 ),
         ),
       ],
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.photoUrl});
-
-  final String? photoUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final photoUrl = this.photoUrl;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.blueLight,
-        border: Border.all(color: AppColors.white, width: 2),
-      ),
-      child: ClipOval(
-        child: photoUrl == null || photoUrl.isEmpty
-            ? const _FallbackIcon()
-            : Image.network(
-                photoUrl,
-                fit: BoxFit.cover,
-                // Si la foto no carga, se ve el ícono en vez de un error.
-                errorBuilder: (_, _, _) => const _FallbackIcon(),
-                loadingBuilder: (context, child, progress) =>
-                    progress == null ? child : const _FallbackIcon(),
-              ),
-      ),
-    );
-  }
-}
-
-class _FallbackIcon extends StatelessWidget {
-  const _FallbackIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return const FittedBox(
-      child: Icon(Icons.person, color: AppColors.blueStrong),
     );
   }
 }
