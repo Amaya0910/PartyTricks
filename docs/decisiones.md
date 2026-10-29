@@ -319,3 +319,26 @@
   - Hojas de animación del personaje en lugar del círculo con la foto.
   - Más mapas: el anfitrión sortearía uno y lo guardaría en la partida (toca el estado de Brayan).
 
+## D-26. Minijuegos: Para el Tiempo, Reacción y Globo Bomba
+
+- **Fecha:** 2026-10-29
+- **Estado:** Propuesta (por confirmar con Isabella)
+- **Decisión:**
+  - Tres minijuegos con **una sola arquitectura** (`lib/services/game_engine/minigames.dart`): `MinigameType` (id que se guarda), `MinigameRules` (tiempos y rangos en un solo lugar), `MinigameState` (el minijuego en curso), `MinigameResult` (cómo terminó) y `MinigameJudge` (las reglas, sin guardar nada). El motor sortea el minijuego al terminar la ronda y paga con la misma función que antes (`_finishMinigame`): monedas y `minigamesWon`.
+  - El minijuego en curso vive **dentro de la partida** (`rooms/{id}/game/minigame`) y el último resultado en `rooms/{id}/game/lastMinigame`. Por eso sobrevive a **reconexiones** y a un **cambio de anfitrión** sin pasos extra.
+  - **Cada teléfono mide su propio tiempo** desde que muestra el minijuego (explicación de 3 s incluida) y manda su puntaje con la acción `minigameMove` (`playerId`, `round`, `score`). Así no importa si los relojes de los teléfonos no coinciden ni cuánto tarda la red: lo que cuenta es el tiempo en la pantalla de cada uno. El anfitrión solo junta los puntajes y decide.
+  - Los números al azar (objetivo, espera, capacidad del globo y el dado del desempate) los sortea **el anfitrión** con el `RandomSource` del motor, igual que los dados del tablero.
+  - Para que nadie trabe la ronda, el anfitrión corre un **árbitro** (`MinigameReferee`, dentro de `RoomGuard`): cuenta desde que ve cada paso del minijuego y, pasado el límite (`MinigameRules.timeLimit`: el tiempo del minijuego más 5 s de margen), manda `minigameTimeout` (`round`, `step`). En Para el Tiempo y Reacción cierra con lo que haya; en el Globo Bomba infla 1 por quien no jugó. `step` sube con cada jugada, así un cierre viejo se ignora. Si cambia el anfitrión, el nuevo empieza a contar desde que lo ve: a lo mucho se espera un poco más.
+  - Las jugadas repetidas, de otra ronda, de quien no juega o fuera de rango lanzan `StateError` y el anfitrión las ignora (`hostApply`), como el resto de acciones.
+  - Se **quita** el botón provisional "Simular minijuego". `FinishMinigame` se queda: lo usan el motor por dentro y las pruebas de antes. Un `GameEngine` sin minijuegos configurados (`minigames: []`, el valor por defecto) sigue esperando `FinishMinigame`; la app usa los tres (`gameEngineProvider`).
+  - Partidas guardadas en fase de minijuego **sin** minijuego armado (de antes de este bloque): el árbitro manda `minigameTimeout` a los 5 s y la ronda se cierra sin ganador.
+- **En el código:** `lib/services/game_engine/minigames.dart` (nuevo), `game_state.dart`, `game_action.dart` (`MinigameMove`, `MinigameTimeout`), `game_engine.dart`, `game_codec.dart`; `lib/services/game/minigame_referee.dart` (nuevo) y `lib/controllers/room_guard.dart`; pantallas en `lib/widgets/minigames/` (`MinigameView`, `StopwatchGame`, `ReactionGame`, `BalloonGame` y `MinigameResultOverlay`) y `board_screen.dart`, que muestra el minijuego en lugar del mapa.
+- **Reglas (`database.rules.json`):** se permiten las acciones `minigameMove` (solo con el uid propio en `playerId`, `round` de 1 a 25 y `score` de -1 a 25000) y `minigameTimeout` (solo el anfitrión, `step` desde 0). Las demás reglas no cambian.
+- **Motivo:** guardar todo en la partida reutiliza lo que ya funciona para reconexiones y anfitriones (D-24, bloque 5), y medir en cada teléfono evita sincronizar relojes, que en Realtime Database sin servidor propio no es exacto.
+- **Alternativas:** marcar el inicio con la hora del servidor (`ServerValue.timestamp`) y comparar tiempos de llegada (depende de la red de cada uno) o Cloud Functions como árbitro (necesita el plan Blaze).
+- **Riesgos que quedan:**
+  - El puntaje lo manda cada teléfono: una app modificada podría mandar un tiempo falso. Las reglas solo revisan el rango.
+  - Los números secretos (espera de Reacción, capacidad del globo) están en la partida, que todos los jugadores pueden leer. La pantalla no los muestra, pero una app modificada sí podría.
+  - Quien vuelve a abrir la app en pleno Para el Tiempo o Reacción empieza a contar de nuevo.
+  - Las estadísticas por tipo de minijuego (`MinigameStats.byType`) todavía no se llenan: la partida guarda solo el último resultado.
+- **Cómo se probaron:** 61 pruebas nuevas (reglas de cada minijuego, desempate con el dado, cierre por tiempo, árbitro, cambio de anfitrión, reconexión, guardado en la base de datos y pantallas). Las reglas de Realtime Database no se probaron con el emulador en este bloque (en esta computadora falta Java 21).

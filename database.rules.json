@@ -68,11 +68,14 @@
         "actions": {
           "$actionId": {
             ".write": "auth != null && ((!data.exists() && newData.exists() && data.parent().parent().child('meta/status').val() === 'playing' && data.parent().parent().child('players/' + auth.uid).exists()) || (data.exists() && !newData.exists() && data.parent().parent().child('meta/hostUid').val() === auth.uid))",
-            ".validate": "(newData.child('type').val() === 'roll' && newData.child('playerId').val() === auth.uid) || (newData.child('type').val() === 'branch' && newData.child('playerId').val() === auth.uid && newData.child('branch').isNumber()) || ((newData.child('type').val() === 'buy' || newData.child('type').val() === 'useItem') && newData.child('playerId').val() === auth.uid && newData.child('item').isString()) || (newData.child('type').val() === 'leaveShop' && newData.child('playerId').val() === auth.uid) || (newData.child('type').val() === 'minigame' && newData.parent().parent().child('meta/hostUid').val() === auth.uid) || (newData.child('type').val() === 'skip' && newData.child('playerId').isString() && newData.parent().parent().child('meta/hostUid').val() === auth.uid)",
+            ".validate": "(newData.child('type').val() === 'roll' && newData.child('playerId').val() === auth.uid) || (newData.child('type').val() === 'branch' && newData.child('playerId').val() === auth.uid && newData.child('branch').isNumber()) || ((newData.child('type').val() === 'buy' || newData.child('type').val() === 'useItem') && newData.child('playerId').val() === auth.uid && newData.child('item').isString()) || (newData.child('type').val() === 'leaveShop' && newData.child('playerId').val() === auth.uid) || (newData.child('type').val() === 'minigame' && newData.parent().parent().child('meta/hostUid').val() === auth.uid) || (newData.child('type').val() === 'skip' && newData.child('playerId').isString() && newData.parent().parent().child('meta/hostUid').val() === auth.uid) || (newData.child('type').val() === 'minigameMove' && newData.child('playerId').val() === auth.uid && newData.child('round').exists() && newData.child('score').exists()) || (newData.child('type').val() === 'minigameTimeout' && newData.child('round').exists() && newData.child('step').exists() && newData.parent().parent().child('meta/hostUid').val() === auth.uid)",
             "type": { ".validate": "newData.isString()" },
             "playerId": { ".validate": "newData.isString()" },
             "branch": { ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)" },
             "item": { ".validate": "newData.isString() && newData.val().matches(/^(extraDie3|extraDie6|extraDie9|movementBoost|trap|shield|diamondBoost)$/)" },
+            "round": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 25" },
+            "score": { ".validate": "newData.isNumber() && newData.val() >= -1 && newData.val() <= 25000" },
+            "step": { ".validate": "newData.isNumber() && newData.val() >= 0" },
             "winnerIds": {
               "$index": { ".validate": "newData.isString()" }
             },
