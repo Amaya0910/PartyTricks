@@ -11,6 +11,8 @@ import 'package:party_tricks/services/stats/streak_calculator.dart';
 /// - `stats/{uid}`: un mapa por grupo de [PlayerStats].
 /// - `stats/{uid}/matches/{matchId}`: marca de cada partida ya sumada, para
 ///   no contarla dos veces si la pantalla se vuelve a abrir.
+/// - `users/{uid}`: la XP, monedas y diamantes que deja cada partida se suman
+///   en la misma transacción, así tampoco se cuentan dos veces.
 class FirebaseStatsService implements StatsService {
   FirebaseStatsService(
     this._firestore, [
@@ -50,10 +52,12 @@ class FirebaseStatsService implements StatsService {
       final current = _read(await transaction.get(statsRef));
       final next = _calculator.applyMatch(current, match);
       transaction.set(statsRef, next.toMap());
-      transaction.set(marker, {
-        'won': match.won,
-        'recordedAt': FieldValue.serverTimestamp(),
-      });
+      transaction.set(marker, FirestoreStatsDocument.matchMarkerData(match));
+      transaction.set(
+        FirestoreStatsDocument.profile(_firestore, uid),
+        FirestoreStatsDocument.matchRewards(match),
+        SetOptions(merge: true),
+      );
     });
   }
 

@@ -127,7 +127,9 @@ Conteos que se guardan para los **diamantes finales**: minijuegos ganados, casil
 | `experienciaGanada` | Según la fórmula de `diseno_juego.md` (sección 11.1) |
 | `monedasYDiamantes` | Lo que sobra y pasa a la cuenta |
 
-Un jugador desconectado recibe 0 de experiencia, monedas y diamantes.
+Un jugador desconectado recibe 0 de experiencia, monedas y diamantes _(pendiente, `feature/disconnections`)_.
+
+Cómo se guarda (ver `results_system.md`): la XP, monedas y diamantes se suman a `users/{uid}`, la marca `stats/{uid}/matches/{roomId}` guarda puesto y XP, y el anfitrión crea el registro `matchResults/{roomId}` para los rankings.
 
 ### 2.8 Estadísticas del jugador
 

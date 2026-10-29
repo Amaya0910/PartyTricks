@@ -2,9 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/results_controller.dart';
 import 'package:party_tricks/controllers/stats_controller.dart';
+import 'package:party_tricks/screens/results_screen.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
-import 'package:party_tricks/services/game_engine/award_calculator.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/map/map_providers.dart';
@@ -72,12 +73,16 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     );
   }
 
-  /// Cada jugador guarda sus propias estadísticas al terminar la partida.
+  /// Al terminar la partida cada jugador guarda sus estadísticas, su XP y
+  /// lo que pasa a su cuenta; el anfitrión además guarda el resultado en el
+  /// registro de partidas.
   void _onGameChanged(GameState? game) {
     if (game == null) return;
     _timeTracker.onPhase(game.phase);
     if (game.phase != GamePhase.finished || _statsRecorded) return;
     _statsRecorded = true;
+    final room = ref.read(roomProvider(widget.roomId)).value;
+    final isPublic = room?.isPublic ?? false;
     ref
         .read(statsControllerProvider)
         .recordFinishedMatch(
@@ -85,9 +90,19 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
           game: game,
           tracker: _timeTracker,
           isHost: widget.isHost,
-          isPublic:
-              ref.read(roomProvider(widget.roomId)).value?.isPublic ?? false,
+          isPublic: isPublic,
         );
+    final hostUid = room?.hostUid ?? ref.read(roomIdentityProvider).value?.uid;
+    if (widget.isHost && hostUid != null) {
+      ref
+          .read(resultsControllerProvider)
+          .saveFinishedMatch(
+            roomId: widget.roomId,
+            hostUid: hostUid,
+            game: game,
+            isPublic: isPublic,
+          );
+    }
   }
 
   @override
@@ -96,8 +111,18 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
       gameProvider(widget.roomId),
       (_, next) => _onGameChanged(next.value),
     );
+    // Se escucha la sala para tenerla cargada al terminar (si es pública y
+    // quién es el anfitrión); si no, Riverpod la pausa y llega vacía.
+    ref.watch(roomProvider(widget.roomId));
     final game = ref.watch(gameProvider(widget.roomId)).value;
     final me = ref.watch(roomIdentityProvider).value;
+    if (game != null && me != null && game.phase == GamePhase.finished) {
+      return ResultsScreen(
+        game: game,
+        myId: me.uid,
+        onExit: () => Navigator.of(context).popUntil((route) => route.isFirst),
+      );
+    }
     final mapView = game == null || me == null ? null : _mapView(game, me.uid);
     return PopScope(
       // Salir a mitad de partida llega con feature/disconnections.
@@ -314,11 +339,8 @@ class _Panel extends StatelessWidget {
         'Esperando el minijuego...',
         textAlign: TextAlign.center,
       ),
-      GamePhase.finished => Text(
-        _winnerText(),
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
+      // Al terminar se muestra ResultsScreen en vez del tablero.
+      GamePhase.finished => const SizedBox.shrink(),
     };
   }
 
@@ -330,15 +352,6 @@ class _Panel extends StatelessWidget {
         : '';
     final boost = game.lastBoost > 0 ? ' + ${game.lastBoost} (impulso)' : '';
     return 'Último dado: ${game.lastRoll}$extra$boost. ';
-  }
-
-  /// Provisional: la pantalla de resultados llega en feature/results-xp.
-  String _winnerText() {
-    final result = const AwardCalculator().calculate(game);
-    final names = [
-      for (final id in result.winnerIds) game.players[id]!.username,
-    ];
-    return '¡Partida terminada! Ganó ${names.join(' y ')}';
   }
 }
 

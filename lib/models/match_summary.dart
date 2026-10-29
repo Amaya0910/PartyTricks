@@ -22,6 +22,7 @@ class MatchSummary {
     required this.minigamesWon,
     required this.minigamesPlayed,
     this.tied = false,
+    this.experience = 0,
     this.rounds = 0,
     this.isHost = false,
     this.isPublic = false,
@@ -51,6 +52,9 @@ class MatchSummary {
 
   /// Monedas al final de la partida.
   final int coins;
+
+  /// XP que ganó en la partida (diseno_juego.md, sección 11.1).
+  final int experience;
 
   final int rounds;
 
