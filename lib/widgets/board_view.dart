@@ -39,7 +39,8 @@ Map<int, (int, int)> defaultBoardCells() {
   return cells;
 }
 
-/// Dibuja el tablero con las fichas de los jugadores y el diamante.
+/// Dibuja el tablero con las fichas de los jugadores, el diamante y las
+/// trampas.
 class BoardView extends StatelessWidget {
   const BoardView({super.key, required this.board, required this.state});
 
@@ -117,6 +118,8 @@ class _Tile extends StatelessWidget {
         child: Center(
           child: tile.id == state.diamondTileId
               ? const Icon(Icons.diamond, color: AppColors.diamond)
+              : state.traps.containsKey(tile.id)
+              ? const Icon(Icons.dangerous, color: AppColors.trap)
               : Icon(icon, color: AppColors.white, size: 16),
         ),
       ),

@@ -103,6 +103,9 @@ class AppColors {
   static const Color tileShop = coin;
   static const Color boardPanel = Color(0xE6FFFFFF);
 
+  /// Trampa puesta en el tablero de cuadritos.
+  static const Color trap = Color(0xFF424242);
+
   /// Color de cada jugador, en el orden de turnos.
   static const List<Color> players = [
     Color(0xFFD32F2F),
@@ -154,7 +157,7 @@ class AppColors {
 
   /// Íconos, textos y bordes punteados de los cosméticos.
   static const Color wardrobeInk = Color(0xFF000000);
-  
+
   // ---------------------------------------------------------------------------
   // Tienda
   // ---------------------------------------------------------------------------

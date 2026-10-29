@@ -18,6 +18,7 @@ import 'package:party_tricks/widgets/profile_avatar.dart';
 /// - Se ven todos los jugadores. Avanzan saltando de casilla en casilla y,
 ///   si comparten casilla, se ponen uno al lado del otro.
 /// - En una bifurcación, en tu turno, salen dos flechas para elegir camino.
+/// - Las trampas se ven en su casilla con el color de quien las puso.
 class BoardMapView extends StatefulWidget {
   const BoardMapView({
     super.key,
@@ -53,6 +54,7 @@ class _BoardMapViewState extends State<BoardMapView>
   /// Separación entre jugadores que están en la misma casilla.
   static const _sideBySide = 110.0;
   static const _arrowSize = 128.0;
+  static const _trapSize = 90.0;
 
   /// Distancia del centro de la bifurcación a cada flecha.
   static const _arrowDistance = 230.0;
@@ -130,10 +132,9 @@ class _BoardMapViewState extends State<BoardMapView>
     if (_viewport.isEmpty) return;
     final scale = _camera.value.getMaxScaleOnAxis();
     final mapSize = widget.map.size * scale;
-    double clamp(double value, double view, double content) =>
-        content <= view
-            ? (view - content) / 2
-            : value.clamp(view - content, 0).toDouble();
+    double clamp(double value, double view, double content) => content <= view
+        ? (view - content) / 2
+        : value.clamp(view - content, 0).toDouble();
     final dx = clamp(
       _viewport.width / 2 - world.dx * scale,
       _viewport.width,
@@ -197,6 +198,7 @@ class _BoardMapViewState extends State<BoardMapView>
                         color: AppColors.diamond,
                       ),
                     ),
+                  ..._traps(),
                   ..._arrows(),
                   ..._tokens(),
                 ],
@@ -211,6 +213,24 @@ class _BoardMapViewState extends State<BoardMapView>
   Offset? _diamondAnchor() {
     final id = widget.state.diamondTileId;
     return widget.map.tiles[id]?.anchor;
+  }
+
+  /// Las trampas puestas, con el color de quien las puso.
+  List<Widget> _traps() {
+    return [
+      for (final MapEntry(key: tileId, value: ownerId)
+          in widget.state.traps.entries)
+        if (widget.map.tiles[tileId]?.anchor case final anchor?)
+          Positioned(
+            left: anchor.dx - _trapSize / 2,
+            top: anchor.dy - _trapSize / 2,
+            child: Icon(
+              Icons.dangerous,
+              size: _trapSize,
+              color: _colorOf(ownerId),
+            ),
+          ),
+    ];
   }
 
   /// Los jugadores, con el tuyo encima de los demás.

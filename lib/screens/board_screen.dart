@@ -12,6 +12,7 @@ import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/board_view.dart';
+import 'package:party_tricks/widgets/map_items_dialog.dart';
 import 'package:party_tricks/widgets/map/board_map_view.dart';
 
 /// Pantalla de la partida: el tablero, los jugadores y lo que toca hacer.
@@ -59,6 +60,16 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
 
   void _send(GameAction action) {
     ref.read(gameServiceProvider).sendAction(widget.roomId, action);
+  }
+
+  void _openItems(String myId, ItemsMode mode) {
+    MapItemsDialog.show(
+      context,
+      roomId: widget.roomId,
+      myId: myId,
+      mode: mode,
+      onAction: _send,
+    );
   }
 
   /// Cada jugador guarda sus propias estadísticas al terminar la partida.
@@ -117,6 +128,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                         isHost: widget.isHost,
                         branchButtons: mapView == null,
                         onAction: _send,
+                        onOpenItems: (mode) => _openItems(me.uid, mode),
                       ),
                     ),
                   ],
@@ -159,6 +171,7 @@ class _Panel extends StatelessWidget {
     required this.isHost,
     required this.branchButtons,
     required this.onAction,
+    required this.onOpenItems,
   });
 
   /// Alto del panel debajo del mapa.
@@ -172,6 +185,9 @@ class _Panel extends StatelessWidget {
   /// se elige con las flechas).
   final bool branchButtons;
   final void Function(GameAction action) onAction;
+
+  /// Abre la tienda del mapa o tu mochila.
+  final void Function(ItemsMode mode) onOpenItems;
 
   @override
   Widget build(BuildContext context) {
@@ -214,14 +230,28 @@ class _Panel extends StatelessWidget {
   Widget _actions() {
     final myTurn = game.currentPlayerId == myId;
     final current = game.currentPlayer.username;
-    final lastRoll = game.lastRoll > 0 ? 'Último dado: ${game.lastRoll}. ' : '';
     return switch (game.phase) {
-      GamePhase.rolling when myTurn => _Button(
-        label: 'Lanzar dado',
-        onPressed: () => onAction(RollDice(myId)),
+      GamePhase.rolling when myTurn => Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: _Button(
+              label: 'Lanzar dado',
+              onPressed: () => onAction(RollDice(myId)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 2,
+            child: _Button(
+              label: 'Mochila',
+              onPressed: () => onOpenItems(ItemsMode.backpack),
+            ),
+          ),
+        ],
       ),
       GamePhase.rolling => Text(
-        '${lastRoll}Turno de $current',
+        '${_lastRoll()}Turno de $current',
         textAlign: TextAlign.center,
       ),
       GamePhase.choosingBranch when myTurn && !branchButtons => const Text(
@@ -250,6 +280,27 @@ class _Panel extends StatelessWidget {
         '$current está eligiendo camino',
         textAlign: TextAlign.center,
       ),
+      GamePhase.shopping when myTurn => Row(
+        children: [
+          Expanded(
+            child: _Button(
+              label: 'Tienda',
+              onPressed: () => onOpenItems(ItemsMode.shop),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _Button(
+              label: 'Terminar',
+              onPressed: () => onAction(LeaveShop(myId)),
+            ),
+          ),
+        ],
+      ),
+      GamePhase.shopping => Text(
+        '$current está comprando en la tienda',
+        textAlign: TextAlign.center,
+      ),
       // Provisional hasta tener minijuegos: el creador sortea un ganador.
       GamePhase.minigame when isHost => _Button(
         label: 'Simular minijuego',
@@ -269,6 +320,16 @@ class _Panel extends StatelessWidget {
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     };
+  }
+
+  /// "Último dado: 4 + 2 (dado extra) + 3 (impulso). "
+  String _lastRoll() {
+    if (game.lastRoll == 0) return '';
+    final extra = game.lastExtraRoll > 0
+        ? ' + ${game.lastExtraRoll} (dado extra)'
+        : '';
+    final boost = game.lastBoost > 0 ? ' + ${game.lastBoost} (impulso)' : '';
+    return 'Último dado: ${game.lastRoll}$extra$boost. ';
   }
 
   /// Provisional: la pantalla de resultados llega en feature/results-xp.
@@ -292,6 +353,9 @@ class _PlayerRow extends StatelessWidget {
   final Color color;
   final bool hasTurn;
 
+  /// Ítems en la mochila.
+  int get _items => player.inventory.values.fold(0, (a, b) => a + b);
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -310,6 +374,11 @@ class _PlayerRow extends StatelessWidget {
           Text(' ${player.coins}   '),
           const Icon(Icons.diamond, color: AppColors.diamond, size: 18),
           Text(' ${player.diamonds}'),
+          if (_items > 0) ...[
+            const Text('   '),
+            const Icon(Icons.backpack, color: AppColors.tileShop, size: 18),
+            Text(' $_items'),
+          ],
         ],
       ),
     );
