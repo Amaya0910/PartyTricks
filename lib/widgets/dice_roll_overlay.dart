@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:party_tricks/services/map/map_assets.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 
 /// Una tirada para mostrar. [serial] cambia en cada tirada, aunque salga
@@ -161,10 +162,39 @@ class _DiceRollOverlayState extends State<DiceRollOverlay>
   }
 }
 
-/// Un dado blanco con el número grande del color del jugador. Lleva número
-/// y no puntos porque con efectos puede salir hasta 12.
+/// Una cara del dado con las imágenes de arte (dado_1 a dado_6). Si falta
+/// la imagen, se dibuja un dado blanco con el número del color del jugador.
 class _Die extends StatelessWidget {
   const _Die({required this.size, required this.value, required this.color});
+
+  final double size;
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Image.asset(
+        MapAssets.dice(value),
+        fit: BoxFit.contain,
+        // Sin parpadeo al cambiar de cara mientras gira.
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) =>
+            _NumberDie(size: size, value: value, color: color),
+      ),
+    );
+  }
+}
+
+/// Dado de respaldo: blanco con el número grande del color del jugador.
+class _NumberDie extends StatelessWidget {
+  const _NumberDie({
+    required this.size,
+    required this.value,
+    required this.color,
+  });
 
   final double size;
   final int value;
