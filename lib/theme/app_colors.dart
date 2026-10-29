@@ -262,4 +262,25 @@ class AppColors {
 
   /// Fondo oscuro detrás del dado mientras rueda.
   static const Color diceScrim = Color(0x33000000);
+
+  // ---------------------------------------------------------------------------
+  // Minijuegos (reutilizan colores que ya existían)
+  // ---------------------------------------------------------------------------
+
+  /// Tarjeta del minijuego y del resultado.
+  static const Color minigamePanel = boardPanel;
+
+  /// Reacción: "Prepárate" (no toques) y "¡YA!" (toca).
+  static const Color reactionWait = authError;
+  static const Color reactionGo = accept;
+
+  /// Botones para jugar ("¡Ya!", inflar).
+  static const Color minigameButton = authAccent;
+
+  /// Globo Bomba: el globo y los que ya reventaron.
+  static const Color balloon = authError;
+  static const Color minigameOut = authError;
+
+  /// Quien ganó el minijuego.
+  static const Color minigameWinner = coin;
 }

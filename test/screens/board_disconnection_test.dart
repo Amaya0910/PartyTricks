@@ -10,6 +10,7 @@ import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/game/game_service.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/widgets/active_game_banner.dart';
 
@@ -62,7 +63,13 @@ void main() {
   late FakeRoomService rooms;
   late _FakeGameService games;
 
-  Future<void> pumpBoard(WidgetTester tester, {required String me}) async {
+  /// [settle] en false no espera a que todo se quede quieto: el reloj de un
+  /// minijuego nunca se queda quieto mientras se juega.
+  Future<void> pumpBoard(
+    WidgetTester tester, {
+    required String me,
+    bool settle = true,
+  }) async {
     tester.view
       ..physicalSize = const Size(400, 1600)
       ..devicePixelRatio = 1;
@@ -95,7 +102,12 @@ void main() {
       ),
     );
     await tester.tap(find.text('Abrir'));
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+    }
   }
 
   setUp(() {
@@ -118,8 +130,34 @@ void main() {
     await tester.pump();
 
     expect(games.hosting, 1);
-    // Ahora ella maneja el minijuego provisional.
-    expect(find.text('Simular minijuego'), findsOneWidget);
+    // El botón provisional ya no existe: el minijuego lo cierra el árbitro.
+    expect(find.text('Simular minijuego'), findsNothing);
+    expect(find.text('Esperando el minijuego...'), findsOneWidget);
+  });
+
+  testWidgets('el minijuego se juega en lugar del mapa y manda la jugada', (
+    tester,
+  ) async {
+    games.emit(
+      _game.copyWith(
+        minigame: const MinigameState(
+          type: MinigameType.stopwatch,
+          round: 1,
+          players: ['host', 'ana', 'beto'],
+          targetMs: 5000,
+        ),
+      ),
+    );
+    await pumpBoard(tester, me: 'ana', settle: false);
+    expect(find.text('Minijuego: Para el Tiempo'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 3000 + 4500));
+    await tester.tap(find.text('¡Ya!'));
+    await tester.pump();
+    final move = games.sent.whereType<MinigameMove>().single;
+    expect((move.playerId, move.round), ('ana', 1));
+    // Cuenta desde que se mostró el minijuego (después de abrir la pantalla).
+    expect(move.score, inInclusiveRange(4500, 5100));
   });
 
   testWidgets('el anfitrión que pierde el lugar deja de aplicarlas', (

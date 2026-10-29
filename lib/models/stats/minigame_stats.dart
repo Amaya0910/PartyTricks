@@ -25,8 +25,8 @@ class MinigameTypeStats {
 
 /// Minijuegos: totales y resultados por tipo.
 ///
-/// Por tipo queda vacío hasta que existan minijuegos de verdad: hoy el
-/// creador de la sala solo simula al ganador.
+/// Por tipo todavía queda vacío: la partida guarda solo el último minijuego
+/// (decisiones.md, D-26).
 class MinigameStats {
   const MinigameStats({
     this.won = 0,

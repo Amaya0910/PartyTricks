@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/results_controller.dart';
@@ -18,6 +16,8 @@ import 'package:party_tricks/widgets/confirm_dialog.dart';
 import 'package:party_tricks/widgets/dice_roll_overlay.dart';
 import 'package:party_tricks/widgets/map_items_dialog.dart';
 import 'package:party_tricks/widgets/map/board_map_view.dart';
+import 'package:party_tricks/widgets/minigames/minigame_result_overlay.dart';
+import 'package:party_tricks/widgets/minigames/minigame_view.dart';
 
 /// Pantalla de la partida: el tablero, los jugadores y lo que toca hacer.
 ///
@@ -103,6 +103,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
       onSkipTurn: (playerId) => ref
           .read(gameServiceProvider)
           .sendAction(widget.roomId, SkipTurn(playerId)),
+      onMinigameTimeout: (action) =>
+          ref.read(gameServiceProvider).sendAction(widget.roomId, action),
     )..start();
     final room = ref.read(roomProvider(widget.roomId)).value;
     _guard!.update(
@@ -244,6 +246,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
       return ResultsScreen(game: game, myId: me.uid, onExit: _leave);
     }
     final mapView = game == null || me == null ? null : _mapView(game, me.uid);
+    final players = game == null ? null : _minigamePlayers(game);
+    final minigame = game?.minigame;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -260,15 +264,34 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          mapView ??
-                              Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: BoardView(
-                                  board: ref.watch(boardProvider),
-                                  state: game,
-                                ),
+                          if (game.phase == GamePhase.minigame &&
+                              minigame != null)
+                            MinigameView(
+                              minigame: minigame,
+                              myId: me.uid,
+                              players: players!,
+                              rules: ref
+                                  .watch(gameEngineProvider)
+                                  .minigameRules,
+                              onPlay: (score) => _send(
+                                MinigameMove(me.uid, minigame.round, score),
                               ),
+                            )
+                          else
+                            mapView ??
+                                Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: BoardView(
+                                    board: ref.watch(boardProvider),
+                                    state: game,
+                                  ),
+                                ),
                           DiceRollOverlay(roll: _roll),
+                          MinigameResultOverlay(
+                            result: game.lastMinigame,
+                            players: players!,
+                            coins: ref.watch(gameEngineProvider).minigameCoins,
+                          ),
                         ],
                       ),
                     ),
@@ -277,7 +300,6 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                       child: _Panel(
                         game: game,
                         myId: me.uid,
-                        isHost: _isHost,
                         branchButtons: mapView == null,
                         onAction: _send,
                         onOpenItems: (mode) => _openItems(me.uid, mode),
@@ -287,6 +309,17 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                 ),
         ),
       ),
+    );
+  }
+
+  /// Nombre y color de cada jugador, para los minijuegos.
+  MinigamePlayers _minigamePlayers(GameState game) {
+    return MinigamePlayers(
+      names: {for (final p in game.players.values) p.id: p.username},
+      colors: {
+        for (final (index, id) in game.turnOrder.indexed)
+          id: AppColors.players[index % AppColors.players.length],
+      },
     );
   }
 
@@ -320,7 +353,6 @@ class _Panel extends StatelessWidget {
   const _Panel({
     required this.game,
     required this.myId,
-    required this.isHost,
     required this.branchButtons,
     required this.onAction,
     required this.onOpenItems,
@@ -331,7 +363,6 @@ class _Panel extends StatelessWidget {
 
   final GameState game;
   final String myId;
-  final bool isHost;
 
   /// Botones Seguir y Atajo, solo si no se ve el mapa dibujado (en el mapa
   /// se elige con las flechas).
@@ -453,18 +484,14 @@ class _Panel extends StatelessWidget {
         '$current está comprando en la tienda',
         textAlign: TextAlign.center,
       ),
-      // Provisional hasta tener minijuegos: el creador sortea un ganador.
-      GamePhase.minigame when isHost => _Button(
-        label: 'Simular minijuego',
-        onPressed: () {
-          final winner =
-              game.turnOrder[Random().nextInt(game.turnOrder.length)];
-          onAction(FinishMinigame([winner]));
+      // El minijuego se juega arriba, en lugar del mapa.
+      GamePhase.minigame => Text(
+        switch (game.minigame) {
+          final minigame? => 'Minijuego: ${minigame.type.title}',
+          null => 'Esperando el minijuego...',
         },
-      ),
-      GamePhase.minigame => const Text(
-        'Esperando el minijuego...',
         textAlign: TextAlign.center,
+        style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       // Al terminar se muestra ResultsScreen en vez del tablero.
       GamePhase.finished => const SizedBox.shrink(),
