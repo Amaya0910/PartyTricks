@@ -2,20 +2,27 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/results_controller.dart';
+import 'package:party_tricks/controllers/room_guard.dart';
 import 'package:party_tricks/controllers/stats_controller.dart';
+import 'package:party_tricks/screens/results_screen.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
-import 'package:party_tricks/services/game_engine/award_calculator.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/map/map_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/board_view.dart';
+import 'package:party_tricks/widgets/confirm_dialog.dart';
+import 'package:party_tricks/widgets/map_items_dialog.dart';
+import 'package:party_tricks/widgets/map/board_map_view.dart';
 
 /// Pantalla de la partida: el tablero, los jugadores y lo que toca hacer.
 ///
-/// En el teléfono del creador también corre el anfitrión, que aplica las
-/// acciones de todos.
+/// En el teléfono del anfitrión también corre el que aplica las acciones de
+/// todos. Si el anfitrión se va, otro jugador toma su lugar ([RoomGuard]) y
+/// su teléfono empieza a aplicarlas; [isHost] solo dice quién empieza.
 class BoardScreen extends ConsumerStatefulWidget {
   const BoardScreen({super.key, required this.roomId, required this.isHost});
 
@@ -35,59 +42,176 @@ class BoardScreen extends ConsumerStatefulWidget {
 class _BoardScreenState extends ConsumerState<BoardScreen> {
   void Function()? _stopHost;
 
+  /// Presencia, cambio de anfitrión y turnos de los desconectados.
+  RoomGuard? _guard;
+  String? _myUid;
+
   /// Mide la partida para las estadísticas (tiempo jugando y en minijuegos).
   final _timeTracker = MatchTimeTracker();
 
   /// Para guardar la partida en las estadísticas una sola vez.
   bool _statsRecorded = false;
 
+  bool get _isHost => _stopHost != null;
+
   @override
   void initState() {
     super.initState();
-    if (widget.isHost) {
-      _stopHost = ref.read(gameServiceProvider).runHost(widget.roomId);
-    }
+    if (widget.isHost) _setHosting(true);
+    ref.listenManual(
+      roomIdentityProvider,
+      (_, next) => _onIdentity(next.value?.uid),
+      fireImmediately: true,
+    );
+    ref.listenManual(roomProvider(widget.roomId), (_, next) {
+      final room = next.value;
+      _guard?.update(room: room);
+      final uid = _myUid;
+      if (room != null && uid != null) _setHosting(room.hostUid == uid);
+    }, fireImmediately: true);
   }
 
   @override
   void dispose() {
     _stopHost?.call();
+    _guard?.dispose();
     super.dispose();
+  }
+
+  void _onIdentity(String? uid) {
+    if (uid == null || _myUid != null) return;
+    _myUid = uid;
+    final rooms = ref.read(roomServiceProvider);
+    // Para volver a la partida si se cierra la app.
+    rooms.setActiveGame(uid, widget.roomId).catchError((Object error) {
+      debugPrint('No se pudo guardar la partida en curso: $error');
+    });
+    _guard = RoomGuard(
+      roomId: widget.roomId,
+      uid: uid,
+      rooms: rooms,
+      presence: ref.read(presenceServiceProvider),
+      policy: ref.read(disconnectionPolicyProvider),
+      onSkipTurn: (playerId) => ref
+          .read(gameServiceProvider)
+          .sendAction(widget.roomId, SkipTurn(playerId)),
+    )..start();
+    final room = ref.read(roomProvider(widget.roomId)).value;
+    _guard!.update(
+      room: room,
+      game: ref.read(gameProvider(widget.roomId)).value,
+    );
+    if (room != null) _setHosting(room.hostUid == uid);
+  }
+
+  /// Empieza o deja de aplicar las acciones de todos. Las que llegaron
+  /// mientras no había anfitrión siguen en la fila y se aplican al empezar.
+  void _setHosting(bool host) {
+    if (host == _isHost) return;
+    if (host) {
+      _stopHost = ref.read(gameServiceProvider).runHost(widget.roomId);
+    } else {
+      _stopHost!.call();
+      _stopHost = null;
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Salir de la sala: deja de ser su partida en curso. Si era el último en
+  /// la sala, la sala se borra.
+  Future<void> _leave() async {
+    final uid = _myUid;
+    if (uid != null) {
+      final rooms = ref.read(roomServiceProvider);
+      try {
+        await rooms.setActiveGame(uid, null);
+        await rooms.leave(roomId: widget.roomId, uid: uid);
+      } catch (error) {
+        debugPrint('No se pudo salir de la sala: $error');
+      }
+    }
+    if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  /// A mitad de partida se pregunta antes de salir.
+  Future<void> _confirmLeave() async {
+    final leave = await ConfirmDialog.show(
+      context,
+      title: 'Salir',
+      message:
+          'Si sales, la partida sigue sin ti y no ganas XP ni premios. '
+          'Tus turnos se saltan.',
+      confirmLabel: 'Salir de la partida',
+    );
+    if (leave) await _leave();
   }
 
   void _send(GameAction action) {
     ref.read(gameServiceProvider).sendAction(widget.roomId, action);
   }
 
-  /// Cada jugador guarda sus propias estadísticas al terminar la partida.
+  void _openItems(String myId, ItemsMode mode) {
+    MapItemsDialog.show(
+      context,
+      roomId: widget.roomId,
+      myId: myId,
+      mode: mode,
+      onAction: _send,
+    );
+  }
+
+  /// Al terminar la partida cada jugador guarda sus estadísticas, su XP y
+  /// lo que pasa a su cuenta; el anfitrión además guarda el resultado en el
+  /// registro de partidas.
   void _onGameChanged(GameState? game) {
     if (game == null) return;
     _timeTracker.onPhase(game.phase);
     if (game.phase != GamePhase.finished || _statsRecorded) return;
     _statsRecorded = true;
+    final room = ref.read(roomProvider(widget.roomId)).value;
+    final isPublic = room?.isPublic ?? false;
     ref
         .read(statsControllerProvider)
         .recordFinishedMatch(
           roomId: widget.roomId,
           game: game,
           tracker: _timeTracker,
-          isHost: widget.isHost,
-          isPublic:
-              ref.read(roomProvider(widget.roomId)).value?.isPublic ?? false,
+          isHost: _isHost,
+          isPublic: isPublic,
         );
+    final hostUid = room?.hostUid ?? ref.read(roomIdentityProvider).value?.uid;
+    if (_isHost && hostUid != null) {
+      ref
+          .read(resultsControllerProvider)
+          .saveFinishedMatch(
+            roomId: widget.roomId,
+            hostUid: hostUid,
+            game: game,
+            isPublic: isPublic,
+          );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(
-      gameProvider(widget.roomId),
-      (_, next) => _onGameChanged(next.value),
-    );
+    ref.listen(gameProvider(widget.roomId), (_, next) {
+      _guard?.update(game: next.value);
+      _onGameChanged(next.value);
+    });
+    // Se escucha la sala para tenerla cargada al terminar (si es pública y
+    // quién es el anfitrión); si no, Riverpod la pausa y llega vacía.
+    ref.watch(roomProvider(widget.roomId));
     final game = ref.watch(gameProvider(widget.roomId)).value;
     final me = ref.watch(roomIdentityProvider).value;
+    if (game != null && me != null && game.phase == GamePhase.finished) {
+      return ResultsScreen(game: game, myId: me.uid, onExit: _leave);
+    }
+    final mapView = game == null || me == null ? null : _mapView(game, me.uid);
     return PopScope(
-      // Salir a mitad de partida llega con feature/disconnections.
-      canPop: game?.phase == GamePhase.finished,
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
       child: Scaffold(
         backgroundColor: AppColors.screenBackground,
         body: SafeArea(
@@ -95,25 +219,56 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
               ? const Center(child: Text('Preparando la partida...'))
               : Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: BoardView(
-                        board: ref.watch(boardProvider),
-                        state: game,
-                      ),
-                    ),
                     Expanded(
+                      child:
+                          mapView ??
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: BoardView(
+                              board: ref.watch(boardProvider),
+                              state: game,
+                            ),
+                          ),
+                    ),
+                    SizedBox(
+                      height: _Panel.height,
                       child: _Panel(
                         game: game,
                         myId: me.uid,
-                        isHost: widget.isHost,
+                        isHost: _isHost,
+                        branchButtons: mapView == null,
                         onAction: _send,
+                        onOpenItems: (mode) => _openItems(me.uid, mode),
                       ),
                     ),
                   ],
                 ),
         ),
       ),
+    );
+  }
+
+  /// El mapa dibujado, o null si todavía no carga o le faltan casillas. En
+  /// ese caso se muestra el tablero de cuadritos para que se pueda jugar.
+  Widget? _mapView(GameState game, String myId) {
+    final map = ref.watch(boardMapProvider);
+    final texture = ref.watch(pathTextureProvider).value;
+    final board = ref.watch(boardProvider);
+    if (map.hasError) debugPrint('Mapa: ${map.error}');
+    final loaded = map.value;
+    if (loaded == null || texture == null) return null;
+    final missing = loaded.missingTiles(board.tiles.map((tile) => tile.id));
+    if (missing.isNotEmpty) {
+      debugPrint('Mapa: faltan las casillas $missing');
+      return null;
+    }
+    return BoardMapView(
+      map: loaded,
+      board: board,
+      pathTexture: texture,
+      state: game,
+      myId: myId,
+      onChooseBranch: (branch) => _send(ChooseBranch(myId, branch)),
     );
   }
 }
@@ -124,13 +279,25 @@ class _Panel extends StatelessWidget {
     required this.game,
     required this.myId,
     required this.isHost,
+    required this.branchButtons,
     required this.onAction,
+    required this.onOpenItems,
   });
+
+  /// Alto del panel debajo del mapa.
+  static const height = 230.0;
 
   final GameState game;
   final String myId;
   final bool isHost;
+
+  /// Botones Seguir y Atajo, solo si no se ve el mapa dibujado (en el mapa
+  /// se elige con las flechas).
+  final bool branchButtons;
   final void Function(GameAction action) onAction;
+
+  /// Abre la tienda del mapa o tu mochila.
+  final void Function(ItemsMode mode) onOpenItems;
 
   @override
   Widget build(BuildContext context) {
@@ -173,15 +340,34 @@ class _Panel extends StatelessWidget {
   Widget _actions() {
     final myTurn = game.currentPlayerId == myId;
     final current = game.currentPlayer.username;
-    final lastRoll = game.lastRoll > 0 ? 'Último dado: ${game.lastRoll}. ' : '';
     return switch (game.phase) {
-      GamePhase.rolling when myTurn => _Button(
-        label: 'Lanzar dado',
-        onPressed: () => onAction(RollDice(myId)),
+      GamePhase.rolling when myTurn => Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: _Button(
+              label: 'Lanzar dado',
+              onPressed: () => onAction(RollDice(myId)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 2,
+            child: _Button(
+              label: 'Mochila',
+              onPressed: () => onOpenItems(ItemsMode.backpack),
+            ),
+          ),
+        ],
       ),
       GamePhase.rolling => Text(
-        '${lastRoll}Turno de $current',
+        '${_lastRoll()}Turno de $current',
         textAlign: TextAlign.center,
+      ),
+      GamePhase.choosingBranch when myTurn && !branchButtons => const Text(
+        'Toca una flecha en el mapa para elegir el camino',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontWeight: FontWeight.w600),
       ),
       GamePhase.choosingBranch when myTurn => Row(
         children: [
@@ -204,6 +390,27 @@ class _Panel extends StatelessWidget {
         '$current está eligiendo camino',
         textAlign: TextAlign.center,
       ),
+      GamePhase.shopping when myTurn => Row(
+        children: [
+          Expanded(
+            child: _Button(
+              label: 'Tienda',
+              onPressed: () => onOpenItems(ItemsMode.shop),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _Button(
+              label: 'Terminar',
+              onPressed: () => onAction(LeaveShop(myId)),
+            ),
+          ),
+        ],
+      ),
+      GamePhase.shopping => Text(
+        '$current está comprando en la tienda',
+        textAlign: TextAlign.center,
+      ),
       // Provisional hasta tener minijuegos: el creador sortea un ganador.
       GamePhase.minigame when isHost => _Button(
         label: 'Simular minijuego',
@@ -217,21 +424,19 @@ class _Panel extends StatelessWidget {
         'Esperando el minijuego...',
         textAlign: TextAlign.center,
       ),
-      GamePhase.finished => Text(
-        _winnerText(),
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
+      // Al terminar se muestra ResultsScreen en vez del tablero.
+      GamePhase.finished => const SizedBox.shrink(),
     };
   }
 
-  /// Provisional: la pantalla de resultados llega en feature/results-xp.
-  String _winnerText() {
-    final result = const AwardCalculator().calculate(game);
-    final names = [
-      for (final id in result.winnerIds) game.players[id]!.username,
-    ];
-    return '¡Partida terminada! Ganó ${names.join(' y ')}';
+  /// "Último dado: 4 + 2 (dado extra) + 3 (impulso). "
+  String _lastRoll() {
+    if (game.lastRoll == 0) return '';
+    final extra = game.lastExtraRoll > 0
+        ? ' + ${game.lastExtraRoll} (dado extra)'
+        : '';
+    final boost = game.lastBoost > 0 ? ' + ${game.lastBoost} (impulso)' : '';
+    return 'Último dado: ${game.lastRoll}$extra$boost. ';
   }
 }
 
@@ -245,6 +450,9 @@ class _PlayerRow extends StatelessWidget {
   final PlayerState player;
   final Color color;
   final bool hasTurn;
+
+  /// Ítems en la mochila.
+  int get _items => player.inventory.values.fold(0, (a, b) => a + b);
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +472,11 @@ class _PlayerRow extends StatelessWidget {
           Text(' ${player.coins}   '),
           const Icon(Icons.diamond, color: AppColors.diamond, size: 18),
           Text(' ${player.diamonds}'),
+          if (_items > 0) ...[
+            const Text('   '),
+            const Icon(Icons.backpack, color: AppColors.tileShop, size: 18),
+            Text(' $_items'),
+          ],
         ],
       ),
     );

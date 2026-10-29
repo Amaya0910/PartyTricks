@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:party_tricks/controllers/room_controller.dart';
 import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/services/rooms/disconnection_policy.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/rooms/room_service.dart';
 
@@ -54,6 +55,26 @@ class FakeRoomService implements RoomService {
 
   @override
   Stream<Room?> watchRoom(String roomId) => Stream.value(rooms[roomId]);
+
+  @override
+  Future<bool> claimHost({
+    required String roomId,
+    required String expectedHost,
+    required String uid,
+  }) async => false;
+
+  @override
+  Future<void> touch(String roomId) async {}
+
+  @override
+  Future<int> cleanAbandoned(DisconnectionPolicy policy, DateTime now) async =>
+      0;
+
+  @override
+  Future<void> setActiveGame(String uid, String? roomId) async {}
+
+  @override
+  Stream<String?> watchActiveGame(String uid) => Stream.value(null);
 }
 
 ProviderContainer containerWith(FakeRoomService service) {

@@ -5,6 +5,7 @@ import 'package:party_tricks/services/game_engine/game_engine.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
 import 'package:party_tricks/services/game_engine/turn_order_resolver.dart';
+import 'test_board.dart';
 
 import 'fake_random_source.dart';
 
@@ -19,7 +20,7 @@ const diamondFar = 38;
 
 GameEngine engineWith(List<int> randomValues) {
   return GameEngine(
-    board: buildDefaultBoard(),
+    board: buildTestBoard(),
     random: FakeRandomSource(randomValues),
   );
 }

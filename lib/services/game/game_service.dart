@@ -1,5 +1,7 @@
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
+import 'package:party_tricks/services/game_engine/game_codec.dart';
+import 'package:party_tricks/services/game_engine/game_engine.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/random_source.dart';
 import 'package:party_tricks/services/game_engine/turn_order_resolver.dart';
@@ -33,4 +35,28 @@ List<InitialRoll> initialRollsFor(Room room, RandomSource random) {
         value: random.rollDie(),
       ),
   ];
+}
+
+/// Lo que hace el anfitrión con cada acción que llega: lee el estado
+/// guardado, aplica la acción y devuelve el estado nuevo para guardar.
+///
+/// Devuelve null si la acción no vale ahora (alguien tocó el dado dos veces,
+/// no era su turno, no le alcanzan las monedas...) o si no se entiende.
+Map<String, Object?>? hostApply(
+  GameEngine engine,
+  Map<Object?, Object?> game,
+  Map<Object?, Object?> action,
+) {
+  const codec = GameCodec();
+  try {
+    final next = engine.apply(
+      codec.decodeState(game),
+      codec.decodeAction(action),
+    );
+    return codec.encodeState(next);
+  } on StateError {
+    return null;
+  } on FormatException {
+    return null;
+  }
 }

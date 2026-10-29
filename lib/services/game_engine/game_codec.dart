@@ -1,9 +1,13 @@
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
 
 /// Convierte el estado y las acciones a mapas para guardarlos en Realtime
 /// Database (`rooms/{id}/game` y `rooms/{id}/actions`), y de vuelta.
+///
+/// Los campos que faltan se leen vacíos, así las partidas guardadas antes de
+/// las tiendas siguen funcionando.
 class GameCodec {
   const GameCodec();
 
@@ -17,6 +21,13 @@ class GameCodec {
     'diamondTileId': state.diamondTileId,
     'stepsLeft': state.stepsLeft,
     'lastRoll': state.lastRoll,
+    'lastExtraRoll': state.lastExtraRoll,
+    'lastBoost': state.lastBoost,
+    // Con claves "t17" y no "17": si las claves son números, la base de
+    // datos puede devolver el mapa como lista.
+    'traps': {
+      for (final entry in state.traps.entries) 't${entry.key}': entry.value,
+    },
   };
 
   GameState decodeState(Map<Object?, Object?> data) {
@@ -37,6 +48,12 @@ class GameCodec {
       diamondTileId: _int(data['diamondTileId']),
       stepsLeft: _int(data['stepsLeft']),
       lastRoll: _int(data['lastRoll']),
+      lastExtraRoll: _int(data['lastExtraRoll']),
+      lastBoost: _int(data['lastBoost']),
+      traps: {
+        for (final entry in _map(data['traps']).entries)
+          int.parse((entry.key as String).substring(1)): entry.value as String,
+      },
     );
   }
 
@@ -46,6 +63,18 @@ class GameCodec {
       'type': 'branch',
       'playerId': playerId,
       'branch': branch,
+    },
+    BuyItem(:final playerId, :final item) => {
+      'type': 'buy',
+      'playerId': playerId,
+      'item': item.name,
+    },
+    LeaveShop(:final playerId) => {'type': 'leaveShop', 'playerId': playerId},
+    SkipTurn(:final playerId) => {'type': 'skip', 'playerId': playerId},
+    UseItem(:final playerId, :final item) => {
+      'type': 'useItem',
+      'playerId': playerId,
+      'item': item.name,
     },
     FinishMinigame(:final winnerIds) => {
       'type': 'minigame',
@@ -60,6 +89,10 @@ class GameCodec {
         data['playerId'] as String,
         _int(data['branch']),
       ),
+      'buy' => BuyItem(data['playerId'] as String, _item(data['item'])),
+      'leaveShop' => LeaveShop(data['playerId'] as String),
+      'skip' => SkipTurn(data['playerId'] as String),
+      'useItem' => UseItem(data['playerId'] as String, _item(data['item'])),
       'minigame' => FinishMinigame([
         for (final id in data['winnerIds'] as List? ?? const []) id as String,
       ]),
@@ -85,6 +118,13 @@ class GameCodec {
     'shortcutsTaken': p.shortcutsTaken,
     'laps': p.laps,
     'mapDiamonds': p.mapDiamonds,
+    'inventory': {
+      for (final entry in p.inventory.entries) entry.key.name: entry.value,
+    },
+    'activeItems': [for (final item in p.activeItems) item.name],
+    'itemsUsed': p.itemsUsed,
+    'away': p.away,
+    'missedTurns': p.missedTurns,
   };
 
   PlayerState _decodePlayer(String id, Map<Object?, Object?> data) {
@@ -110,8 +150,45 @@ class GameCodec {
       shortcutsTaken: _int(data['shortcutsTaken']),
       laps: _int(data['laps']),
       mapDiamonds: _int(data['mapDiamonds']),
+      // Un ítem que esta versión no conoce se ignora en vez de romper.
+      inventory: {
+        for (final entry in _map(data['inventory']).entries)
+          if (_knownItem(entry.key) case final item?)
+            if (_int(entry.value) > 0) item: _int(entry.value),
+      },
+      activeItems: [
+        for (final name in _list(data['activeItems'])) ?_knownItem(name),
+      ],
+      itemsUsed: _int(data['itemsUsed']),
+      away: data['away'] as bool? ?? false,
+      missedTurns: _int(data['missedTurns']),
     );
   }
+
+  ShopItem _item(Object? name) {
+    final item = _knownItem(name);
+    if (item == null) throw FormatException('Ítem desconocido: $name');
+    return item;
+  }
+
+  ShopItem? _knownItem(Object? name) {
+    for (final item in ShopItem.values) {
+      if (item.name == name) return item;
+    }
+    return null;
+  }
+
+  /// La base de datos no guarda los mapas vacíos.
+  Map<Object?, Object?> _map(Object? value) =>
+      value as Map<Object?, Object?>? ?? const {};
+
+  /// Las listas pueden volver como mapa ("0", "1"...) si les faltan
+  /// posiciones.
+  Iterable<Object?> _list(Object? value) => switch (value) {
+    final List<Object?> list => list.whereType<Object>(),
+    final Map<Object?, Object?> map => map.values,
+    _ => const [],
+  };
 
   /// La base de datos puede devolver los números como int o como double, y
   /// no guarda los que valen null.

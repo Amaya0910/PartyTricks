@@ -1,4 +1,5 @@
 import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/services/rooms/disconnection_policy.dart';
 
 /// Error al crear o entrar a una sala, con un mensaje para mostrar.
 class RoomException implements Exception {
@@ -34,8 +35,29 @@ abstract class RoomService {
     required String username,
   });
 
-  /// Saca al jugador de la sala.
+  /// Saca al jugador de la sala. Si era el último, borra la sala.
   Future<void> leave({required String roomId, required String uid});
+
+  /// Toma el lugar del anfitrión [expectedHost] si todavía lo es (si otro
+  /// ya lo tomó, no hace nada). Devuelve true si [uid] quedó de anfitrión.
+  Future<bool> claimHost({
+    required String roomId,
+    required String expectedHost,
+    required String uid,
+  });
+
+  /// Solo el anfitrión: avisa que la sala sigue viva (`meta/lastActiveAt`).
+  Future<void> touch(String roomId);
+
+  /// Borra de la lista pública las salas que ya no existen y las que
+  /// quedaron abandonadas. Devuelve cuántas quitó.
+  Future<int> cleanAbandoned(DisconnectionPolicy policy, DateTime now);
+
+  /// La partida en curso del jugador, para volver a ella si cierra la app.
+  /// Con null se borra.
+  Future<void> setActiveGame(String uid, String? roomId);
+
+  Stream<String?> watchActiveGame(String uid);
 
   /// Cambia el estado. Solo lo hace el creador (arrancar o cerrar).
   Future<void> setStatus(Room room, RoomStatus status);

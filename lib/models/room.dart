@@ -31,6 +31,7 @@ class RoomPlayer {
     required this.username,
     required this.joinedAt,
     this.connected = true,
+    this.lastSeen,
     this.photoUrl,
   });
 
@@ -40,6 +41,7 @@ class RoomPlayer {
       username: data['username'] as String,
       joinedAt: DateTime.fromMillisecondsSinceEpoch(data['joinedAt'] as int),
       connected: data['connected'] as bool? ?? true,
+      lastSeen: _time(data['lastSeen']),
       photoUrl: data['photoUrl'] as String?,
     );
   }
@@ -49,6 +51,10 @@ class RoomPlayer {
   final DateTime joinedAt;
   final bool connected;
 
+  /// Última vez que la presencia lo vio (hora del servidor). Null en las
+  /// salas guardadas antes de `feature/disconnections`.
+  final DateTime? lastSeen;
+
   /// Foto de perfil (opcional). Si es null se muestra un ícono.
   final String? photoUrl;
 
@@ -56,9 +62,13 @@ class RoomPlayer {
     'username': username,
     'joinedAt': joinedAt.millisecondsSinceEpoch,
     'connected': connected,
+    if (lastSeen != null) 'lastSeen': lastSeen!.millisecondsSinceEpoch,
     if (photoUrl != null) 'photoUrl': photoUrl,
   };
 }
+
+DateTime? _time(Object? value) =>
+    value is num ? DateTime.fromMillisecondsSinceEpoch(value.toInt()) : null;
 
 /// Sala de juego guardada en Realtime Database en `rooms/{id}`.
 class Room {
@@ -71,6 +81,7 @@ class Room {
     required this.rounds,
     required this.status,
     required this.lobbyEndsAt,
+    this.lastActiveAt,
     this.players = const {},
   });
 
@@ -89,6 +100,7 @@ class Room {
       lobbyEndsAt: DateTime.fromMillisecondsSinceEpoch(
         meta['lobbyEndsAt'] as int,
       ),
+      lastActiveAt: _time(meta['lastActiveAt']),
       players: {
         for (final entry in players.entries)
           entry.key as String: RoomPlayer.fromMap(
@@ -116,6 +128,10 @@ class Room {
   /// Hora en que se acaba la espera de 1:30.
   final DateTime lobbyEndsAt;
 
+  /// Última vez que el anfitrión dio señales (lo renueva mientras juega).
+  /// Sirve para saber si la sala quedó abandonada.
+  final DateTime? lastActiveAt;
+
   /// Jugadores por uid.
   final Map<String, RoomPlayer> players;
 
@@ -140,8 +156,7 @@ class Room {
     'rounds': rounds,
     'status': status.name,
     'lobbyEndsAt': lobbyEndsAt.millisecondsSinceEpoch,
+    if (lastActiveAt != null)
+      'lastActiveAt': lastActiveAt!.millisecondsSinceEpoch,
   };
 }
-
-
-

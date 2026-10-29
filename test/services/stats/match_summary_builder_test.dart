@@ -133,4 +133,13 @@ void main() {
 
     expect(summary, isNull);
   });
+
+  test('guarda la XP de la partida según el puesto', () {
+    // 3 jugadores y 5 rondas: 100 × 1,15 × 0,75 = 86 para el primero.
+    final first = builder.build(matchId: 's', game: game(), playerId: 'a')!;
+    final last = builder.build(matchId: 's', game: game(), playerId: 'c')!;
+
+    expect(first.experience, 86);
+    expect(last.experience, 26);
+  });
 }

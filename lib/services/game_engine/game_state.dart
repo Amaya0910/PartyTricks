@@ -1,7 +1,11 @@
+import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
 
 /// En qué momento de la ronda va la partida.
-enum GamePhase { rolling, choosingBranch, minigame, finished }
+///
+/// [shopping]: el jugador cayó en una tienda y está comprando; su turno
+/// termina cuando sale.
+enum GamePhase { rolling, choosingBranch, shopping, minigame, finished }
 
 /// Estado de un jugador dentro de una partida.
 class PlayerState {
@@ -24,6 +28,11 @@ class PlayerState {
     this.shortcutsTaken = 0,
     this.laps = 0,
     this.mapDiamonds = 0,
+    this.inventory = const {},
+    this.activeItems = const [],
+    this.itemsUsed = 0,
+    this.away = false,
+    this.missedTurns = 0,
   });
 
   final String id;
@@ -65,6 +74,38 @@ class PlayerState {
   /// Diamantes recogidos en el mapa.
   final int mapDiamonds;
 
+  /// Mochila: cuántos tiene de cada ítem. Los que tiene en 0 no aparecen.
+  final Map<ShopItem, int> inventory;
+
+  /// Ítems que activó para su próxima tirada (dado extra e impulso).
+  final List<ShopItem> activeItems;
+
+  /// Ítems que gastó: los que activó y los pasivos que se usaron solos.
+  final int itemsUsed;
+
+  /// Se desconectó y el anfitrión le saltó el turno. Vuelve a false cuando
+  /// juega de nuevo. Si termina la partida así, no gana XP ni premios
+  /// (diseno_juego.md, sección 11).
+  final bool away;
+
+  /// Turnos que el anfitrión le saltó por estar desconectado.
+  final int missedTurns;
+
+  int itemCount(ShopItem item) => inventory[item] ?? 0;
+
+  /// Suma o quita [delta] ítems de la mochila.
+  PlayerState addItem(ShopItem item, int delta) {
+    final count = itemCount(item) + delta;
+    final updated = {...inventory}..remove(item);
+    if (count > 0) updated[item] = count;
+    return copyWith(inventory: updated);
+  }
+
+  /// Gasta un ítem de la mochila y lo cuenta como usado.
+  PlayerState consumeItem(ShopItem item) {
+    return addItem(item, -1).copyWith(itemsUsed: itemsUsed + 1);
+  }
+
   /// Suma o resta monedas sin bajar de cero.
   PlayerState addCoins(int delta) {
     final total = coins + delta;
@@ -89,6 +130,11 @@ class PlayerState {
     int? shortcutsTaken,
     int? laps,
     int? mapDiamonds,
+    Map<ShopItem, int>? inventory,
+    List<ShopItem>? activeItems,
+    int? itemsUsed,
+    bool? away,
+    int? missedTurns,
   }) {
     return PlayerState(
       id: id,
@@ -111,6 +157,11 @@ class PlayerState {
       shortcutsTaken: shortcutsTaken ?? this.shortcutsTaken,
       laps: laps ?? this.laps,
       mapDiamonds: mapDiamonds ?? this.mapDiamonds,
+      inventory: inventory ?? this.inventory,
+      activeItems: activeItems ?? this.activeItems,
+      itemsUsed: itemsUsed ?? this.itemsUsed,
+      away: away ?? this.away,
+      missedTurns: missedTurns ?? this.missedTurns,
     );
   }
 }
@@ -127,6 +178,9 @@ class GameState {
     this.phase = GamePhase.rolling,
     this.stepsLeft = 0,
     this.lastRoll = 0,
+    this.lastExtraRoll = 0,
+    this.lastBoost = 0,
+    this.traps = const {},
   });
 
   /// Jugadores por id.
@@ -152,6 +206,14 @@ class GameState {
   /// Último número que salió en el dado.
   final int lastRoll;
 
+  /// Lo que salió en el dado extra y las casillas del impulso en la última
+  /// tirada, o 0 si no se usaron.
+  final int lastExtraRoll;
+  final int lastBoost;
+
+  /// Trampas puestas: casilla -> id de quien la puso.
+  final Map<int, String> traps;
+
   String get currentPlayerId => turnOrder[turnIndex];
 
   PlayerState get currentPlayer => players[currentPlayerId]!;
@@ -169,6 +231,9 @@ class GameState {
     int? diamondTileId,
     int? stepsLeft,
     int? lastRoll,
+    int? lastExtraRoll,
+    int? lastBoost,
+    Map<int, String>? traps,
   }) {
     return GameState(
       players: players ?? this.players,
@@ -180,6 +245,9 @@ class GameState {
       diamondTileId: diamondTileId ?? this.diamondTileId,
       stepsLeft: stepsLeft ?? this.stepsLeft,
       lastRoll: lastRoll ?? this.lastRoll,
+      lastExtraRoll: lastExtraRoll ?? this.lastExtraRoll,
+      lastBoost: lastBoost ?? this.lastBoost,
+      traps: traps ?? this.traps,
     );
   }
 }

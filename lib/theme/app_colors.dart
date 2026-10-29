@@ -103,6 +103,21 @@ class AppColors {
   static const Color tileShop = coin;
   static const Color boardPanel = Color(0xE6FFFFFF);
 
+  /// Trampa puesta en el tablero de cuadritos.
+  static const Color trap = Color(0xFF424242);
+
+  // ---------------------------------------------------------------------------
+  // Resultados
+  // ---------------------------------------------------------------------------
+
+  /// Medallas del 1.º, 2.º y 3.º puesto.
+  static const Color medalGold = Color(0xFFFFC107);
+  static const Color medalSilver = Color(0xFFB0BEC5);
+  static const Color medalBronze = Color(0xFFCD7F32);
+
+  /// Fondo de tu fila en la clasificación.
+  static const Color resultsMine = Color(0x3345C7FF);
+
   /// Color de cada jugador, en el orden de turnos.
   static const List<Color> players = [
     Color(0xFFD32F2F),
@@ -154,7 +169,7 @@ class AppColors {
 
   /// Íconos, textos y bordes punteados de los cosméticos.
   static const Color wardrobeInk = Color(0xFF000000);
-  
+
   // ---------------------------------------------------------------------------
   // Tienda
   // ---------------------------------------------------------------------------

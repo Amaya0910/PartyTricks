@@ -101,7 +101,7 @@ Vive en Realtime Database, en `rooms/{id}` (ver D-14).
 | `maxJugadores` | Entre 2 y 6 |
 | `rondas` | Entre 5 y 25 |
 | `estado` | Esperando, en juego o cerrada |
-| `jugadores` | Lista con su presencia (conectado o no) |
+| `jugadores` | Lista con su presencia: `connected` y `lastSeen` (ver `disconnections.md`) |
 
 ### 2.6 Partida
 
@@ -113,8 +113,9 @@ Vive en Realtime Database, en `rooms/{id}/game` (ver D-15).
 | `rondaActual` y `turnoActual` | Dónde va la partida |
 | `jugadores` | Por jugador: posición, monedas, diamantes, efecto pendiente y conteos para los premios finales |
 | `casillaDiamante` | Casilla donde está el diamante |
-| `fase` | Lanzando, eligiendo camino, minijuego o terminada |
-| `ítems y trampas` | _(por construir, `feature/map-shop-items`)_ Casillas con trampa colocada, quién la puso y los dados extra comprados |
+| `fase` | Lanzando, eligiendo camino, en la tienda, minijuego o terminada |
+| `traps` | Casillas con trampa colocada y quién la puso (ver `map_shop_items.md`) |
+| Por jugador: `inventory`, `activeItems`, `itemsUsed` | Mochila con los ítems comprados, los activados para la próxima tirada y cuántos gastó |
 
 Conteos que se guardan para los **diamantes finales**: minijuegos ganados, casillas negativas pisadas, monedas al final y compras hechas.
 
@@ -126,7 +127,9 @@ Conteos que se guardan para los **diamantes finales**: minijuegos ganados, casil
 | `experienciaGanada` | Según la fórmula de `diseno_juego.md` (sección 11.1) |
 | `monedasYDiamantes` | Lo que sobra y pasa a la cuenta |
 
-Un jugador desconectado recibe 0 de experiencia, monedas y diamantes.
+Un jugador desconectado recibe 0 de experiencia, monedas y diamantes (`away` en la partida, ver `disconnections.md`).
+
+Cómo se guarda (ver `results_system.md`): la XP, monedas y diamantes se suman a `users/{uid}`, la marca `stats/{uid}/matches/{roomId}` guarda puesto y XP, y el anfitrión crea el registro `matchResults/{roomId}` para los rankings.
 
 ### 2.8 Estadísticas del jugador
 

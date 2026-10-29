@@ -43,18 +43,19 @@ class BoardLayout {
   }
 }
 
-/// Tablero de 42 casillas y 3 bifurcaciones.
+/// Tablero del primer mapa dibujado: 42 casillas y 2 bifurcaciones.
 ///
-/// Las posiciones y los tipos son provisionales hasta tener el dibujo final.
+/// El camino principal va de la 0 a la 31 y vuelve a la salida. Los dos
+/// desvíos son atajos. Las posiciones están en `assets/maps/mapa_01/mapa.tmj`.
 BoardLayout buildDefaultBoard() {
-  const lastMainTile = 29;
-  // Casilla de la bifurcación -> primera casilla del camino alterno.
-  const forks = {5: 30, 15: 34, 24: 38};
-  // Última casilla del camino alterno -> casilla donde vuelve al principal.
-  const rejoins = {33: 10, 37: 20, 41: 29};
-  const shops = {12, 22};
-  const specials = {3, 8, 14, 18, 26, 32, 36, 40};
-  const negatives = {7, 11, 17, 21, 27, 31, 35, 39};
+  const lastMainTile = 31;
+  // Casilla de la bifurcación -> primera casilla del desvío.
+  const forks = {1: 32, 13: 37};
+  // Última casilla del desvío -> casilla donde vuelve al principal.
+  const rejoins = {36: 8, 41: 23};
+  const shops = {17, 36};
+  const specials = {6, 22, 27, 39};
+  const negatives = {5, 7, 9, 12, 14, 16, 18, 20, 26, 28, 31, 32, 35, 37};
 
   TileType typeFor(int id) {
     if (id == BoardLayout.startId) return TileType.start;

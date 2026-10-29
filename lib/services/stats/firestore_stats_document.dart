@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:party_tricks/models/chest.dart';
+import 'package:party_tricks/models/match_summary.dart';
 import 'package:party_tricks/models/player_stats.dart';
 import 'package:party_tricks/models/stats/shop_stats.dart';
 import 'package:party_tricks/models/stats/social_stats.dart';
@@ -33,6 +34,47 @@ class FirestoreStatsDocument {
   ) {
     return ref(firestore, uid).collection('matches').doc(matchId);
   }
+
+  /// Perfil del jugador (`users/{uid}`), donde está su XP y lo de su cuenta.
+  static DocumentReference<Map<String, dynamic>> profile(
+    FirebaseFirestore firestore,
+    String uid,
+  ) {
+    return firestore.collection('users').doc(uid);
+  }
+
+  /// Lo que la partida le deja a la cuenta: la XP y lo que sobró de monedas
+  /// y diamantes (diseno_juego.md, sección 7). Si terminó desconectado, nada.
+  static Map<String, dynamic> matchRewards(MatchSummary match) {
+    final rewards = matchRewardAmounts(match);
+    return {
+      for (final entry in rewards.entries)
+        entry.key: FieldValue.increment(entry.value),
+    };
+  }
+
+  /// Las cantidades de [matchRewards], sin Firebase (para probarlas).
+  static Map<String, int> matchRewardAmounts(MatchSummary match) {
+    if (match.disconnected) {
+      return const {'experience': 0, 'coins': 0, 'diamonds': 0};
+    }
+    return {
+      'experience': match.experience,
+      'coins': match.coins,
+      'diamonds': match.diamonds,
+    };
+  }
+
+  /// Lo que se guarda en la marca de la partida: sirve de historial.
+  static Map<String, dynamic> matchMarkerData(MatchSummary match) => {
+    'won': match.won,
+    'place': match.place,
+    'experience': match.experience,
+    'coins': match.coins,
+    'diamonds': match.diamonds,
+    'disconnected': match.disconnected,
+    'recordedAt': FieldValue.serverTimestamp(),
+  };
 
   static Map<String, dynamic> appTimeIncrement(Duration time) => {
     PlayerStats.timeKey: {
