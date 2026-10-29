@@ -1,5 +1,7 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/services/rooms/disconnection_policy.dart';
 import 'package:party_tricks/services/rooms/room_code_generator.dart';
 import 'package:party_tricks/services/rooms/room_service.dart';
 
@@ -8,6 +10,7 @@ import 'package:party_tricks/services/rooms/room_service.dart';
 /// - `rooms/{id}/meta` y `rooms/{id}/players/{uid}`: la sala.
 /// - `roomCodes/{code}`: id de la sala con ese código.
 /// - `publicLobby/{id}`: salas públicas que esperan jugadores.
+/// - `activeGames/{uid}`: la partida en curso de cada jugador.
 class FirebaseRoomService implements RoomService {
   FirebaseRoomService(this._db, [RoomCodeGenerator? codes])
     : _codes = codes ?? RoomCodeGenerator();
@@ -68,6 +71,7 @@ class FirebaseRoomService implements RoomService {
     required String uid,
     required String username,
   }) async {
+    await cleanAbandoned(const DisconnectionPolicy(), DateTime.now());
     final snapshot = await _db.ref('publicLobby').limitToFirst(20).get();
     for (final child in snapshot.children) {
       try {
@@ -80,8 +84,84 @@ class FirebaseRoomService implements RoomService {
   }
 
   @override
-  Future<void> leave({required String roomId, required String uid}) {
-    return _room(roomId).child('players/$uid').remove();
+  Future<void> leave({required String roomId, required String uid}) async {
+    await _room(roomId).child('players/$uid').remove();
+    // El último en salir apaga la luz: así no quedan salas vacías.
+    final snapshot = await _room(roomId).get();
+    if (snapshot.value == null) return;
+    final room = Room.fromMap(roomId, snapshot.value as Map<Object?, Object?>);
+    if (room.players.isEmpty) await _delete(room);
+  }
+
+  @override
+  Future<bool> claimHost({
+    required String roomId,
+    required String expectedHost,
+    required String uid,
+  }) async {
+    // La transacción evita que dos jugadores tomen el lugar a la vez. La
+    // sala ya está en caché porque la pantalla la escucha.
+    final result = await _room(roomId)
+        .child('meta/hostUid')
+        .runTransaction(
+          (current) => current == expectedHost
+              ? Transaction.success(uid)
+              : Transaction.abort(),
+        );
+    return result.committed;
+  }
+
+  @override
+  Future<void> touch(String roomId) {
+    return _room(roomId).child('meta/lastActiveAt').set(ServerValue.timestamp);
+  }
+
+  @override
+  Future<int> cleanAbandoned(DisconnectionPolicy policy, DateTime now) async {
+    final snapshot = await _db.ref('publicLobby').limitToFirst(20).get();
+    var removed = 0;
+    for (final child in snapshot.children) {
+      final id = child.key!;
+      try {
+        final room = await _room(id).get();
+        if (room.value == null) {
+          await _db.ref('publicLobby/$id').remove();
+          removed++;
+          continue;
+        }
+        final parsed = Room.fromMap(id, room.value as Map<Object?, Object?>);
+        if (policy.isAbandoned(parsed, now)) {
+          await _delete(parsed);
+          removed++;
+        }
+      } on FirebaseException {
+        // Otro la borró antes o el reloj no coincide con el del servidor:
+        // se intenta la próxima vez.
+      }
+    }
+    return removed;
+  }
+
+  @override
+  Future<void> setActiveGame(String uid, String? roomId) {
+    return _db.ref('activeGames/$uid').set(roomId);
+  }
+
+  @override
+  Stream<String?> watchActiveGame(String uid) {
+    return _db
+        .ref('activeGames/$uid')
+        .onValue
+        .map((event) => event.snapshot.value as String?);
+  }
+
+  /// Borra la sala con su código y su lugar en la lista pública.
+  Future<void> _delete(Room room) {
+    return _db.ref().update({
+      'rooms/${room.id}': null,
+      'roomCodes/${room.code}': null,
+      'publicLobby/${room.id}': null,
+    });
   }
 
   @override

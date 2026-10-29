@@ -46,6 +46,15 @@ final class UseItem extends GameAction {
   final ShopItem item;
 }
 
+/// Solo el anfitrión: el jugador del turno se desconectó, así que se juega
+/// por él lo mínimo para que la partida siga: pierde la tirada, toma el
+/// camino principal en la bifurcación o sale de la tienda.
+final class SkipTurn extends GameAction {
+  const SkipTurn(this.playerId);
+
+  final String playerId;
+}
+
 /// Terminó el minijuego de la ronda. Puede haber varios ganadores.
 final class FinishMinigame extends GameAction {
   const FinishMinigame(this.winnerIds);

@@ -44,12 +44,26 @@ class FirestoreStatsDocument {
   }
 
   /// Lo que la partida le deja a la cuenta: la XP y lo que sobró de monedas
-  /// y diamantes (diseno_juego.md, sección 7).
-  static Map<String, dynamic> matchRewards(MatchSummary match) => {
-    'experience': FieldValue.increment(match.experience),
-    'coins': FieldValue.increment(match.coins),
-    'diamonds': FieldValue.increment(match.diamonds),
-  };
+  /// y diamantes (diseno_juego.md, sección 7). Si terminó desconectado, nada.
+  static Map<String, dynamic> matchRewards(MatchSummary match) {
+    final rewards = matchRewardAmounts(match);
+    return {
+      for (final entry in rewards.entries)
+        entry.key: FieldValue.increment(entry.value),
+    };
+  }
+
+  /// Las cantidades de [matchRewards], sin Firebase (para probarlas).
+  static Map<String, int> matchRewardAmounts(MatchSummary match) {
+    if (match.disconnected) {
+      return const {'experience': 0, 'coins': 0, 'diamonds': 0};
+    }
+    return {
+      'experience': match.experience,
+      'coins': match.coins,
+      'diamonds': match.diamonds,
+    };
+  }
 
   /// Lo que se guarda en la marca de la partida: sirve de historial.
   static Map<String, dynamic> matchMarkerData(MatchSummary match) => {
@@ -58,6 +72,7 @@ class FirestoreStatsDocument {
     'experience': match.experience,
     'coins': match.coins,
     'diamonds': match.diamonds,
+    'disconnected': match.disconnected,
     'recordedAt': FieldValue.serverTimestamp(),
   };
 

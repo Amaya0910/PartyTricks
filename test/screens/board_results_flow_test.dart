@@ -18,6 +18,7 @@ import 'package:party_tricks/services/social/social_providers.dart';
 import 'package:party_tricks/services/stats/stats_providers.dart';
 
 import '../services/results/fake_results_service.dart';
+import '../services/rooms/fake_room_services.dart' as rooms_fake;
 import '../services/stats/fake_stats_service.dart';
 
 /// La partida en vivo, controlada por la prueba.
@@ -76,6 +77,10 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           gameServiceProvider.overrideWithValue(games),
+          roomServiceProvider.overrideWithValue(rooms_fake.FakeRoomService()),
+          presenceServiceProvider.overrideWithValue(
+            rooms_fake.FakePresenceService(),
+          ),
           statsServiceProvider.overrideWithValue(stats),
           resultsServiceProvider.overrideWithValue(results),
           friendUidsProvider.overrideWithValue(const {}),

@@ -70,6 +70,7 @@ class GameCodec {
       'item': item.name,
     },
     LeaveShop(:final playerId) => {'type': 'leaveShop', 'playerId': playerId},
+    SkipTurn(:final playerId) => {'type': 'skip', 'playerId': playerId},
     UseItem(:final playerId, :final item) => {
       'type': 'useItem',
       'playerId': playerId,
@@ -90,6 +91,7 @@ class GameCodec {
       ),
       'buy' => BuyItem(data['playerId'] as String, _item(data['item'])),
       'leaveShop' => LeaveShop(data['playerId'] as String),
+      'skip' => SkipTurn(data['playerId'] as String),
       'useItem' => UseItem(data['playerId'] as String, _item(data['item'])),
       'minigame' => FinishMinigame([
         for (final id in data['winnerIds'] as List? ?? const []) id as String,
@@ -121,6 +123,8 @@ class GameCodec {
     },
     'activeItems': [for (final item in p.activeItems) item.name],
     'itemsUsed': p.itemsUsed,
+    'away': p.away,
+    'missedTurns': p.missedTurns,
   };
 
   PlayerState _decodePlayer(String id, Map<Object?, Object?> data) {
@@ -156,6 +160,8 @@ class GameCodec {
         for (final name in _list(data['activeItems'])) ?_knownItem(name),
       ],
       itemsUsed: _int(data['itemsUsed']),
+      away: data['away'] as bool? ?? false,
+      missedTurns: _int(data['missedTurns']),
     );
   }
 

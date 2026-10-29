@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/invite_controller.dart';
 import 'package:party_tricks/controllers/room_controller.dart';
+import 'package:party_tricks/controllers/room_guard.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/screens/board_screen.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
@@ -17,7 +18,9 @@ import 'package:party_tricks/widgets/player_slot.dart';
 /// Sala de espera: muestra el código, los jugadores y la cuenta regresiva
 /// de 1:30.
 ///
-/// El teléfono del creador decide cuándo arranca o se cierra la sala.
+/// El teléfono del anfitrión decide cuándo arranca o se cierra la sala. Si
+/// el anfitrión se va, otro jugador toma su lugar ([RoomGuard]) y sigue la
+/// cuenta regresiva.
 class LobbyScreen extends ConsumerStatefulWidget {
   const LobbyScreen({super.key, required this.roomId});
 
@@ -38,15 +41,35 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
   Timer? _timer;
   bool _deciding = false;
 
+  /// Presencia y cambio de anfitrión mientras se espera.
+  RoomGuard? _guard;
+
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    ref.listenManual(roomIdentityProvider, (_, next) {
+      final uid = next.value?.uid;
+      if (uid == null || _guard != null) return;
+      _guard = RoomGuard(
+        roomId: widget.roomId,
+        uid: uid,
+        rooms: ref.read(roomServiceProvider),
+        presence: ref.read(presenceServiceProvider),
+        policy: ref.read(disconnectionPolicyProvider),
+      )..start();
+      _guard!.update(room: ref.read(roomProvider(widget.roomId)).value);
+    }, fireImmediately: true);
+    ref.listenManual(
+      roomProvider(widget.roomId),
+      (_, next) => _guard?.update(room: next.value),
+    );
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _guard?.dispose();
     super.dispose();
   }
 
@@ -91,9 +114,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            sent == 1
-                ? 'Invitación enviada'
-                : 'Invitaciones enviadas: $sent',
+            sent == 1 ? 'Invitación enviada' : 'Invitaciones enviadas: $sent',
           ),
         ),
       );
@@ -149,10 +170,8 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
             SafeArea(
               child: roomAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) => _Message(
-                  text: 'No se pudo cargar la sala',
-                  onBack: _leave,
-                ),
+                error: (_, _) =>
+                    _Message(text: 'No se pudo cargar la sala', onBack: _leave),
                 data: (room) => room == null
                     ? _Message(text: 'La sala ya no existe', onBack: _leave)
                     : _content(room, myUid),

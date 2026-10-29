@@ -7,6 +7,7 @@ import 'package:party_tricks/screens/lobby_screen.dart';
 import 'package:party_tricks/screens/settings_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/rooms/room_service.dart';
+import 'package:party_tricks/widgets/active_game_banner.dart';
 import 'package:party_tricks/widgets/create_room_dialog.dart';
 import 'package:party_tricks/widgets/join_code_dialog.dart';
 import 'package:party_tricks/widgets/play_menu_dialog.dart';
@@ -72,6 +73,7 @@ class HomeScreen extends ConsumerWidget {
           onAvatarTap: () => Navigator.of(context).push(SettingsScreen.route()),
         ),
         const VerifyEmailBanner(),
+        const ActiveGameBanner(),
         // Reemplazar por el personaje armado con los cosméticos.
         const Expanded(
           child: Center(

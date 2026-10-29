@@ -31,6 +31,8 @@ class PlayerState {
     this.inventory = const {},
     this.activeItems = const [],
     this.itemsUsed = 0,
+    this.away = false,
+    this.missedTurns = 0,
   });
 
   final String id;
@@ -81,6 +83,14 @@ class PlayerState {
   /// Ítems que gastó: los que activó y los pasivos que se usaron solos.
   final int itemsUsed;
 
+  /// Se desconectó y el anfitrión le saltó el turno. Vuelve a false cuando
+  /// juega de nuevo. Si termina la partida así, no gana XP ni premios
+  /// (diseno_juego.md, sección 11).
+  final bool away;
+
+  /// Turnos que el anfitrión le saltó por estar desconectado.
+  final int missedTurns;
+
   int itemCount(ShopItem item) => inventory[item] ?? 0;
 
   /// Suma o quita [delta] ítems de la mochila.
@@ -123,6 +133,8 @@ class PlayerState {
     Map<ShopItem, int>? inventory,
     List<ShopItem>? activeItems,
     int? itemsUsed,
+    bool? away,
+    int? missedTurns,
   }) {
     return PlayerState(
       id: id,
@@ -148,6 +160,8 @@ class PlayerState {
       inventory: inventory ?? this.inventory,
       activeItems: activeItems ?? this.activeItems,
       itemsUsed: itemsUsed ?? this.itemsUsed,
+      away: away ?? this.away,
+      missedTurns: missedTurns ?? this.missedTurns,
     );
   }
 }
