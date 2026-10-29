@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:party_tricks/models/chest.dart';
+import 'package:party_tricks/models/match_summary.dart';
 import 'package:party_tricks/models/player_stats.dart';
 import 'package:party_tricks/models/stats/shop_stats.dart';
 import 'package:party_tricks/models/stats/social_stats.dart';
@@ -33,6 +34,32 @@ class FirestoreStatsDocument {
   ) {
     return ref(firestore, uid).collection('matches').doc(matchId);
   }
+
+  /// Perfil del jugador (`users/{uid}`), donde está su XP y lo de su cuenta.
+  static DocumentReference<Map<String, dynamic>> profile(
+    FirebaseFirestore firestore,
+    String uid,
+  ) {
+    return firestore.collection('users').doc(uid);
+  }
+
+  /// Lo que la partida le deja a la cuenta: la XP y lo que sobró de monedas
+  /// y diamantes (diseno_juego.md, sección 7).
+  static Map<String, dynamic> matchRewards(MatchSummary match) => {
+    'experience': FieldValue.increment(match.experience),
+    'coins': FieldValue.increment(match.coins),
+    'diamonds': FieldValue.increment(match.diamonds),
+  };
+
+  /// Lo que se guarda en la marca de la partida: sirve de historial.
+  static Map<String, dynamic> matchMarkerData(MatchSummary match) => {
+    'won': match.won,
+    'place': match.place,
+    'experience': match.experience,
+    'coins': match.coins,
+    'diamonds': match.diamonds,
+    'recordedAt': FieldValue.serverTimestamp(),
+  };
 
   static Map<String, dynamic> appTimeIncrement(Duration time) => {
     PlayerStats.timeKey: {

@@ -12,6 +12,7 @@ Este es el índice de la documentación. Cada documento tiene un propósito; si 
 | [`pantallas.md`](pantallas.md) | Pantallas y navegación (enlazadas al mockup de Figma) |
 | [`modelo_datos.md`](modelo_datos.md) | Entidades: jugador, sala, partida, etc. |
 | [`map_shop_items.md`](map_shop_items.md) | Tiendas del mapa, mochila e ítems de la partida |
+| [`results_system.md`](results_system.md) | Pantalla de resultados, XP y qué se guarda al terminar la partida |
 | [`decisiones.md`](decisiones.md) | Decisiones técnicas y por qué se tomaron |
 | [`roles_y_ramas.md`](roles_y_ramas.md) | Roles del equipo, ramas de Git y reglas de trabajo |
 
