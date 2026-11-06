@@ -22,20 +22,14 @@ class PlayMenuDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _OptionButton(
-              label: 'Crear Party',
-              option: PlayOption.createParty,
-            ),
+            _OptionButton(label: 'Crear Party', option: PlayOption.createParty),
             const SizedBox(height: 16),
             _OptionButton(
               label: 'Unirse a Party',
               option: PlayOption.joinParty,
             ),
             const SizedBox(height: 16),
-            _OptionButton(
-              label: 'Juego Random',
-              option: PlayOption.randomGame,
-            ),
+            _OptionButton(label: 'Juego Random', option: PlayOption.randomGame),
           ],
         ),
       ),

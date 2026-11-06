@@ -57,9 +57,7 @@ class _ReportDialogState extends State<ReportDialog> {
             ),
             const SizedBox(height: 8),
             FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.reject,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.reject),
               onPressed: _reason == null
                   ? null
                   : () => Navigator.of(context).pop(_reason),

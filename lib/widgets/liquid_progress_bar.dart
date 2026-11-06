@@ -52,7 +52,7 @@ class _LiquidProgressBarState extends State<LiquidProgressBar>
               child: Center(
                 child: Text(
                   '$percent%',
-                    style: const TextStyle(
+                  style: const TextStyle(
                     color: AppColors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -72,7 +72,7 @@ class _LiquidProgressBarState extends State<LiquidProgressBar>
 
 class _LiquidPainter extends CustomPainter {
   _LiquidPainter({required this.progress, required this.wave})
-      : super(repaint: wave);
+    : super(repaint: wave);
 
   final double progress;
   final Animation<double> wave;

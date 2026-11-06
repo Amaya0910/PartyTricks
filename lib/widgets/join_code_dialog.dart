@@ -97,9 +97,8 @@ class _JoinCodeDialogState extends State<JoinCodeDialog> {
                         onSubmitted: (_) => _submit(),
                         inputFormatters: [
                           TextInputFormatter.withFunction(
-                            (old, value) => value.copyWith(
-                              text: value.text.toUpperCase(),
-                            ),
+                            (old, value) =>
+                                value.copyWith(text: value.text.toUpperCase()),
                           ),
                           // Solo el alfabeto de los códigos (sin O/0 ni I/1).
                           FilteringTextInputFormatter.allow(

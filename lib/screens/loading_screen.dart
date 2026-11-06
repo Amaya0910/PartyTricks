@@ -18,9 +18,8 @@ class LoadingScreen extends StatelessWidget {
             'assets/images/Fondo_Carga.png',
             fit: BoxFit.cover,
             // Si falta la imagen, se ve un color liso en vez de un error.
-            errorBuilder: (_, _, _) => const ColoredBox(
-              color: AppColors.loadingFallback,
-            ),
+            errorBuilder: (_, _, _) =>
+                const ColoredBox(color: AppColors.loadingFallback),
           ),
           Center(
             child: Padding(

@@ -18,24 +18,27 @@ void main() {
   bool isObscured(WidgetTester tester) =>
       tester.widget<TextField>(find.byType(TextField)).obscureText;
 
-  testWidgets('un campo normal no oculta el texto ni muestra el ojo',
-      (tester) async {
+  testWidgets('un campo normal no oculta el texto ni muestra el ojo', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(isPassword: false));
 
     expect(isObscured(tester), isFalse);
     expect(find.byIcon(Icons.visibility_outlined), findsNothing);
   });
 
-  testWidgets('la contraseña empieza oculta con el ojo a un lado',
-      (tester) async {
+  testWidgets('la contraseña empieza oculta con el ojo a un lado', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(isPassword: true));
 
     expect(isObscured(tester), isTrue);
     expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
   });
 
-  testWidgets('tocar el ojo muestra y vuelve a ocultar la contraseña',
-      (tester) async {
+  testWidgets('tocar el ojo muestra y vuelve a ocultar la contraseña', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(isPassword: true));
 
     await tester.tap(find.byIcon(Icons.visibility_outlined));

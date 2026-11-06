@@ -11,6 +11,5 @@ class NavigationController extends Notifier<AppSection> {
 
 final navigationControllerProvider =
     NotifierProvider<NavigationController, AppSection>(
-  NavigationController.new,
-);
-
+      NavigationController.new,
+    );

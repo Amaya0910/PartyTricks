@@ -11,8 +11,7 @@ void main() {
     // 25 % cosmético, 5 % nada, 65 % monedas, 5 % dado.
     final random = FakeRandomSource([25, 26, 30, 31, 95, 96, 100]);
     final outcomes = [
-      for (var i = 0; i < 7; i++)
-        roller.roll(ChestType.basic.odds, random),
+      for (var i = 0; i < 7; i++) roller.roll(ChestType.basic.odds, random),
     ];
 
     expect(outcomes, [
@@ -29,8 +28,7 @@ void main() {
   test('un premio con 0 % nunca sale', () {
     final random = FakeRandomSource([1, 50, 51, 100]);
     final outcomes = [
-      for (var i = 0; i < 4; i++)
-        roller.roll(ChestType.diamond.odds, random),
+      for (var i = 0; i < 4; i++) roller.roll(ChestType.diamond.odds, random),
     ];
 
     expect(outcomes, [

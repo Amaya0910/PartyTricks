@@ -16,10 +16,7 @@ void main() {
 
     test('antes de los 30 días devuelve lo que falta', () {
       final last = now.subtract(const Duration(days: 20));
-      expect(
-        AccountRules.usernameWait(last, now),
-        const Duration(days: 10),
-      );
+      expect(AccountRules.usernameWait(last, now), const Duration(days: 10));
     });
   });
 

@@ -55,10 +55,7 @@ class TiledMapParser {
             'conjuntos de patrones.',
           );
         }
-        final sprite = image.place(
-          object,
-          flipX: gid & _flipHorizontal != 0,
-        );
+        final sprite = image.place(object, flipX: gid & _flipHorizontal != 0);
         if (!isTiles) {
           objects.add(sprite);
           continue;
@@ -106,9 +103,7 @@ class TiledMapParser {
         );
       }
       final firstGid = (tileset['firstgid'] as num).toInt();
-      final alignment = _Alignment.from(
-        tileset['objectalignment'] as String?,
-      );
+      final alignment = _Alignment.from(tileset['objectalignment'] as String?);
       for (final rawTile in tileset['tiles'] as List? ?? const []) {
         final tile = rawTile as Map<String, dynamic>;
         final image = tile['image'] as String?;
