@@ -4,7 +4,7 @@ import 'package:party_tricks/models/cosmetic_category.dart';
 /// Guarda qué categoría de cosméticos está seleccionada en el Vestuario.
 class WardrobeController extends Notifier<CosmeticCategory> {
   @override
-  CosmeticCategory build() => CosmeticCategory.shirt;
+  CosmeticCategory build() => CosmeticCategory.skin;
 
   void select(CosmeticCategory category) => state = category;
 }

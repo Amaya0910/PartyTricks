@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/controllers/wardrobe_controller.dart';
 import 'package:party_tricks/models/cosmetic_category.dart';
+import 'package:party_tricks/models/skin_tone.dart';
+import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/category_tab_bar.dart';
+import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/cosmetic_slot.dart';
+import 'package:party_tricks/widgets/skin_tone_picker.dart';
 
 /// Vestuario: el personaje arriba, las categorías en el medio y los
 /// cosméticos de la categoría elegida abajo. El fondo lo pone MainShellScreen.
@@ -19,9 +24,25 @@ class WardrobeScreen extends ConsumerWidget {
     CosmeticCategory.shirt: ['Camisa 1'],
   };
 
+  Future<void> _selectSkinTone(
+    BuildContext context,
+    WidgetRef ref,
+    int index,
+  ) async {
+    try {
+      await ref.read(skinToneControllerProvider).select(index);
+    } on CharacterException catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(wardrobeControllerProvider);
+    final skinTone = ref.watch(skinToneProvider);
 
     return Column(
       children: [
@@ -31,12 +52,13 @@ class WardrobeScreen extends ConsumerWidget {
             bottom: false,
             child: Stack(
               children: [
-                // Reemplazar por el personaje armado con los cosméticos.
-                const Center(
-                  child: Icon(
-                    Icons.face,
-                    size: 200,
-                    color: AppColors.placeholderIcon,
+                // Falta agregar los cosméticos equipados (clothing).
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: AnimatedCharacter(
+                      skinTone: SkinTone.colorOf(skinTone),
+                    ),
                   ),
                 ),
                 Positioned(
@@ -63,10 +85,15 @@ class WardrobeScreen extends ConsumerWidget {
             // SafeArea inferior: también deja espacio para la barra de navegación.
             child: SafeArea(
               top: false,
-              child: _OwnedItems(
-                emptyMessage: selected.emptyMessage,
-                items: _ownedItems[selected] ?? const [],
-              ),
+              child: selected == CosmeticCategory.skin
+                  ? SkinTonePicker(
+                      selected: skinTone,
+                      onSelected: (index) => _selectSkinTone(context, ref, index),
+                    )
+                  : _OwnedItems(
+                      emptyMessage: selected.emptyMessage,
+                      items: _ownedItems[selected] ?? const [],
+                    ),
             ),
           ),
         ),

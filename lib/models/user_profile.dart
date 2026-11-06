@@ -1,3 +1,5 @@
+import 'package:party_tricks/models/skin_tone.dart';
+
 /// Perfil permanente del jugador (vive en Cloud Firestore, colección `users`).
 ///
 /// La contraseña nunca se guarda aquí: la gestiona Firebase Authentication.
@@ -11,6 +13,7 @@ class UserProfile {
     this.coins = 0,
     this.diamonds = 0,
     this.extraDice = 0,
+    this.skinTone = SkinTone.defaultIndex,
     this.usernameChangedAt,
   });
 
@@ -36,6 +39,9 @@ class UserProfile {
   /// Dados extra consumibles que ganó en los cofres.
   final int extraDice;
 
+  /// Posición del tono de piel en [SkinTone] (0 = el más claro).
+  final int skinTone;
+
   /// Última vez que cambió el nombre de usuario en Ajustes (null si nunca).
   final DateTime? usernameChangedAt;
 
@@ -51,6 +57,9 @@ class UserProfile {
       coins: (map['coins'] as num?)?.toInt() ?? 0,
       diamonds: (map['diamonds'] as num?)?.toInt() ?? 0,
       extraDice: (map['extraDice'] as num?)?.toInt() ?? 0,
+      skinTone: SkinTone.clamp(
+        (map['skinTone'] as num?)?.toInt() ?? SkinTone.defaultIndex,
+      ),
       usernameChangedAt: changed is num
           ? DateTime.fromMillisecondsSinceEpoch(changed.toInt())
           : null,
@@ -66,6 +75,7 @@ class UserProfile {
       'coins': coins,
       'diamonds': diamonds,
       'extraDice': extraDice,
+      'skinTone': skinTone,
       if (usernameChangedAt != null)
         'usernameChangedAt': usernameChangedAt!.millisecondsSinceEpoch,
     };
@@ -79,6 +89,7 @@ class UserProfile {
     int? coins,
     int? diamonds,
     int? extraDice,
+    int? skinTone,
     DateTime? usernameChangedAt,
   }) {
     return UserProfile(
@@ -90,6 +101,7 @@ class UserProfile {
       coins: coins ?? this.coins,
       diamonds: diamonds ?? this.diamonds,
       extraDice: extraDice ?? this.extraDice,
+      skinTone: skinTone ?? this.skinTone,
       usernameChangedAt: usernameChangedAt ?? this.usernameChangedAt,
     );
   }

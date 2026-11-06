@@ -1,0 +1,187 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+
+/// Tamaño del lienzo en el que están dibujadas todas las capas.
+const Size kCharacterCanvas = Size(512, 768);
+
+/// Partes del cuerpo, en orden de dibujo (de atrás hacia adelante).
+///
+/// Cada parte tiene dos PNG del mismo tamaño que el lienzo:
+///   assets/images/personaje/<id>_relleno.png   (blanco, se tiñe)
+///   assets/images/personaje/<id>_contorno.png  (negro, no se tiñe)
+enum BodyPart {
+  cuerpo('cuerpo', Offset(256, 555)),
+  piernaIzquierda('pierna_izquierda', Offset(228, 511)),
+  piernaDerecha('pierna_derecha', Offset(284, 511)),
+  brazoIzquierdo('brazo_izquierdo', Offset(222, 392)),
+  brazoDerecho('brazo_derecha', Offset(290, 392)),
+  manoIzquierda('mano_izquierda', Offset(222, 392)), // gira con el brazo
+  manoDerecha('mano_derecha', Offset(290, 392)),
+  cabeza('cabeza', Offset(256, 360));
+
+  const BodyPart(this.id, this.pivot);
+
+  final String id;
+
+  /// Punto (en píxeles del lienzo) alrededor del cual gira o escala.
+  final Offset pivot;
+
+  String get fillAsset => 'assets/images/personaje/relleno_$id.png';
+  String get outlineAsset => 'assets/images/personaje/linea_$id.png';
+}
+
+/// Transformación de una parte en un instante dado.
+@immutable
+class PartTransform {
+  const PartTransform({this.angle = 0, this.dy = 0, this.scaleY = 1});
+
+  static const identity = PartTransform();
+
+  final double angle; // radianes
+  final double dy; // píxeles del lienzo
+  final double scaleY;
+}
+
+/// Define una animación: dada una fase t (0..1), cómo se mueve cada parte.
+/// Para nuevas animaciones (saludar, celebrar...) se crea otra clase
+/// que implemente esta interfaz, sin tocar el widget.
+abstract interface class CharacterAnimation {
+  Duration get period;
+  PartTransform transformFor(BodyPart part, double t);
+}
+
+/// Idle: respiración (el torso se estira), cabeza y brazos suben un poco,
+/// los brazos se abren levemente y la cabeza se balancea.
+class IdleAnimation implements CharacterAnimation {
+  const IdleAnimation();
+
+  static const double _deg = math.pi / 180;
+
+  @override
+  Duration get period => const Duration(milliseconds: 2500);
+
+  @override
+  PartTransform transformFor(BodyPart part, double t) {
+    final phase = t * 2 * math.pi;
+    final breath = (1 - math.cos(phase)) / 2; // 0..1
+    final lift = -5 * breath;
+  
+    switch (part) {
+      case BodyPart.cuerpo:
+        return PartTransform(scaleY: 1 + 0.022 * breath);
+      case BodyPart.cabeza:
+        return PartTransform(angle: math.sin(phase) * 2.5 * _deg, dy: lift * 1.1);
+      case BodyPart.brazoIzquierdo:
+      case BodyPart.manoIzquierda:
+        return PartTransform(angle: (1.5 + 1.5 * breath) * _deg, dy: lift);
+      case BodyPart.brazoDerecho:
+      case BodyPart.manoDerecha:
+        return PartTransform(angle: -(1.5 + 1.5 * breath) * _deg, dy: lift);
+      case BodyPart.piernaIzquierda:
+      case BodyPart.piernaDerecha:
+        return PartTransform.identity;
+    }
+  }
+}
+
+/// Personaje animado por capas con tono de piel configurable.
+class AnimatedCharacter extends StatefulWidget {
+  const AnimatedCharacter({
+    super.key,
+    required this.skinTone,
+    this.animation = const IdleAnimation(),
+    this.clothing = const [],
+  });
+
+  final Color skinTone;
+  final CharacterAnimation animation;
+
+  /// Capas de ropa/cara (mismo lienzo 512x768), se dibujan encima.
+  final List<String> clothing;
+
+  @override
+  State<AnimatedCharacter> createState() => _AnimatedCharacterState();
+}
+
+class _AnimatedCharacterState extends State<AnimatedCharacter>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: widget.animation.period)
+        ..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      child: SizedBox.fromSize(
+        size: kCharacterCanvas,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final t = _controller.value;
+            return Stack(
+              children: [
+                for (final part in BodyPart.values)
+                  _TransformedPart(
+                    part: part,
+                    transform: widget.animation.transformFor(part, t),
+                    skinTone: widget.skinTone,
+                  ),
+                for (final asset in widget.clothing) _layer(asset),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _TransformedPart extends StatelessWidget {
+  const _TransformedPart({
+    required this.part,
+    required this.transform,
+    required this.skinTone,
+  });
+
+  final BodyPart part;
+  final PartTransform transform;
+  final Color skinTone;
+
+  @override
+  Widget build(BuildContext context) {
+    final matrix = Matrix4.identity()
+      ..translateByDouble(part.pivot.dx, part.pivot.dy + transform.dy, 0, 1)
+      ..rotateZ(transform.angle)
+      ..scaleByDouble(1, transform.scaleY, 1, 1)
+      ..translateByDouble(-part.pivot.dx, -part.pivot.dy, 0, 1);
+
+    return Transform(
+      transform: matrix,
+      child: Stack(
+        children: [
+          ColorFiltered(
+            colorFilter: ColorFilter.mode(skinTone, BlendMode.modulate),
+            child: _layer(part.fillAsset),
+          ),
+          _layer(part.outlineAsset),
+        ],
+      ),
+    );
+  }
+}
+
+Widget _layer(String asset) => Image.asset(
+      asset,
+      width: kCharacterCanvas.width,
+      height: kCharacterCanvas.height,
+      filterQuality: FilterQuality.medium,
+      // Si falta una capa (arte en progreso), no se dibuja en vez de fallar.
+      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+    );

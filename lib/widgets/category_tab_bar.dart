@@ -108,6 +108,7 @@ class _Tab extends StatelessWidget {
 
 // Íconos provisionales: reemplazar por los exportados de Figma.
 const Map<CosmeticCategory, IconData> _icons = {
+  CosmeticCategory.skin: Icons.palette,
   CosmeticCategory.shirt: Icons.checkroom,
   CosmeticCategory.pants: Icons.dry_cleaning,
   CosmeticCategory.shoes: Icons.hiking,
