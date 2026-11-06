@@ -47,10 +47,10 @@ Datos adicionales que se deducen del diseño **(propuesto)**:
 
 ### 3.2 Personaje y foto de perfil
 
-- La **foto de perfil es la cabeza del personaje** (con su piel, ojos y boca) sobre un **color de fondo** que el jugador elige en Ajustes. La ven también los demás jugadores.
+- La **foto de perfil es la cabeza del personaje** sobre un **color de fondo** que el jugador elige en Ajustes. La ven también los demás jugadores.
 - El jugador puede personalizar el rostro y el cuerpo con **cosméticos** (Piel, Camisa, Pantalón, Zapatos, Cabello, Ojos, Nariz, Boca). Hoy están hechos la piel (40 tonos, 20 de ellos fantasiosos), los ojos (11) y las bocas (10), cada uno con 20 colores.
 - Cada cosmético tiene una **rareza** (común, poco común, raro, épico o legendario) que decide qué tan seguido sale en los cofres y se ve en la Tienda.
-- Idea descartada por ahora: tomarse una foto y usarla como cara del personaje.
+- **Foto de la cara (opcional):** el jugador se toma una foto o elige una de la galería, la acomoda dentro de la silueta de la cabeza y cubre toda la cara del personaje, en lugar de los ojos y la boca. Se puede apagar o quitar cuando quiera.
 
 ### 3.3 Amigos
 
@@ -359,7 +359,7 @@ Pantallas adicionales que se deducen del diseño **(propuesto)**: registro e ini
 | Authentication (correo y contraseña) | Registro e inicio de sesión |
 | Cloud Firestore | Perfiles, amigos, chat, catálogo de tienda e inventario |
 | Realtime Database | Salas, estado de la partida y presencia (detectar desconexiones) |
-| Storage | _(sin uso por ahora)_ Foto del rostro; la foto de perfil es la cabeza del personaje |
+| Storage | _(sin uso por ahora)_ La foto de la cara va en Firestore, reducida (D-32) |
 | Reglas de seguridad | Que cada jugador solo pueda leer y modificar lo suyo |
 
 ### 15.2 Gestor de estado **(propuesto)**
