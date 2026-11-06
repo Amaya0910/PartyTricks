@@ -47,9 +47,10 @@ Datos adicionales que se deducen del diseño **(propuesto)**:
 
 ### 3.2 Personaje y foto de perfil
 
-- La **foto de perfil es el rostro del personaje**.
-- El jugador puede personalizar el rostro y el cuerpo con **cosméticos** (Camisa, Pantalón, Zapatos, Cabello, Ojos, Nariz, Boca).
-- Alternativa: **tomarse una foto** y usarla como cara del personaje.
+- La **foto de perfil es la cabeza del personaje** (con su piel, ojos y boca) sobre un **color de fondo** que el jugador elige en Ajustes. La ven también los demás jugadores.
+- El jugador puede personalizar el rostro y el cuerpo con **cosméticos** (Piel, Camisa, Pantalón, Zapatos, Cabello, Ojos, Nariz, Boca). Hoy están hechos la piel (40 tonos, 20 de ellos fantasiosos), los ojos (11) y las bocas (10), cada uno con 20 colores.
+- Cada cosmético tiene una **rareza** (común, poco común, raro, épico o legendario) que decide qué tan seguido sale en los cofres y se ve en la Tienda.
+- Idea descartada por ahora: tomarse una foto y usarla como cara del personaje.
 
 ### 3.3 Amigos
 
@@ -177,7 +178,8 @@ Hay **dos tiendas** en el mapa. Se compra con las **monedas de partida**. Todos 
 ### 8.1 Tienda del juego (fuera de partida)
 
 - Se compra con las **monedas y diamantes de la cuenta**.
-- Vende cosméticos, cosméticos "mejores" y mejoras consumibles.
+- Vende cosméticos, cosméticos "mejores" y mejoras consumibles. Hoy vende **ojos y bocas** por monedas (de 30 a 100), con filtro por categoría y orden por precio o rareza.
+- Los **cofres** (con diamantes) pueden dar un cosmético aleatorio que el jugador todavía no tiene, 100 monedas, un dado extra o nada. Se puede ver la probabilidad de cada cosmético antes de comprar el cofre.
 - Incluye la **caja secreta de dados**: da dados extra **consumibles** que se pueden usar en próximas partidas.
 
 ---
@@ -340,7 +342,7 @@ Barra de navegación con 5 secciones:
 |---|---|
 | Inicio | Crear sala / unirse (código o aleatoria) |
 | Tienda | Compra con monedas y diamantes de la cuenta |
-| Vestuario | Personalización del personaje: Camisa, Pantalón, Zapatos, Cabello, Ojos, Nariz, Boca |
+| Vestuario | Personalización del personaje: Piel, Camisa, Pantalón, Zapatos, Cabello, Ojos, Nariz, Boca |
 | Stats | Estadísticas del jugador |
 | Amigos | Lista de amigos, código de amistad, invitaciones y chat |
 
@@ -357,7 +359,7 @@ Pantallas adicionales que se deducen del diseño **(propuesto)**: registro e ini
 | Authentication (correo y contraseña) | Registro e inicio de sesión |
 | Cloud Firestore | Perfiles, amigos, chat, catálogo de tienda e inventario |
 | Realtime Database | Salas, estado de la partida y presencia (detectar desconexiones) |
-| Storage | Foto del rostro del personaje |
+| Storage | _(sin uso por ahora)_ Foto del rostro; la foto de perfil es la cabeza del personaje |
 | Reglas de seguridad | Que cada jugador solo pueda leer y modificar lo suyo |
 
 ### 15.2 Gestor de estado **(propuesto)**
