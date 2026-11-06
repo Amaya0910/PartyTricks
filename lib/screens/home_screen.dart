@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/eyes_controller.dart';
+import 'package:party_tricks/controllers/mouth_controller.dart';
 import 'package:party_tricks/controllers/room_controller.dart';
 import 'package:party_tricks/controllers/skin_tone_controller.dart';
+import 'package:party_tricks/models/eye_color.dart';
+import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/play_option.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/models/skin_tone.dart';
@@ -14,6 +18,7 @@ import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/create_room_dialog.dart';
 import 'package:party_tricks/widgets/join_code_dialog.dart';
 import 'package:party_tricks/widgets/play_menu_dialog.dart';
+import 'package:party_tricks/widgets/my_avatar.dart';
 import 'package:party_tricks/widgets/player_header.dart';
 import 'package:party_tricks/widgets/verify_email_banner.dart';
 import 'package:party_tricks/theme/app_colors.dart';
@@ -67,6 +72,10 @@ class HomeScreen extends ConsumerWidget {
     // mientras llega de Firebase).
     final profile = ref.watch(userProfileProvider).value;
     final skinTone = ref.watch(skinToneProvider);
+    final eyeStyle = ref.watch(eyeStyleProvider);
+    final eyeColor = ref.watch(eyeColorProvider);
+    final mouthStyle = ref.watch(mouthStyleProvider);
+    final mouthColor = ref.watch(mouthColorProvider);
 
     return Column(
       children: [
@@ -74,6 +83,7 @@ class HomeScreen extends ConsumerWidget {
           username: profile?.username ?? '',
           coins: profile?.coins ?? 0,
           diamonds: profile?.diamonds ?? 0,
+          avatar: const MyAvatar(size: 64),
           onAvatarTap: () => Navigator.of(context).push(SettingsScreen.route()),
         ),
         const VerifyEmailBanner(),
@@ -83,7 +93,13 @@ class HomeScreen extends ConsumerWidget {
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: AnimatedCharacter(skinTone: SkinTone.colorOf(skinTone)),
+              child: AnimatedCharacter(
+                skinTone: SkinTone.colorOf(skinTone),
+                eyes: eyeStyle,
+                eyeColor: EyeColor.colorOf(eyeColor),
+                mouth: mouthStyle,
+                mouthColor: MouthColor.colorOf(mouthColor),
+              ),
             ),
           ),
         ),

@@ -14,4 +14,24 @@ abstract class CharacterService {
   /// Guarda la posición del tono de piel en el perfil. Lanza
   /// [CharacterException] si falla.
   Future<void> setSkinTone({required String uid, required int skinTone});
+
+  /// Guarda el número de los ojos equipados. Lanza [CharacterException]
+  /// si falla.
+  Future<void> setEyes({required String uid, required int eyes});
+
+  /// Guarda la posición del color de ojos. Lanza [CharacterException] si
+  /// falla.
+  Future<void> setEyeColor({required String uid, required int eyeColor});
+
+  /// Guarda el número de la boca equipada. Lanza [CharacterException] si
+  /// falla.
+  Future<void> setMouth({required String uid, required int mouth});
+
+  /// Guarda la posición del color de boca. Lanza [CharacterException] si
+  /// falla.
+  Future<void> setMouthColor({required String uid, required int mouthColor});
+
+  /// Guarda la posición del color de fondo de la foto de perfil. Lanza
+  /// [CharacterException] si falla.
+  Future<void> setAvatarColor({required String uid, required int avatarColor});
 }

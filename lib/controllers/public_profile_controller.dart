@@ -19,6 +19,12 @@ class PublicProfileController {
       username: profile.username,
       friendCode: profile.friendCode,
       experience: profile.experience,
+      skinTone: profile.skinTone,
+      eyes: profile.eyes,
+      eyeColor: profile.eyeColor,
+      mouth: profile.mouth,
+      mouthColor: profile.mouthColor,
+      avatarColor: profile.avatarColor,
     );
   }
 

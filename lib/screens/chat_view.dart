@@ -192,7 +192,7 @@ class _Header extends StatelessWidget {
             onPressed: onBack,
             icon: const Icon(Icons.arrow_back),
           ),
-          ProfileAvatar(photoUrl: profile?.photoUrl, size: 44),
+          ProfileAvatar(profile: profile, size: 44),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

@@ -12,12 +12,16 @@ class PlayerHeader extends StatelessWidget {
     required this.username,
     required this.coins,
     required this.diamonds,
+    this.avatar,
     this.onAvatarTap,
   });
 
   final String username;
   final int coins;
   final int diamonds;
+
+  /// La foto de perfil (la cabeza del personaje). Si es null, un ícono.
+  final Widget? avatar;
 
   /// Abre la pantalla de Ajustes (la llave del mockup).
   final VoidCallback? onAvatarTap;
@@ -51,12 +55,12 @@ class PlayerHeader extends StatelessWidget {
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        const CircleAvatar(
-                          radius: 32,
-                          backgroundColor: AppColors.avatarBackground,
-                          // Reemplazar por el rostro del personaje.
-                          child: Icon(Icons.person, size: 36),
-                        ),
+                        avatar ??
+                            const CircleAvatar(
+                              radius: 32,
+                              backgroundColor: AppColors.avatarBackground,
+                              child: Icon(Icons.person, size: 36),
+                            ),
                         Positioned(
                           left: -4,
                           bottom: -4,

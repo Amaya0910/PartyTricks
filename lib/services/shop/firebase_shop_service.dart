@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:party_tricks/models/chest.dart';
+import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/services/game_engine/random_source.dart';
 import 'package:party_tricks/services/shop/chest_roller.dart';
+import 'package:party_tricks/services/shop/cosmetic_picker.dart';
 import 'package:party_tricks/services/shop/shop_service.dart';
 import 'package:party_tricks/services/stats/firestore_stats_document.dart';
 
@@ -15,14 +18,16 @@ class FirebaseShopService implements ShopService {
     this._firestore,
     this._random, [
     this._roller = const ChestRoller(),
+    this._picker = const CosmeticPicker(),
   ]);
 
   final FirebaseFirestore _firestore;
   final RandomSource _random;
   final ChestRoller _roller;
+  final CosmeticPicker _picker;
 
   @override
-  Future<ChestOutcome> buyChest({
+  Future<ChestPrize> buyChest({
     required String uid,
     required ChestType chest,
   }) async {
@@ -38,27 +43,115 @@ class FirebaseShopService implements ShopService {
           throw const ShopException('No tienes suficientes diamantes.');
         }
 
-        final outcome = _roller.roll(chest.odds, _random);
-        // TODO(feature/player-profile): guardar el cosmético cuando exista
-        // el catálogo; por ahora solo se guardan las monedas y el dado extra.
+        var prize = ChestPrize(_roller.roll(chest.odds, _random));
+        final ownedEyes = _numbers(data['ownedEyes']);
+        final ownedMouths = _numbers(data['ownedMouths']);
+        if (prize.outcome == ChestOutcome.cosmetic) {
+          // El cosmético es uno que todavía no tiene, según su rareza. Si ya
+          // los tiene todos, el premio se cambia por monedas.
+          prize =
+              _picker.pick(
+                ownedEyes: ownedEyes.toSet(),
+                ownedMouths: ownedMouths.toSet(),
+                random: _random,
+              ) ??
+              const ChestPrize(ChestOutcome.coins);
+        }
+        final outcome = prize.outcome;
         transaction.update(ref, {
           'diamonds': diamonds - chest.price,
           if (outcome == ChestOutcome.coins)
             'coins': _int(data['coins']) + chestCoinPrize,
           if (outcome == ChestOutcome.dice)
             'extraDice': _int(data['extraDice']) + 1,
+          if (prize.eyes != null)
+            'ownedEyes': [...ownedEyes, prize.eyes!.number],
+          if (prize.mouth != null)
+            'ownedMouths': [...ownedMouths, prize.mouth!.number],
         });
         transaction.set(
           FirestoreStatsDocument.ref(_firestore, uid),
           FirestoreStatsDocument.chestIncrements(chest, outcome),
           SetOptions(merge: true),
         );
-        return outcome;
+        return prize;
       });
     } on FirebaseException catch (e) {
       throw ShopException(_messageFor(e));
     }
   }
+
+  @override
+  Future<void> buyEyes({required String uid, required EyeStyle eyes}) async {
+    if (eyes.isFree) throw const ShopException('Estos ojos ya son tuyos.');
+    final ref = _firestore.collection('users').doc(uid);
+    try {
+      // Leer y cobrar en una transacción: no se cobra dos veces ni se
+      // compra con monedas que ya se gastaron.
+      await _firestore.runTransaction((transaction) async {
+        final data = (await transaction.get(ref)).data();
+        if (data == null) {
+          throw const ShopException('No se encontró tu perfil.');
+        }
+        final owned = [
+          for (final value in data['ownedEyes'] as List? ?? const [])
+            if (value is num) value.toInt(),
+        ];
+        if (owned.contains(eyes.number)) {
+          throw const ShopException('Ya tienes estos ojos.');
+        }
+        final coins = _int(data['coins']);
+        if (coins < eyes.price) {
+          throw const ShopException('No tienes suficientes monedas.');
+        }
+        transaction.update(ref, {
+          'coins': coins - eyes.price,
+          'ownedEyes': [...owned, eyes.number],
+        });
+      });
+    } on FirebaseException catch (e) {
+      throw ShopException(_messageFor(e));
+    }
+  }
+
+  @override
+  Future<void> buyMouth({
+    required String uid,
+    required MouthStyle mouth,
+  }) async {
+    if (mouth.isFree) throw const ShopException('Esta boca ya es tuya.');
+    final ref = _firestore.collection('users').doc(uid);
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final data = (await transaction.get(ref)).data();
+        if (data == null) {
+          throw const ShopException('No se encontró tu perfil.');
+        }
+        final owned = [
+          for (final value in data['ownedMouths'] as List? ?? const [])
+            if (value is num) value.toInt(),
+        ];
+        if (owned.contains(mouth.number)) {
+          throw const ShopException('Ya tienes esta boca.');
+        }
+        final coins = _int(data['coins']);
+        if (coins < mouth.price) {
+          throw const ShopException('No tienes suficientes monedas.');
+        }
+        transaction.update(ref, {
+          'coins': coins - mouth.price,
+          'ownedMouths': [...owned, mouth.number],
+        });
+      });
+    } on FirebaseException catch (e) {
+      throw ShopException(_messageFor(e));
+    }
+  }
+
+  List<int> _numbers(Object? value) => [
+    for (final item in value as List? ?? const [])
+      if (item is num) item.toInt(),
+  ];
 
   int _int(Object? value) => (value as num?)?.toInt() ?? 0;
 

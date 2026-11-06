@@ -115,7 +115,7 @@ class _FriendCheck extends ConsumerWidget {
     return CheckboxListTile(
       value: checked,
       onChanged: (value) => onChanged(value ?? false),
-      secondary: ProfileAvatar(photoUrl: profile?.photoUrl, size: 36),
+      secondary: ProfileAvatar(profile: profile, size: 36),
       title: Text(
         profile?.username ?? 'Jugador',
         maxLines: 1,

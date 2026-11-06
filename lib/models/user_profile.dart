@@ -1,3 +1,8 @@
+import 'package:party_tricks/models/avatar_color.dart';
+import 'package:party_tricks/models/eye_color.dart';
+import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/mouth_color.dart';
+import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 
 /// Perfil permanente del jugador (vive en Cloud Firestore, colección `users`).
@@ -14,6 +19,13 @@ class UserProfile {
     this.diamonds = 0,
     this.extraDice = 0,
     this.skinTone = SkinTone.defaultIndex,
+    this.eyes = EyeStyle.defaultStyle,
+    this.eyeColor = EyeColor.defaultIndex,
+    this.ownedEyes = const {},
+    this.mouth = MouthStyle.defaultStyle,
+    this.mouthColor = MouthColor.defaultIndex,
+    this.ownedMouths = const {},
+    this.avatarColor = AvatarColor.defaultIndex,
     this.usernameChangedAt,
   });
 
@@ -42,6 +54,38 @@ class UserProfile {
   /// Posición del tono de piel en [SkinTone] (0 = el más claro).
   final int skinTone;
 
+  /// Ojos equipados. En Firestore se guarda su número (campo `eyes`).
+  final EyeStyle eyes;
+
+  /// Posición del color de ojos en [EyeColor] (0 = el dibujo original).
+  final int eyeColor;
+
+  /// Números de los ojos que compró en la Tienda (campo `ownedEyes`). Los
+  /// gratis no se guardan: los tiene todo el mundo.
+  final Set<int> ownedEyes;
+
+  /// Si puede ponerse [style]: es gratis o ya lo compró.
+  bool ownsEyes(EyeStyle style) =>
+      style.isFree || ownedEyes.contains(style.number);
+
+  /// Boca equipada. En Firestore se guarda su número (campo `mouth`).
+  final MouthStyle mouth;
+
+  /// Posición del color de boca en [MouthColor] (0 = sin color: toma el
+  /// tono de piel).
+  final int mouthColor;
+
+  /// Números de las bocas que compró en la Tienda (campo `ownedMouths`).
+  /// Las gratis no se guardan: las tiene todo el mundo.
+  final Set<int> ownedMouths;
+
+  /// Posición del color de fondo de la foto de perfil en [AvatarColor].
+  final int avatarColor;
+
+  /// Si puede ponerse [style]: es gratis o ya la compró.
+  bool ownsMouth(MouthStyle style) =>
+      style.isFree || ownedMouths.contains(style.number);
+
   /// Última vez que cambió el nombre de usuario en Ajustes (null si nunca).
   final DateTime? usernameChangedAt;
 
@@ -60,6 +104,25 @@ class UserProfile {
       skinTone: SkinTone.clamp(
         (map['skinTone'] as num?)?.toInt() ?? SkinTone.defaultIndex,
       ),
+      eyes: EyeStyle.fromNumber((map['eyes'] as num?)?.toInt()),
+      eyeColor: EyeColor.clamp(
+        (map['eyeColor'] as num?)?.toInt() ?? EyeColor.defaultIndex,
+      ),
+      ownedEyes: {
+        for (final value in map['ownedEyes'] as List? ?? const [])
+          if (value is num) value.toInt(),
+      },
+      mouth: MouthStyle.fromNumber((map['mouth'] as num?)?.toInt()),
+      mouthColor: MouthColor.clamp(
+        (map['mouthColor'] as num?)?.toInt() ?? MouthColor.defaultIndex,
+      ),
+      ownedMouths: {
+        for (final value in map['ownedMouths'] as List? ?? const [])
+          if (value is num) value.toInt(),
+      },
+      avatarColor: AvatarColor.clamp(
+        (map['avatarColor'] as num?)?.toInt() ?? AvatarColor.defaultIndex,
+      ),
       usernameChangedAt: changed is num
           ? DateTime.fromMillisecondsSinceEpoch(changed.toInt())
           : null,
@@ -76,6 +139,13 @@ class UserProfile {
       'diamonds': diamonds,
       'extraDice': extraDice,
       'skinTone': skinTone,
+      'eyes': eyes.number,
+      'eyeColor': eyeColor,
+      'ownedEyes': ownedEyes.toList()..sort(),
+      'mouth': mouth.number,
+      'mouthColor': mouthColor,
+      'ownedMouths': ownedMouths.toList()..sort(),
+      'avatarColor': avatarColor,
       if (usernameChangedAt != null)
         'usernameChangedAt': usernameChangedAt!.millisecondsSinceEpoch,
     };
@@ -90,6 +160,13 @@ class UserProfile {
     int? diamonds,
     int? extraDice,
     int? skinTone,
+    EyeStyle? eyes,
+    int? eyeColor,
+    Set<int>? ownedEyes,
+    MouthStyle? mouth,
+    int? mouthColor,
+    Set<int>? ownedMouths,
+    int? avatarColor,
     DateTime? usernameChangedAt,
   }) {
     return UserProfile(
@@ -102,6 +179,13 @@ class UserProfile {
       diamonds: diamonds ?? this.diamonds,
       extraDice: extraDice ?? this.extraDice,
       skinTone: skinTone ?? this.skinTone,
+      eyes: eyes ?? this.eyes,
+      eyeColor: eyeColor ?? this.eyeColor,
+      ownedEyes: ownedEyes ?? this.ownedEyes,
+      mouth: mouth ?? this.mouth,
+      mouthColor: mouthColor ?? this.mouthColor,
+      ownedMouths: ownedMouths ?? this.ownedMouths,
+      avatarColor: avatarColor ?? this.avatarColor,
       usernameChangedAt: usernameChangedAt ?? this.usernameChangedAt,
     );
   }
