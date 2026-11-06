@@ -190,6 +190,7 @@
 - **Decisión:** `WardrobeController` guarda la categoría activa (`CosmeticCategory`: camisa, pantalón, zapatos, cabello, nariz, ojos y boca). Los cosméticos que se muestran son un mapa fijo en `wardrobe_screen.dart` (solo "Camisa 1"). Si la categoría no tiene ítems, se muestra su mensaje de "Aún no tienes...".
 - **Motivo:** permite construir y revisar la interfaz del mockup antes de que exista el catálogo de cosméticos.
 - **Pendientes:** reemplazar el mapa por los cosméticos desbloqueados del perfil, poder equiparlos, armar el personaje y conectar el botón "Foto" (hoy muestra "La cámara llega pronto").
+- **Actualización (2026-11-06):** la piel, los ojos y la boca ya son reales (D-29, D-30 y D-31); el mapa fijo con "Camisa 1" queda solo para las categorías sin arte (camisa, pantalón, zapatos, cabello y nariz).
 
 ## D-20. Una rama permanente para la documentación
 
