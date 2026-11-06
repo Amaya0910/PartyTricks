@@ -184,12 +184,12 @@ Una tarea está terminada cuando:
 | `feature/auth` | Isabella | 🟢 Listo (incluye Ajustes, verificación del correo e inicio con Google) |
 | `feature/rooms-lobby` | Brayan | 🟢 Listo |
 | `feature/game-engine` | Brayan | 🟢 Listo |
-| `feature/player-profile` | Isabella | 🟡 En proceso (vestuario y estadísticas listos; faltan cosméticos desbloqueados, foto, nivel y experiencia) |
+| `feature/player-profile` | Isabella | 🟡 En proceso (listos el Vestuario con piel, ojos y boca, la foto de perfil con la cabeza del personaje y las estadísticas; faltan la ropa, el cabello y la nariz) |
 | `feature/board-turns` | Brayan | 🟢 Listo |
-| `feature/map-shop-items` | Brayan | 🔴 Pendiente |
-| `feature/results-xp` | Brayan | 🔴 Pendiente |
-| `feature/game-shop` | Isabella | 🟡 En proceso (cofres listos; faltan cosméticos e ítems en la tienda) |
+| `feature/map-shop-items` | Brayan | 🟢 Listo |
+| `feature/results-xp` | Brayan | 🟢 Listo |
+| `feature/game-shop` | Isabella | 🟡 En proceso (listos los cofres con cosméticos por rareza, y ojos y bocas en la Tienda; faltan los demás cosméticos y las mejoras consumibles) |
 | `feature/friends-chat` | Isabella | 🟢 Listo (amigos por solicitud, chat, invitaciones, bloquear y reportar) |
-| `feature/disconnections` | Brayan | 🔴 Pendiente |
+| `feature/disconnections` | Brayan | 🟢 Listo |
 | `docs/documentacion-completa` | Ambos | 🟢 Rama permanente (se reutiliza en cada actualización) |
 | Minijuegos | Ambos | 🔴 Pendiente |

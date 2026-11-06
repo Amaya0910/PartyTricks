@@ -52,8 +52,8 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 | Sección | Archivo | Estado | Contenido según el mockup |
 |---|---|---|---|
 | Inicio | `home_screen.dart` | En desarrollo | Cabecera del jugador, personaje y botón **Jugar** |
-| Tienda | `shop_screen.dart` | En desarrollo | Tienda de Tricks: cofres (50, 100, 150) y cosméticos con precio |
-| Vestuario | `wardrobe_screen.dart` | En desarrollo | Foto del rostro y categorías: Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos, Boca |
+| Tienda | `shop_screen.dart` | En desarrollo | Tienda de Tricks: cofres (50, 100, 150) y cosméticos (ojos y bocas) con precio, rareza, filtro y orden |
+| Vestuario | `wardrobe_screen.dart` | En desarrollo | Tu personaje y categorías: Piel, Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos y Boca (Piel, Ojos y Boca ya funcionan) |
 | Stats | `stats_screen.dart` | En desarrollo | Estadísticas de partidas, minijuegos y tiempo |
 | Amigos | `friends_screen.dart` | En desarrollo | Solicitudes, lista de amigos, chat e invitaciones |
 
@@ -63,8 +63,8 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 
 ## 3. Inicio
 
-- **Cabecera del jugador:** foto de perfil, nombre de usuario, monedas y diamantes. Los datos salen del perfil del jugador con la sesión iniciada.
-- **Personaje:** el rostro armado con los cosméticos equipados (por ahora, un ícono provisional).
+- **Cabecera del jugador:** foto de perfil, nombre de usuario, monedas y diamantes. La foto es la **cabeza de tu personaje** (piel, ojos y boca) sobre el color de fondo que eliges en Ajustes. Los datos salen del perfil del jugador con la sesión iniciada.
+- **Personaje:** tu personaje animado en reposo (respira y mueve un poco la cabeza), con la piel, los ojos y la boca que tienes puestos. La ropa, el cabello y la nariz llegan después.
 - **Botón Jugar:** abre un menú emergente con tres opciones.
 
 ### Menú de Jugar
@@ -114,10 +114,13 @@ Archivo: `shop_screen.dart`.
 
 - Encabezado **Tienda de Tricks** con la franja **COFRES**.
 - Tres cofres con su precio en **diamantes**: Cofre Básico (50), Cofre Party (100) y Cofre Diamante (150, nombre provisional; el mockup lo repite como "Cofre Party").
-- Al tocar un cofre se abre una ventana con sus **probabilidades** de premio (cosmético aleatorio, nada, 100 monedas o dado extra) y el botón **Comprar**.
-- Si no alcanzan los diamantes, la ventana muestra el mensaje de error; si se compra, aparece un aviso con el premio.
-- Debajo de los cofres está la lista de ítems. Por ahora muestra "Aún no hay ítems en la tienda"; los cosméticos con nombre, descripción, precio y botón **Comprar** llegan después.
-- Las reglas de la compra están en `decisiones.md`, D-18.
+- Al tocar un cofre se abre una ventana con sus **probabilidades** de premio (cosmético aleatorio, nada, 100 monedas o dado extra) y el botón **Comprar**. La fila **Cosmético aleatorio** (con un ícono de información) se puede tocar: abre una ventana con la **probabilidad de cada cosmético** que todavía no tienes, agrupados por rareza (`cosmetic_odds_dialog.dart`). Los que ya tienes no salen, y los porcentajes se recalculan solos.
+- Si no alcanzan los diamantes, la ventana muestra el mensaje de error. Si se compra, se abre la **ventana de premio** (`chest_reward_dialog.dart`), con los colores del cofre: el **cosmético** ganado con su rareza (ya queda guardado y aparece en el Vestuario), las **100 monedas**, el **dado extra** o el aviso de **cofre vacío**, y el total que tienes ahora.
+- Debajo de los cofres están los **chips de filtro** (Todos, Ojos y Bocas) y un botón para **ordenar** (recomendado, precio o rareza, de mayor a menor o al revés).
+- La lista muestra los cosméticos que todavía no tienes: el dibujo en un cuadro punteado y, al lado, el nombre, la descripción, el precio en **monedas** y la **rareza**. Los precios van de 30 a 100 monedas (ver D-29 y D-30).
+- Al tocar un cosmético se abre la **ventana de compra** (`cosmetic_purchase_dialog.dart`): tu personaje probándoselo, con tu piel y tus colores, su rareza, la descripción, cuántas monedas tienes y el botón **Comprar**. Si no alcanzan, dice cuántas faltan. Lo comprado sale de la Tienda y aparece en el Vestuario.
+- Si ya tienes todos los de una categoría, la lista dice "¡Ya tienes todos los ojos!" (o las bocas, o los cosméticos).
+- Las reglas de la compra están en `decisiones.md`: D-18 (cofres), D-29 y D-30 (ojos y bocas) y D-31 (rareza y cosméticos en los cofres).
 
 ---
 
@@ -125,10 +128,14 @@ Archivo: `shop_screen.dart`.
 
 Archivo: `wardrobe_screen.dart`.
 
-- Arriba, el personaje (ícono provisional) y el botón **Foto** para usar una foto propia (**opcional**). Por ahora solo muestra "La cámara llega pronto".
-- En el medio, la barra de **categorías**: Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos y Boca. Se desplaza si no caben.
-- Abajo, una cuadrícula con los cosméticos que el jugador ya tiene en la categoría elegida. Si no tiene ninguno, muestra un mensaje ("Aún no tienes ninguna camisa", etc.).
-- Provisional: los cosméticos son un mapa fijo en el código (solo "Camisa 1"). Se reemplazan por los cosméticos desbloqueados del perfil (ver `decisiones.md`, D-19).
+- Arriba, tu **personaje animado** con lo que tienes puesto y el botón **Foto**, que todavía no hace nada: solo muestra "La cámara llega pronto".
+- En el medio, la barra de **categorías**: Piel, Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos y Boca. Se desplaza si no caben.
+- **Piel:** una cuadrícula con **40 tonos**: 20 realistas, de claro a oscuro, y 20 fantasiosos (negro, blanco, azul...).
+- **Ojos** y **Boca:** arriba una línea de **20 colores** que se desplaza y, debajo, una cuadrícula con los que ya tienes (los gratis y los que compraste o ganaste en un cofre). El elegido lleva el borde azul. Los dibujos no llevan nombre.
+  - En los ojos, el primer color deja el dibujo como está.
+  - En la boca, el primer color es **sin color**: lo blanco de la boca toma el tono de piel (en la línea se ve con ese tono). Las bocas 1, 9 y 10 no cambian de color.
+- Las demás categorías (camisa, pantalón, zapatos, cabello y nariz) muestran su mensaje "Aún no tienes..." mientras no existan esos cosméticos.
+- Provisional: en las categorías sin arte, el cosmético es un mapa fijo en el código (solo "Camisa 1"), sin nombre visible. Ver `decisiones.md`, D-19.
 
 ---
 
@@ -206,7 +213,7 @@ Se abre al tocar la foto de perfil en **Inicio** o en **Stats** (ver `decisiones
 |---|---|
 | Tu código | Los 6 caracteres del código de amistad, con **Copiar** (al portapapeles) y **Recargar** (pide confirmación y crea uno nuevo) |
 | Cuenta | Nombre de usuario (se cambia una vez cada 30 días), correo (pide la contraseña actual y envía un enlace al correo nuevo) y **Cambiar contraseña**. Las cuentas que solo usan Google no ven el cambio de contraseña ni de correo |
-| Preferencias | Notificaciones, sonido y efectos de sonido (se guardan en el celular) e idioma (por ahora solo español) |
+| Preferencias | **Color de fondo de tu foto de perfil** (16 colores, con una vista previa de tu cabeza; lo ven también los demás jugadores y se guarda en tu cuenta), notificaciones, sonido y efectos de sonido (se guardan en el celular) e idioma (por ahora solo español) |
 | Más opciones | Acerca de, Términos y condiciones, Política de privacidad, Jugadores bloqueados y **Cerrar sesión** (pide confirmación) |
 
 ### 8.1 Cambiar contraseña
@@ -236,8 +243,8 @@ Pantallas que se deducen del diseño del juego y que **aún no aparecen en el mo
 - [x] Registro e inicio de sesión (diseñados en Figma y construidos; ver 1.1).
 - [x] Lobby de sala (espera de 1:30 minutos; ver 3.1).
 - [x] Tablero de juego y turnos (provisional; ver 3.2).
-- [ ] Minijuego (puede usar Flame si es de tiempo real; ver `decisiones.md`, D-11).
-- [ ] Resultados de la partida.
+- [x] Minijuegos (Para el Tiempo, Reacción y Globo Bomba; ver `decisiones.md`, D-26).
+- [x] Resultados de la partida (`results_screen.dart`).
 - [ ] Mensaje "Lo sentimos, no quedan jugadores :(" con el botón **[Regresar a menú]**.
-- [ ] Tienda de ítems (cosméticos a la venta).
+- [x] Tienda de ítems: ojos y bocas a la venta (ver sección 4). Faltan los demás cosméticos.
 - [x] Ajustes: cuenta, preferencias, cambio de contraseña, textos legales y bloqueados (ver sección 8).

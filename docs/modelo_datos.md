@@ -13,7 +13,7 @@
 | Credenciales | Firebase Authentication | Correo y contraseña (la contraseña **no** se guarda en la base de datos del juego) |
 | Datos permanentes | Cloud Firestore | Perfil, amigos, chat, catálogo de la tienda, inventario |
 | Datos de la partida en vivo | Realtime Database | Salas, turnos, posiciones, presencia (desconexiones) |
-| Archivos | Storage | Foto del rostro del personaje |
+| Archivos | Storage | _(sin uso por ahora)_ Foto del rostro; la foto de perfil es la cabeza del personaje, que se dibuja con las capas de arte (D-31) |
 
 ---
 
@@ -34,9 +34,16 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | `monedas` | `coins` | Monedas de la cuenta, empiezan en 0 |
 | `diamantes` | `diamonds` | Diamantes de la cuenta, empiezan en 0 |
 | `dadosExtra` | `extraDice` | Dados extra consumibles ganados en los cofres (ver D-18); empiezan en 0. Se gastan en próximas partidas |
-| `cosmeticosDesbloqueados` | _(por construir)_ | Lista de ids de cosméticos |
-| `cosmeticosEquipados` | _(por construir)_ | Un cosmético por categoría |
-| `fotoRostro` | _(por construir)_ | Ruta en Storage (opcional) |
+| `tonoPiel` | `skinTone` | Posición del tono de piel (0 a 39: 20 realistas y 20 fantasiosos). Si falta, el 4 |
+| `ojos` | `eyes` | Número de los ojos puestos (1 a 11). Si falta, el 7. Tienen que ser gratis o comprados |
+| `colorOjos` | `eyeColor` | Posición del color de ojos (0 a 19; el 0 deja el dibujo original) |
+| `ojosComprados` | `ownedEyes` | Lista con los números de los ojos comprados o ganados en cofres. Los gratis (2, 5 y 7) no se guardan. Solo cambia al comprar o abrir un cofre (D-29 y D-31) |
+| `boca` | `mouth` | Número de la boca puesta (1 a 10). Si falta, la 1. Tiene que ser gratis o comprada |
+| `colorBoca` | `mouthColor` | Posición del color de boca (0 a 19; el 0 es "sin color" y toma el tono de piel) |
+| `bocasCompradas` | `ownedMouths` | Lista con los números de las bocas compradas o ganadas. Las gratis (1 y 3) no se guardan. Solo cambia al comprar o abrir un cofre (D-30 y D-31) |
+| `colorFondoFoto` | `avatarColor` | Posición del color de fondo de la foto de perfil (0 a 15), que se elige en Ajustes |
+| _(ropa, cabello y nariz)_ | _(por construir)_ | Cuando existan esos cosméticos |
+| `fotoRostro` | _(sin uso)_ | La foto de perfil ahora es la cabeza del personaje; no se sube ninguna imagen |
 
 #### Colecciones de Firestore de la cuenta
 
@@ -52,14 +59,58 @@ Las preferencias de Ajustes (notificaciones, sonido, efectos e idioma) **no** va
 
 ### 2.2 Cosmético
 
-Hoy solo existe la categoría (`CosmeticCategory` en `lib/models/cosmetic_category.dart`). El cosmético como tal llega con el catálogo.
+Hoy existen **ojos** (11) y **bocas** (10), definidos en código, en `lib/models/eye_style.dart` (`EyeStyle`) y `lib/models/mouth_style.dart` (`MouthStyle`). La categoría de cada cosmético del Vestuario está en `lib/models/cosmetic_category.dart` (`CosmeticCategory`). Camisa, pantalón, zapatos, cabello y nariz todavía no tienen catálogo.
 
 | Campo | Descripción |
 |---|---|
-| `id` | Identificador |
-| `categoria` | Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos o Boca |
-| `nombre` y `descripcion` | Texto que se muestra en la tienda |
-| `precio` | En monedas o diamantes |
+| `number` | Número del archivo de arte y lo que se guarda en el perfil |
+| `title` y `description` | Texto que se muestra en la Tienda |
+| `price` | En monedas; 0 si viene gratis con la cuenta. Los precios también están en `firestore.rules` (`eyesPrice` y `mouthPrice`) y hay que cambiarlos en los dos sitios |
+| `rarity` | Rareza (`lib/models/rarity.dart`): decide qué tan seguido sale en los cofres |
+| `layered` y `tintable` | Si viene en dos capas de arte y si su parte blanca puede tomar color |
+
+**Rareza** (`Rarity`): el peso es el que se usa al sortear un cosmético de un cofre.
+
+| Rareza | Índice | Peso |
+|---|---|---|
+| Común | 1 | 50 |
+| Poco común | 2 | 28 |
+| Raro | 3 | 14 |
+| Épico | 4 | 6 |
+| Legendario | 5 | 2 |
+
+**Ojos**
+
+| N.º | Nombre | Precio | Rareza |
+|---|---|---|---|
+| 1 | Ojos Pequeñitos | 30 | Común |
+| 2 | Ojos Ilusionados | gratis | — |
+| 3 | Ojos Burbuja | 45 | Poco común |
+| 4 | Ojos Somnolientos | 45 | Poco común |
+| 5 | Ojos Afilados | gratis | — |
+| 6 | Ojos Felices | 45 | Poco común |
+| 7 | Ojos Clásicos | gratis (los de inicio) | — |
+| 8 | Ojos Aburridos | 60 | Raro |
+| 9 | Ojos Curiosos | 60 | Raro |
+| 10 | Ojos Despistados | 60 | Raro |
+| 11 | Ojos Pícaros | 100 | Legendario |
+
+**Bocas**
+
+| N.º | Nombre | Precio | Rareza |
+|---|---|---|---|
+| 1 | Boca Carcajada | gratis (la de inicio) | — |
+| 2 | Boca Traviesa | 30 | Común |
+| 3 | Boca Chiquita | gratis | — |
+| 4 | Boca Radiante | 30 | Común |
+| 5 | Boca Titubeante | 45 | Poco común |
+| 6 | Boca Sospechosa | 45 | Poco común |
+| 7 | Boca Nerviosa | 60 | Raro |
+| 8 | Boca Pícara | 60 | Raro |
+| 9 | Boca Bromista | 75 | Épico |
+| 10 | Boca Sorprendida | 75 | Épico |
+
+Los nombres y las descripciones son provisionales. Los colores (de ojos, de boca, de piel y de fondo de la foto) y su tintado están en `eye_color.dart`, `mouth_color.dart`, `skin_tone.dart` y `avatar_color.dart`; la lista de colores está en `AppColors`. Qué se tiñe de cada dibujo está en `arte_imagenes.md`, sección 8.
 
 ### 2.3 Cofre
 
@@ -73,13 +124,15 @@ Definido en código, en `lib/models/chest.dart` (`ChestType`). Se compran con **
 
 El mockup repite el nombre "Cofre Party" en el tercer cofre; el nombre final está por definir.
 
+**Cosmético aleatorio:** cuando sale, se sortea entre los ojos y bocas de la Tienda que el jugador todavía no tiene, y cada uno pesa lo que dice su rareza (ver 2.2). El cosmético se guarda en `ownedEyes` u `ownedMouths` en la misma transacción que cobra el cofre (`FirebaseShopService`, `CosmeticPicker`). Si ya los tiene todos, recibe 100 monedas en su lugar. El premio que se devuelve (`ChestPrize`) trae el cosmético para mostrarlo en la ventana de premio. Ver D-31.
+
 ### 2.4 Amigos, chat e invitaciones
 
 Viven en Cloud Firestore (ver `decisiones.md`, D-22). Las fechas se guardan en milisegundos, como en las salas. El **id de pareja** es el de los dos uid en orden alfabético unidos con `_` (`PairId`), así entre dos jugadores hay una sola amistad y un solo chat.
 
 | Colección | Documento | Campos | Para qué |
 |---|---|---|---|
-| `publicProfiles` | `{uid}` | `username`, `friendCode`, `experience`, `photoUrl` | Lo que ven los demás (sin el correo). La app lo mantiene igual al perfil |
+| `publicProfiles` | `{uid}` | `username`, `friendCode`, `experience`, `photoUrl` (sin uso) y cómo se ve la cabeza: `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor` y `avatarColor` | Lo que ven los demás (sin el correo). La app lo mantiene igual al perfil. Con los datos de la cabeza se dibuja la foto de perfil de los demás |
 | `friendships` | `{id de pareja}` | `members` (los dos uid), `requestedBy`, `status` (`pending` o `accepted`), `createdAt` | Solicitud y amistad |
 | `chats` | `{id de pareja}` | `members`, `lastMessage` (copia del último mensaje), `lastReadAt` (uid → fecha) | Lista de amigos: último mensaje y sin leer |
 | `chats/{id}/messages` | automático | `senderId`, `text`, `sentAt`, `type` (`text` o `invite`) y, en invitaciones, `roomId` y `roomCode` | Mensajes |
@@ -164,12 +217,15 @@ Los modelos viven en `lib/models/`. Hoy existen:
 | `loading_state.dart` | Estado de la pantalla de carga |
 | `play_option.dart` | Opciones del menú de Jugar |
 | `room.dart` | Sala de juego: configuración, jugadores y cuándo arranca o se cierra |
-| `user_profile.dart` | Perfil del jugador (correo, nombre de usuario y fecha de su último cambio, código de amistad, experiencia, monedas, diamantes y dados extra) |
+| `user_profile.dart` | Perfil del jugador (correo, nombre de usuario y fecha de su último cambio, código de amistad, experiencia, monedas, diamantes, dados extra y cómo se ve su personaje: piel, ojos, boca, sus colores, lo comprado y el color de fondo de la foto) |
+| `eye_style.dart`, `mouth_style.dart` | Los ojos y las bocas: nombre, descripción, precio, rareza y capas de arte (ver 2.2) |
+| `eye_color.dart`, `mouth_color.dart`, `skin_tone.dart`, `avatar_color.dart` | Posición y color de los ojos, las bocas, el tono de piel y el fondo de la foto de perfil |
+| `rarity.dart` | Rareza de los cosméticos: índice, nombre, peso en los cofres y color |
 | `auth_user.dart` | La sesión: uid, correo, si está verificado y con qué entra (contraseña o Google) |
 | `app_preferences.dart` | Preferencias de Ajustes guardadas en el celular |
 | `legal_document.dart` | Textos de Acerca de, Términos y condiciones y Política de privacidad |
 | `auth_form_state.dart` | Estado de los formularios de inicio de sesión y registro (cargando y mensaje de error) |
-| `chest.dart` | Cofres de la tienda: precio, probabilidades, imagen y premios posibles |
+| `chest.dart` | Cofres de la tienda: precio, probabilidades, imagen y premios posibles, y `ChestPrize` (lo que se ganó, con el cosmético si salió uno) |
 | `cosmetic_category.dart` | Categorías de cosméticos del Vestuario, con su etiqueta y mensaje de "sin ítems" |
 | `player_stats.dart` | Estadísticas del jugador: une los grupos de `stats/` |
 | `stats/` | Un archivo por grupo de estadísticas (ver 2.8), `stats_section.dart` (tarjetas de la pantalla) y `stats_map.dart` (lectura segura de Firestore) |
@@ -185,9 +241,9 @@ Los modelos de datos de este documento que faltan se agregarán a esa carpeta a 
 ## 4. Pendientes
 
 - [x] Estructura de las colecciones de Firestore para amigos y chat (ver 2.4).
-- [ ] Estructura del catálogo de cosméticos.
-- [x] Reglas de seguridad de Firestore, en `firestore.rules` (ver `decisiones.md`, D-22). Pendiente: impedir que un jugador edite por su cuenta `diamonds`, `coins` y `extraDice` (necesita Cloud Functions; ver D-18).
+- [x] Catálogo de ojos y bocas, en código (ver 2.2). Falta el de camisa, pantalón, zapatos, cabello y nariz.
+- [x] Reglas de seguridad de Firestore, en `firestore.rules` (ver `decisiones.md`, D-22). La cartera (`coins`, `diamonds`, `extraDice`, `experience`, `ownedEyes` y `ownedMouths`) solo cambia con compras, premios de partida o el panel de administración (D-28 a D-31); las reglas no se probaron con el emulador.
 - [x] Forma de garantizar que el nombre de usuario y el código de amistad sean únicos (colecciones `usernames` y `friendCodes` con transacción; ver D-16).
 - [x] Estructura de las salas y de la partida en Realtime Database (ver D-14 y D-15).
 - [ ] Qué se guarda para permitir reconexión a una partida.
-- [ ] Guardar el cosmético ganado en un cofre (hoy el premio se sortea pero no se guarda).
+- [x] Guardar el cosmético ganado en un cofre (ver 2.3 y D-31). Falta usar el dado extra dentro de la partida.
