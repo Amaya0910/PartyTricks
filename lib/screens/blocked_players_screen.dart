@@ -70,7 +70,7 @@ class _BlockedTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(publicProfileProvider(uid)).value;
     return ListTile(
-      leading: ProfileAvatar(photoUrl: profile?.photoUrl, size: 40),
+      leading: ProfileAvatar(profile: profile, size: 40),
       title: Text(profile?.username ?? 'Jugador'),
       trailing: TextButton(
         onPressed: () => _unblock(context, ref),

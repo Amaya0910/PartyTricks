@@ -38,7 +38,7 @@ class FriendRequestTile extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          ProfileAvatar(photoUrl: profile?.photoUrl, size: 40),
+          ProfileAvatar(profile: profile, size: 40),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
