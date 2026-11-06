@@ -1,5 +1,7 @@
 /// Categorías de cosméticos, en el orden del mockup del Vestuario.
 enum CosmeticCategory {
+  /// No es un cosmético que se gane: muestra el selector de tono de piel.
+  skin('Piel', 'Tono', 'No hay tonos de piel'),
   shirt('Camisa', 'Camisa', 'Aún no tienes ninguna camisa'),
   pants('Pantalón', 'Pantalón', 'Aún no tienes ningún pantalón'),
   shoes('Zapatos', 'Zapatos', 'Aún no tienes zapatos de fiesta'),

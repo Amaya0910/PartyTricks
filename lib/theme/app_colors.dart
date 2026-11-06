@@ -87,12 +87,6 @@ class AppColors {
   static const Color authShadow = Color(0x6663A9DB);
 
   // ---------------------------------------------------------------------------
-  // Marcadores de posición (hasta tener el arte final)
-  // ---------------------------------------------------------------------------
-
-  static const Color placeholderIcon = Color(0xB3FFFFFF);
-
-  // ---------------------------------------------------------------------------
   // Tablero (provisional hasta tener el dibujo del tablero)
   // ---------------------------------------------------------------------------
 
@@ -256,6 +250,31 @@ class AppColors {
   /// Contorno negro del personaje (arte_imagenes.md, sección 1).
   static const Color characterOutline = Color(0xFF1A1A1A);
 
+  /// Los 20 tonos de piel que se eligen en el Vestuario, de claro a oscuro.
+  /// En Firestore se guarda solo la posición en esta lista (ver SkinTone).
+  static const List<Color> skinTones = [
+    Color(0xFFFFF1E6),
+    Color(0xFFFCE3D0),
+    Color(0xFFF8D5BE),
+    Color(0xFFF3C6A5),
+    Color(0xFFEDB98A),
+    Color(0xFFE5A97A),
+    Color(0xFFD99A6C),
+    Color(0xFFCB8B5C),
+    Color(0xFFBE7B4F),
+    Color(0xFFB06F45),
+    Color(0xFFA0623C),
+    Color(0xFF8F5535),
+    Color(0xFF7E4A2F),
+    Color(0xFF6F402A),
+    Color(0xFF603624),
+    Color(0xFF532E20),
+    Color(0xFF47271C),
+    Color(0xFF3D2219),
+    Color(0xFF331C15),
+    Color(0xFF2A1712),
+  ];
+
   /// Sombra en el piso y rubor de las mejillas.
   static const Color characterShadow = Color(0x40000000);
   static const Color characterBlush = Color(0x55FF7B7B);
@@ -283,4 +302,21 @@ class AppColors {
 
   /// Quien ganó el minijuego.
   static const Color minigameWinner = coin;
+
+  /// Cabecera, borde y botones de cada minijuego.
+  static const Color minigameStopwatch = authAccent;
+  static const Color minigameReaction = activeButton;
+  static const Color minigameBalloon = chestDiamondStrong;
+
+  /// Fondo suave de los recuadros de ayuda y de las píldoras.
+  static const Color minigameSoft = Color(0xFFF2F8FC);
+
+  /// Pista vacía del reloj y de la barra de tiempo.
+  static const Color minigameTrack = authField;
+
+  /// Brillo del globo y de los botones.
+  static const Color minigameShine = Color(0x8CFFFFFF);
+
+  /// Franja dorada del resultado y fila de quien ganó.
+  static const Color minigameWinnerSoft = pillBackground;
 }
