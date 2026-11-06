@@ -45,7 +45,7 @@ class FriendTile extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.slotBorder, width: 2),
               ),
-              child: ProfileAvatar(photoUrl: profile?.photoUrl, size: 52),
+              child: ProfileAvatar(profile: profile, size: 52),
             ),
             const SizedBox(width: 10),
             Expanded(

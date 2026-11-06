@@ -171,6 +171,12 @@ class AppColors {
   /// Franja "COFRES".
   static const Color shopBand = Color(0xFFD6EAB9);
 
+  /// Borde punteado celeste de cada artículo de la lista.
+  static const Color shopItemBorder = Color(0xFFA9D3E6);
+
+  /// Fondo celeste muy claro detrás de la lista de artículos.
+  static const Color shopListBackground = Color(0xFFEAF4F9);
+
   /// De cada cofre: `Card` para fondos y `Strong` para bordes, cabeceras
   /// y textos.
   static const Color chestBasicCard = Color(0xFFDDFF8F);
@@ -250,7 +256,8 @@ class AppColors {
   /// Contorno negro del personaje (arte_imagenes.md, sección 1).
   static const Color characterOutline = Color(0xFF1A1A1A);
 
-  /// Los 20 tonos de piel que se eligen en el Vestuario, de claro a oscuro.
+  /// Los 40 tonos de piel que se eligen en el Vestuario: 20 reales, de claro
+  /// a oscuro, y 20 fantasiosos.
   /// En Firestore se guarda solo la posición en esta lista (ver SkinTone).
   static const List<Color> skinTones = [
     Color(0xFFFFF1E6),
@@ -273,6 +280,81 @@ class AppColors {
     Color(0xFF3D2219),
     Color(0xFF331C15),
     Color(0xFF2A1712),
+    // Del 21 al 40: colores fantasiosos, nada realistas.
+    Color(0xFF000000), // negro puro
+    Color(0xFFFFFFFF), // blanco puro
+    Color(0xFF8E9AA6), // gris
+    Color(0xFFD50000), // rojo
+    Color(0xFFFF6D00), // naranja
+    Color(0xFFFFD600), // amarillo
+    Color(0xFFAEEA00), // lima
+    Color(0xFF00C853), // verde
+    Color(0xFF00BFA5), // verde azulado
+    Color(0xFF00E5FF), // turquesa
+    Color(0xFF29B6F6), // celeste
+    Color(0xFF2962FF), // azul
+    Color(0xFF1A237E), // azul noche
+    Color(0xFF651FFF), // violeta
+    Color(0xFFAA00FF), // morado
+    Color(0xFFE040FB), // orquídea
+    Color(0xFFFF4081), // rosa chicle
+    Color(0xFFF8BBD0), // rosa pastel
+    Color(0xFFB9F6CA), // menta pastel
+    Color(0xFFFFD180), // durazno pastel
+  ];
+
+  /// Colores de fondo de la foto de perfil (la cabeza del personaje). En
+  /// Firestore se guarda solo la posición (ver AvatarColor).
+  static const List<Color> avatarColors = [
+    Color(0xFFA5D3C5),
+    Color(0xFF8DDDFF),
+    Color(0xFF3F9FD8),
+    Color(0xFF1F3A93),
+    Color(0xFF8A5CE0),
+    Color(0xFFE040FB),
+    Color(0xFFE0589B),
+    Color(0xFFFF8A80),
+    Color(0xFFD50000),
+    Color(0xFFFF8A3D),
+    Color(0xFFF2C230),
+    Color(0xFFAEEA00),
+    Color(0xFF2E9E6B),
+    Color(0xFF8B5A2B),
+    Color(0xFF8E9AA6),
+    Color(0xFF2B2B2B),
+  ];
+
+  /// Colores de la rareza de los cosméticos (común a legendario).
+  static const Color rarityCommon = Color(0xFF8FA05A);
+  static const Color rarityUncommon = Color(0xFF3F9FD8);
+  static const Color rarityRare = Color(0xFF8A5CE0);
+  static const Color rarityEpic = Color(0xFFE0589B);
+  static const Color rarityLegendary = Color(0xFFF2A81D);
+
+  /// Los 20 colores de ojos que se eligen en el Vestuario. Tiñen la parte
+  /// blanca de la línea del ojo (ver EyeColor); el primero, blanco, deja el
+  /// dibujo original. En Firestore se guarda solo la posición.
+  static const List<Color> eyeColors = [
+    Color(0xFFFFFFFF), // original
+    Color(0xFFB8C4CC),
+    Color(0xFF77ABD5),
+    Color(0xFF3F7FBF),
+    Color(0xFF1F3A93),
+    Color(0xFF4FC3C8),
+    Color(0xFF2E9E6B),
+    Color(0xFF8DBF4A),
+    Color(0xFF6B7A2E),
+    Color(0xFFF2C230),
+    Color(0xFFD99A2B),
+    Color(0xFFE0702A),
+    Color(0xFF8B5A2B),
+    Color(0xFF4A2C1D),
+    Color(0xFFAA0033),
+    Color(0xFF780422),
+    Color(0xFFE85A9B),
+    Color(0xFFAA00A7),
+    Color(0xFF7A3FC2),
+    Color(0xFF2B2B2B),
   ];
 
   /// Sombra en el piso y rubor de las mejillas.

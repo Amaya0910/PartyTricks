@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/eyes_controller.dart';
+import 'package:party_tricks/controllers/mouth_controller.dart';
 import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/controllers/wardrobe_controller.dart';
 import 'package:party_tricks/models/cosmetic_category.dart';
+import 'package:party_tricks/models/eye_color.dart';
+import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/category_tab_bar.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/cosmetic_slot.dart';
+import 'package:party_tricks/widgets/eyes_picker.dart';
+import 'package:party_tricks/widgets/mouth_picker.dart';
 import 'package:party_tricks/widgets/skin_tone_picker.dart';
 
 /// Vestuario: el personaje arriba, las categorías en el medio y los
@@ -24,13 +30,13 @@ class WardrobeScreen extends ConsumerWidget {
     CosmeticCategory.shirt: ['Camisa 1'],
   };
 
-  Future<void> _selectSkinTone(
+  /// Guarda un cambio del personaje y, si falla, muestra el mensaje.
+  Future<void> _save(
     BuildContext context,
-    WidgetRef ref,
-    int index,
+    Future<void> Function() change,
   ) async {
     try {
-      await ref.read(skinToneControllerProvider).select(index);
+      await change();
     } on CharacterException catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
@@ -43,6 +49,13 @@ class WardrobeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(wardrobeControllerProvider);
     final skinTone = ref.watch(skinToneProvider);
+    final eyeStyle = ref.watch(eyeStyleProvider);
+    final eyeColor = ref.watch(eyeColorProvider);
+    final ownedEyes = ref.watch(ownedEyesProvider);
+    final mouthStyle = ref.watch(mouthStyleProvider);
+    final mouthColor = ref.watch(mouthColorProvider);
+    final ownedMouths = ref.watch(ownedMouthsProvider);
+    final skinColor = SkinTone.colorOf(skinTone);
 
     return Column(
       children: [
@@ -57,7 +70,11 @@ class WardrobeScreen extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: AnimatedCharacter(
-                      skinTone: SkinTone.colorOf(skinTone),
+                      skinTone: skinColor,
+                      eyes: eyeStyle,
+                      eyeColor: EyeColor.colorOf(eyeColor),
+                      mouth: mouthStyle,
+                      mouthColor: MouthColor.colorOf(mouthColor),
                     ),
                   ),
                 ),
@@ -85,15 +102,47 @@ class WardrobeScreen extends ConsumerWidget {
             // SafeArea inferior: también deja espacio para la barra de navegación.
             child: SafeArea(
               top: false,
-              child: selected == CosmeticCategory.skin
-                  ? SkinTonePicker(
-                      selected: skinTone,
-                      onSelected: (index) => _selectSkinTone(context, ref, index),
-                    )
-                  : _OwnedItems(
-                      emptyMessage: selected.emptyMessage,
-                      items: _ownedItems[selected] ?? const [],
-                    ),
+              child: switch (selected) {
+                CosmeticCategory.skin => SkinTonePicker(
+                  selected: skinTone,
+                  onSelected: (index) => _save(
+                    context,
+                    () => ref.read(skinToneControllerProvider).select(index),
+                  ),
+                ),
+                CosmeticCategory.eyes => EyesPicker(
+                  styles: ownedEyes,
+                  selectedStyle: eyeStyle,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(eyesControllerProvider).selectStyle(style),
+                  ),
+                  colors: AppColors.eyeColors,
+                  selectedColor: eyeColor,
+                  onColorSelected: (index) => _save(
+                    context,
+                    () => ref.read(eyesControllerProvider).selectColor(index),
+                  ),
+                ),
+                CosmeticCategory.mouth => MouthPicker(
+                  styles: ownedMouths,
+                  selectedStyle: mouthStyle,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(mouthControllerProvider).selectStyle(style),
+                  ),
+                  colors: MouthColor.swatches(skinColor),
+                  selectedColor: mouthColor,
+                  onColorSelected: (index) => _save(
+                    context,
+                    () => ref.read(mouthControllerProvider).selectColor(index),
+                  ),
+                ),
+                _ => _OwnedItems(
+                  emptyMessage: selected.emptyMessage,
+                  items: _ownedItems[selected] ?? const [],
+                ),
+              },
             ),
           ),
         ),
@@ -138,7 +187,8 @@ class _OwnedItems extends StatelessWidget {
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
       ),
-      itemBuilder: (context, index) => CosmeticSlot(label: items[index]),
+      itemBuilder: (context, index) =>
+          CosmeticSlot(semanticLabel: items[index]),
     );
   }
 }

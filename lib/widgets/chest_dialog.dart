@@ -6,6 +6,7 @@ import 'package:party_tricks/services/shop/shop_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
 import 'package:party_tricks/widgets/chest_visuals.dart';
+import 'package:party_tricks/widgets/cosmetic_odds_dialog.dart';
 
 /// Ventana de un cofre: sus probabilidades y el botón Comprar.
 /// Devuelve el premio si se compró, o null si se cierra sin comprar.
@@ -14,8 +15,8 @@ class ChestDialog extends ConsumerStatefulWidget {
 
   final ChestType chest;
 
-  static Future<ChestOutcome?> show(BuildContext context, ChestType chest) {
-    return showBlurredDialog<ChestOutcome>(
+  static Future<ChestPrize?> show(BuildContext context, ChestType chest) {
+    return showBlurredDialog<ChestPrize>(
       context,
       builder: (_) => ChestDialog(chest: chest),
     );
@@ -31,10 +32,10 @@ class _ChestDialogState extends ConsumerState<ChestDialog> {
   Future<void> _buy() async {
     setState(() => _error = null);
     try {
-      final outcome = await ref
+      final prize = await ref
           .read(shopControllerProvider.notifier)
           .buyChest(widget.chest);
-      if (mounted) Navigator.of(context).pop(outcome);
+      if (mounted) Navigator.of(context).pop(prize);
     } on ShopException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
@@ -65,7 +66,12 @@ class _ChestDialogState extends ConsumerState<ChestDialog> {
                 _ChestTile(chest: chest, palette: palette),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _Odds(chest: chest, palette: palette),
+                  child: _Odds(
+                    chest: chest,
+                    palette: palette,
+                    onCosmeticTap: () =>
+                        CosmeticOddsDialog.show(context, chest),
+                  ),
                 ),
               ],
             ),
@@ -118,10 +124,17 @@ class _ChestTile extends StatelessWidget {
 }
 
 class _Odds extends StatelessWidget {
-  const _Odds({required this.chest, required this.palette});
+  const _Odds({
+    required this.chest,
+    required this.palette,
+    required this.onCosmeticTap,
+  });
 
   final ChestType chest;
   final ChestPalette palette;
+
+  /// Abre la ventana con la probabilidad de cada cosmético.
+  final VoidCallback onCosmeticTap;
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +159,12 @@ class _Odds extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        _OddsRow('Cosmético aleatorio:', odds.cosmetic),
+        _OddsRow(
+          'Cosmético aleatorio:',
+          odds.cosmetic,
+          onTap: onCosmeticTap,
+          color: palette.strong,
+        ),
         _OddsRow('Nada:', odds.nothing),
         _OddsRow('$chestCoinPrize Monedas:', odds.coins),
         _OddsRow('Dado extra:', odds.dice),
@@ -156,10 +174,14 @@ class _Odds extends StatelessWidget {
 }
 
 class _OddsRow extends StatelessWidget {
-  const _OddsRow(this.label, this.percent);
+  const _OddsRow(this.label, this.percent, {this.onTap, this.color});
 
   final String label;
   final int percent;
+
+  /// Si lo hay, la fila se puede tocar para ver el detalle.
+  final VoidCallback? onTap;
+  final Color? color;
 
   static const _style = TextStyle(
     fontFamily: 'Inter',
@@ -170,13 +192,28 @@ class _OddsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: Row(
         children: [
           Expanded(child: Text(label, style: _style)),
           Text('$percent%', style: _style),
+          if (onTap != null) ...[
+            const SizedBox(width: 4),
+            Icon(Icons.info_outline, size: 16, color: color),
+          ],
         ],
+      ),
+    );
+    if (onTap == null) return row;
+    return Semantics(
+      button: true,
+      label: '$label $percent%, ver probabilidades',
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: row,
       ),
     );
   }

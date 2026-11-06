@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/account_controller.dart';
+import 'package:party_tricks/controllers/avatar_controller.dart';
 import 'package:party_tricks/controllers/preferences_controller.dart';
 import 'package:party_tricks/models/app_preferences.dart';
+import 'package:party_tricks/models/avatar_color.dart';
 import 'package:party_tricks/models/legal_document.dart';
 import 'package:party_tricks/models/user_profile.dart';
 import 'package:party_tricks/screens/admin/admin_screen.dart';
@@ -15,9 +17,11 @@ import 'package:party_tricks/screens/legal_screen.dart';
 import 'package:party_tricks/services/admin/admin_providers.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/auth/auth_service.dart';
+import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/code_digits.dart';
 import 'package:party_tricks/widgets/confirm_dialog.dart';
+import 'package:party_tricks/widgets/my_avatar.dart';
 import 'package:party_tricks/widgets/settings_section.dart';
 import 'package:party_tricks/widgets/text_fields_dialog.dart';
 import 'package:party_tricks/widgets/verify_email_banner.dart';
@@ -321,6 +325,7 @@ class _PreferencesSection extends ConsumerWidget {
     return SettingsSection(
       title: 'Preferencias',
       children: [
+        const _AvatarColorTile(),
         SettingsSwitchTile(
           label: 'Notificaciones',
           value: prefs.notifications,
@@ -343,6 +348,84 @@ class _PreferencesSection extends ConsumerWidget {
           onTap: () => _show(context, 'Por ahora el juego está en español.'),
         ),
       ],
+    );
+  }
+}
+
+/// Elegir el color de fondo de la foto de perfil (la cabeza del personaje).
+/// Lo ven también los demás jugadores.
+class _AvatarColorTile extends ConsumerWidget {
+  const _AvatarColorTile();
+
+  Future<void> _select(BuildContext context, WidgetRef ref, int index) async {
+    try {
+      await ref.read(avatarControllerProvider).selectColor(index);
+    } on CharacterException catch (error) {
+      if (context.mounted) _show(context, error.message);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(avatarColorProvider);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.settingsRowBorder, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Color de fondo de tu foto',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.authText,
+                  ),
+                ),
+              ),
+              const MyAvatar(size: 48),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var i = 0; i < AvatarColor.count; i++)
+                Semantics(
+                  button: true,
+                  selected: i == selected,
+                  label: 'Color ${i + 1}',
+                  excludeSemantics: true,
+                  child: GestureDetector(
+                    onTap: () => _select(context, ref, i),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: AvatarColor.colorOf(i),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: i == selected
+                              ? AppColors.blueStrong
+                              : AppColors.wardrobeInk,
+                          width: i == selected ? 3 : 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

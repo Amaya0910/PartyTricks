@@ -1,5 +1,18 @@
+import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/mouth_style.dart';
+
 /// Premio que puede salir de un cofre.
 enum ChestOutcome { cosmetic, nothing, coins, dice }
+
+/// Lo que ganó el jugador al abrir un cofre. Si el premio es un cosmético,
+/// trae [eyes] o [mouth] (nunca los dos).
+class ChestPrize {
+  const ChestPrize(this.outcome, {this.eyes, this.mouth});
+
+  final ChestOutcome outcome;
+  final EyeStyle? eyes;
+  final MouthStyle? mouth;
+}
 
 /// Monedas que da el premio "100 Monedas".
 ///
