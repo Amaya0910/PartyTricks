@@ -384,3 +384,51 @@
   - Un jugador desconectado (que no gana nada) podría cobrar lo que dice el registro.
   - La XP de `publicProfiles` la sigue escribiendo cada jugador.
   - Las reglas **no se probaron con el emulador** (en esta computadora faltan Firebase CLI y Java 21). Antes de publicarlas conviene probar: comprar cada cofre, terminar una partida (anfitrión y no anfitrión), cambiar el nombre y el tono, y que el panel de administración pueda sumar.
+
+## D-29. Ojos a la venta en la Tienda
+
+- **Fecha:** 2026-11-05
+- **Estado:** Propuesta
+- **Decisión:**
+  - Los ojos 2, 5 y 7 vienen **gratis** con la cuenta (los que ya se veían en el Vestuario). Los otros 8 se compran con **monedas** en la Tienda, debajo de los cofres, con el diseño del mockup: el dibujo en un cuadro punteado y, al lado, nombre, descripción y precio.
+  - Precios provisionales: 30 (Ojos Pequeñitos), 45 (Burbuja, Somnolientos, Felices), 60 (Aburridos, Curiosos, Despistados) y 75 (Pícaros). Quedan cerca de las camisas del mockup (45) y se juntan con una o dos partidas o con un cofre de monedas.
+  - Al tocar un ojo se abre una ventana con tu personaje (con tu tono de piel y tu color de ojos) probándoselos, cuántas monedas tienes y el botón Comprar. Si no alcanzan, dice cuántas faltan. Lo comprado sale de la Tienda y aparece en el Vestuario.
+  - El perfil guarda los ojos comprados en `ownedEyes` (lista de números; los gratis no se guardan). La compra cobra y agrega el ojo en una sola transacción.
+- **Reglas (`firestore.rules`):** `ownedEyes` es parte de la cartera (D-28): empieza vacía y solo cambia con `isEyesPurchase`, que exige agregar **un** ojo que se vende y restar **exactamente** su precio (`eyesPrice`), sin tocar nada más. Los ojos puestos (`eyes`) tienen que ser gratis o comprados. Los precios están repetidos en `lib/models/eye_style.dart` y en las reglas: si cambian, hay que cambiarlos en los dos.
+- **En el código:** `EyeStyle` (nombre, descripción y precio), `UserProfile.ownedEyes`, `ownedEyesProvider` y `eyesForSaleProvider` (`eyes_controller.dart`), `ShopService.buyEyes`, `ShopController.buyEyes`, `ShopScreen`, `ShopItemRow` y `EyesPurchaseDialog`.
+- **Pendientes:**
+  - El premio "Cosmético aleatorio" de los cofres todavía no da nada: podría regalar un ojo que no tengas (habría que permitirlo en `isChestPurchase`).
+  - Las demás categorías (camisas, pantalones...) pueden usar la misma fila y la misma idea cuando tengan arte.
+  - Las reglas no se probaron con el emulador.
+
+## D-30. Bocas con color y filtro en la Tienda
+
+- **Fecha:** 2026-11-06
+- **Estado:** Propuesta
+- **Decisión:**
+  - Las bocas 1 y 3 vienen **gratis** con la cuenta (la inicial es la 1). Las otras 8 se compran con **monedas** en la Tienda, igual que los ojos (D-29): 30 (2 y 4), 45 (5 y 6), 60 (7 y 8) y 75 (9 y 10).
+  - La boca tiene color, con los mismos 20 colores de los ojos, pero la posición 0 es **sin color**: la parte blanca de la boca toma el **tono de piel** del personaje (en la línea de colores se muestra con el tono de piel). Con otro color, lo blanco toma ese color y lo negro sigue negro (`BlendMode.modulate`).
+  - Solo se tiñe la capa que tiene el blanco: la línea en la boca 8; las de un solo PNG se tiñen enteras. Las bocas 1, 9 y 10 no se tiñen nunca (la 1 se queda con sus dientes blancos; la 9 y la 10 tienen colores propios). En la boca 2 el color es el del labial.
+  - La Tienda ahora mezcla ojos y bocas, así que se agregó un **filtro** de chips (Todos / Ojos / Bocas) sobre la lista. La ventana de compra es una sola (`CosmeticPurchaseDialog`) para cualquier cosmético.
+  - El perfil guarda `mouth` (número), `mouthColor` (posición) y `ownedMouths` (las compradas; las gratis no se guardan).
+- **Reglas (`firestore.rules`):** `ownedMouths` es parte de la cartera (D-28) y solo cambia con `isMouthPurchase` (una boca que se vende y su precio exacto, `mouthPrice`). La boca puesta tiene que ser gratis o comprada. Los precios están repetidos en `lib/models/mouth_style.dart` y en las reglas: si cambian, hay que cambiarlos en los dos. **Hay que publicar las reglas nuevas** o las compras de bocas se rechazan.
+- **En el código:** `MouthStyle`, `MouthColor`, `UserProfile.mouth/mouthColor/ownedMouths`, `mouth_controller.dart`, `MouthLayer`, `MouthPicker`, `ShopService.buyMouth`, `ShopController.buyMouth` y `ShopScreen` (filtro).
+- **Pendientes:**
+  - Los nombres y descripciones de las bocas son provisionales.
+  - El premio "Cosmético aleatorio" de los cofres sigue sin dar nada.
+  - Las reglas no se probaron con el emulador.
+
+## D-31. Rareza, cosméticos en los cofres y foto de perfil con la cabeza
+
+- **Fecha:** 2026-11-06
+- **Estado:** Propuesta
+- **Decisión:**
+  - Cada ojo y cada boca tiene una **rareza** (`Rarity`: común, poco común, raro, épico, legendario; índice 1 a 5). La Tienda la muestra junto al precio y se puede **ordenar** (recomendado, precio y rareza) además de filtrar por categoría.
+  - Los **cofres ya regalan cosméticos**: cuando sale "Cosmético aleatorio", se sortea entre los de la Tienda que el jugador todavía no tiene, con un peso por rareza (50, 28, 14, 6 y 2). Si ya los tiene todos, el premio se cambia por 100 monedas. El cosmético se guarda en `ownedEyes` u `ownedMouths` en la misma transacción que cobra el cofre.
+  - Los ojos Pícaros suben a 100 monedas (legendarios). La boca Gatuna pasó a llamarse Boca Titubeante.
+  - Al abrir un cofre sale una **ventana de premio** (`ChestRewardDialog`) con los colores del cofre: el cosmético con su rareza, las monedas, el dado extra o el cofre vacío. El cuadro del premio es un widget aparte para cambiarlo por una animación de sorteo más adelante.
+  - La **foto de perfil** es la cabeza del personaje (piel, ojos y boca) sobre un color de fondo que se elige en Ajustes > Preferencias (16 colores, campo `avatarColor`). Como la ven los demás, el perfil público (`publicProfiles`) ahora también guarda `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor` y `avatarColor`.
+  - El Vestuario ya no muestra el nombre bajo cada cosmético.
+- **Reglas (`firestore.rules`):** `isChestPurchase` acepta, además de los premios de antes, que se agregue **un** ojo o **una** boca de los que se venden y que no cambie nada más. Precio de los ojos 11: 100.
+- **Riesgos que quedan:** el sorteo del cosmético se hace en el teléfono (igual que el del premio): una app modificada podría escoger el que quiera, pero pagando el cofre y solo entre los que se venden. Las fotos de perfil de los jugadores en el Lobby y el tablero siguen siendo las provisionales (`PartyCharacter`).
+- **Pendientes:** animación para el sorteo del cosmético; las reglas no se probaron con el emulador; los jugadores que no han abierto la app desde este cambio se ven con la cabeza inicial hasta que su perfil público se actualice.
