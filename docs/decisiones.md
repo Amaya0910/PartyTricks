@@ -85,6 +85,7 @@
 - **Decisión:** la foto de rostro es opcional (se puede armar el personaje con cosméticos) y el chat debe permitir reportar y bloquear.
 - **Motivo:** el público es de 10 a 27 años, así que hay jugadores menores y se guardan fotos de rostros.
 - **Pendiente:** definir la moderación del chat y la privacidad de las fotos.
+- **Actualización (2026-11-06):** la foto de la cara ya existe y sigue siendo opcional; cómo se guarda y quién la ve está en D-32.
 
 ## D-11. Flutter Casual Games Toolkit como referencia; Flame solo si un minijuego lo necesita
 
@@ -428,8 +429,36 @@
   - Los **cofres ya regalan cosméticos**: cuando sale "Cosmético aleatorio", se sortea entre los de la Tienda que el jugador todavía no tiene, con un peso por rareza (50, 28, 14, 6 y 2). Si ya los tiene todos, el premio se cambia por 100 monedas. El cosmético se guarda en `ownedEyes` u `ownedMouths` en la misma transacción que cobra el cofre.
   - Los ojos Pícaros suben a 100 monedas (legendarios). La boca Gatuna pasó a llamarse Boca Titubeante.
   - Al abrir un cofre sale una **ventana de premio** (`ChestRewardDialog`) con los colores del cofre: el cosmético con su rareza, las monedas, el dado extra o el cofre vacío. El cuadro del premio es un widget aparte para cambiarlo por una animación de sorteo más adelante.
-  - La **foto de perfil** es la cabeza del personaje (piel, ojos y boca) sobre un color de fondo que se elige en Ajustes > Preferencias (16 colores, campo `avatarColor`). Como la ven los demás, el perfil público (`publicProfiles`) ahora también guarda `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor` y `avatarColor`.
+  - La **foto de perfil** es la cabeza del personaje (piel, ojos y boca) sobre un color de fondo que se elige en Ajustes > Preferencias (16 colores, campo `avatarColor`). Como la ven los demás, el perfil público (`publicProfiles`) ahora también guarda `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor` y `avatarColor`. Si el jugador puso su foto, la cabeza la lleva (D-32).
   - El Vestuario ya no muestra el nombre bajo cada cosmético.
 - **Reglas (`firestore.rules`):** `isChestPurchase` acepta, además de los premios de antes, que se agregue **un** ojo o **una** boca de los que se venden y que no cambie nada más. Precio de los ojos 11: 100.
 - **Riesgos que quedan:** el sorteo del cosmético se hace en el teléfono (igual que el del premio): una app modificada podría escoger el que quiera, pero pagando el cofre y solo entre los que se venden. Las fotos de perfil de los jugadores en el Lobby y el tablero siguen siendo las provisionales (`PartyCharacter`).
 - **Pendientes:** animación para el sorteo del cosmético; las reglas no se probaron con el emulador; los jugadores que no han abierto la app desde este cambio se ven con la cabeza inicial hasta que su perfil público se actualice.
+
+## D-32. Foto de la cara en el personaje
+
+- **Fecha:** 2026-11-06
+- **Estado:** Propuesta
+- **Decisión:**
+  - El jugador puede ponerle su cara al personaje. Es **opcional**: se puede apagar para volver a los ojos y la boca, o quitar.
+  - La foto **cubre toda la cabeza**, en lugar de los ojos y la boca. Se recorta con la forma real de la cabeza, sacada de `relleno_cabeza.png`, y el contorno negro se dibuja encima.
+  - Tiene **pantalla propia** (`FacePhotoScreen`), que se abre con el botón **Foto** del Vestuario, con tres partes:
+    - **Cámara en vivo** con la silueta de la cabeza y líneas para los ojos y la boca; lo que queda fuera se oscurece. También se puede elegir una foto de la galería.
+    - **Editor:** mover, acercar, girar y voltear, con los dedos o con controles. Al lado, el personaje muestra el recorte real. Lo que se ve es lo que se guarda: la pantalla y el recorte usan las mismas medidas (`FaceCrop`).
+    - **Resumen:** el personaje en la escena del juego, con Otra foto, Ajustar, el interruptor y Quitar mi foto.
+  - La foto se guarda en **Firestore**, no en Storage: un JPEG de 256 × 256 en base64 en `users/{uid}.facePhoto`, con `useFacePhoto` para el interruptor. Storage suele pedir el plan de pago, y una imagen de ese tamaño cabe en el documento.
+  - La ven **todos los jugadores**: si está activa, se copia a `publicProfiles/{uid}.facePhoto`. Se ve en Inicio, el Vestuario, la foto de perfil, los amigos, el chat y las invitaciones. Al apagarla o quitarla, deja de publicarse.
+- **Alternativas:**
+  - `image_picker` también para la cámara: no deja dibujar la silueta encima, por eso se usa el paquete `camera` y `image_picker` queda solo para la galería.
+  - Un círculo sobre la cara, con la foto a 128 × 128: se veía pegado encima y borroso.
+- **Reglas (`firestore.rules`):** `facePhotoOk` limita el texto a 60 000 caracteres en `users` y en `publicProfiles`. El mismo tope está en `FacePhoto.maxLength`: si cambia, hay que cambiarlo en los dos sitios. **Hay que publicar las reglas.**
+- **En el código:** `FacePhoto`, `FaceCrop` y `FaceSourceImage` (`face_photo.dart`), `FaceImageProcessor` (`face_image_service.dart`), `FaceCamera`, `FacePhotoController`, `HeadShape`, `FacePhotoLayer`, `FaceCameraView`, `FacePhotoEditor`, `FacePhotoSheet` y `FacePhotoScreen`.
+- **Riesgos que quedan:**
+  - No hay moderación de imágenes y cualquier jugador con sesión puede leer las fotos de `publicProfiles`. Hay jugadores menores: hay que definirlo antes de publicar la app (ver D-10).
+  - El editor de una foto ya guardada parte de los 256 × 256 guardados, no del original: sirve para retoques pequeños.
+  - El contorno de la cabeza está escrito en `head_shape.dart`: si cambia `relleno_cabeza.png`, hay que trazarlo otra vez.
+- **Pendientes:**
+  - Probar la cámara real: permiso, encuadre y si la foto frontal sale como espejo (el botón **Voltear** lo corrige a mano).
+  - Decidir si se quita de Android el permiso `RECORD_AUDIO`, que declara el paquete `camera` aunque la app no graba audio.
+  - El lobby y el tablero siguen con el personaje provisional, sin foto.
+  - Las reglas no se probaron con el emulador.
