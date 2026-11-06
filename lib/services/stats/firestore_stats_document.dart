@@ -45,13 +45,20 @@ class FirestoreStatsDocument {
 
   /// Lo que la partida le deja a la cuenta: la XP y lo que sobró de monedas
   /// y diamantes (diseno_juego.md, sección 7). Si terminó desconectado, nada.
+  ///
+  /// Lleva el id de la partida en [lastRewardMatchKey]: las reglas lo usan
+  /// para revisar que lo sumado sea lo de `matchResults/{id}` (D-28).
   static Map<String, dynamic> matchRewards(MatchSummary match) {
     final rewards = matchRewardAmounts(match);
     return {
       for (final entry in rewards.entries)
         entry.key: FieldValue.increment(entry.value),
+      lastRewardMatchKey: match.matchId,
     };
   }
+
+  /// Campo del perfil con la última partida cobrada.
+  static const lastRewardMatchKey = 'lastRewardMatch';
 
   /// Las cantidades de [matchRewards], sin Firebase (para probarlas).
   static Map<String, int> matchRewardAmounts(MatchSummary match) {

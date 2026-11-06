@@ -115,10 +115,7 @@ void main() {
     });
 
     test('avisa si el código no existe', () async {
-      expect(
-        await errorFor('ZZZ999'),
-        'No existe un jugador con ese código.',
-      );
+      expect(await errorFor('ZZZ999'), 'No existe un jugador con ese código.');
     });
 
     test('no envía si el otro me bloqueó, sin decirlo', () async {

@@ -22,10 +22,7 @@ class _PublicProfilePublisherState
   void initState() {
     super.initState();
     // fireImmediately: también publica el perfil que ya está cargado.
-    ref.listenManual<AsyncValue<UserProfile?>>(userProfileProvider, (
-      _,
-      next,
-    ) {
+    ref.listenManual<AsyncValue<UserProfile?>>(userProfileProvider, (_, next) {
       final profile = next.value;
       if (profile != null) {
         ref.read(publicProfileControllerProvider).sync(profile);

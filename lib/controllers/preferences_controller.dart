@@ -11,14 +11,12 @@ final preferencesServiceProvider = Provider<PreferencesService>(
 /// celular.
 class PreferencesController extends AsyncNotifier<AppPreferences> {
   @override
-  Future<AppPreferences> build() =>
-      ref.read(preferencesServiceProvider).load();
+  Future<AppPreferences> build() => ref.read(preferencesServiceProvider).load();
 
   Future<void> setNotifications(bool value) =>
       _update((p) => p.copyWith(notifications: value));
 
-  Future<void> setSound(bool value) =>
-      _update((p) => p.copyWith(sound: value));
+  Future<void> setSound(bool value) => _update((p) => p.copyWith(sound: value));
 
   Future<void> setSoundEffects(bool value) =>
       _update((p) => p.copyWith(soundEffects: value));

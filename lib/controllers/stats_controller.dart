@@ -90,6 +90,4 @@ class StatsController {
   }
 }
 
-final statsControllerProvider = Provider<StatsController>(
-  StatsController.new,
-);
+final statsControllerProvider = Provider<StatsController>(StatsController.new);

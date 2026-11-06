@@ -64,7 +64,10 @@ void main() {
     });
 
     test('con una contraseña débil no llama al servicio', () async {
-      final ok = await register(password: 'clave1234', confirmPassword: 'clave1234');
+      final ok = await register(
+        password: 'clave1234',
+        confirmPassword: 'clave1234',
+      );
 
       expect(ok, isFalse);
       expect(service.registerCalls, 0);
@@ -147,20 +150,22 @@ void main() {
       expect(service.signInCalls, 0);
     });
 
-    test('muestra el mensaje del servicio si los datos son incorrectos',
-        () async {
-      service.nextError = const AuthException(
-        'Correo, usuario o contraseña incorrectos.',
-      );
+    test(
+      'muestra el mensaje del servicio si los datos son incorrectos',
+      () async {
+        service.nextError = const AuthException(
+          'Correo, usuario o contraseña incorrectos.',
+        );
 
-      final ok = await signIn();
+        final ok = await signIn();
 
-      expect(ok, isFalse);
-      expect(
-        container.read(authControllerProvider).errorMessage,
-        'Correo, usuario o contraseña incorrectos.',
-      );
-    });
+        expect(ok, isFalse);
+        expect(
+          container.read(authControllerProvider).errorMessage,
+          'Correo, usuario o contraseña incorrectos.',
+        );
+      },
+    );
   });
 
   test('clearError quita el mensaje', () async {

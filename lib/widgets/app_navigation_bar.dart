@@ -37,7 +37,8 @@ class AppNavigationBar extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final sections = AppSection.values;
-              final unit = constraints.maxWidth /
+              final unit =
+                  constraints.maxWidth /
                   (sections.length - 1 + _activeWidthFactor);
 
               var left = 0.0;

@@ -36,6 +36,7 @@ flutter:
     - assets/images/cofres/
     - assets/images/juego/
     - assets/images/mapa/piezas/
+    - assets/images/personaje/
     - assets/maps/mapa_01/
 
   # Tipografía del mockup.

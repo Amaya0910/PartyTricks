@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/room_controller.dart';
+import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/models/play_option.dart';
 import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/screens/lobby_screen.dart';
 import 'package:party_tricks/screens/settings_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/rooms/room_service.dart';
 import 'package:party_tricks/widgets/active_game_banner.dart';
+import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/create_room_dialog.dart';
 import 'package:party_tricks/widgets/join_code_dialog.dart';
 import 'package:party_tricks/widgets/play_menu_dialog.dart';
@@ -63,6 +66,7 @@ class HomeScreen extends ConsumerWidget {
     // El perfil del jugador con la sesión iniciada (null solo un instante,
     // mientras llega de Firebase).
     final profile = ref.watch(userProfileProvider).value;
+    final skinTone = ref.watch(skinToneProvider);
 
     return Column(
       children: [
@@ -74,13 +78,12 @@ class HomeScreen extends ConsumerWidget {
         ),
         const VerifyEmailBanner(),
         const ActiveGameBanner(),
-        // Reemplazar por el personaje armado con los cosméticos.
-        const Expanded(
+        // Falta agregar los cosméticos equipados (clothing).
+        Expanded(
           child: Center(
-            child: Icon(
-              Icons.face,
-              size: 200,
-              color: AppColors.placeholderIcon,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: AnimatedCharacter(skinTone: SkinTone.colorOf(skinTone)),
             ),
           ),
         ),

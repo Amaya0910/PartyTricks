@@ -18,11 +18,24 @@ class FirebaseStatsService implements StatsService {
     this._firestore, [
     this._calculator = const StatsCalculator(),
     this._streaks = const StreakCalculator(),
+    this._rewardRetries = defaultRewardRetries,
   ]);
 
   final FirebaseFirestore _firestore;
   final StatsCalculator _calculator;
   final StreakCalculator _streaks;
+  final List<Duration> _rewardRetries;
+
+  /// Esperas antes de volver a intentar cobrar una partida. Las reglas solo
+  /// dejan sumar los premios cuando ya existe `matchResults/{id}` (D-28), y
+  /// ese registro lo guarda el anfitrión al mismo tiempo: a veces llega un
+  /// poco después.
+  static const defaultRewardRetries = [
+    Duration(seconds: 2),
+    Duration(seconds: 4),
+    Duration(seconds: 8),
+    Duration(seconds: 16),
+  ];
 
   DocumentReference<Map<String, dynamic>> _stats(String uid) =>
       FirestoreStatsDocument.ref(_firestore, uid);
@@ -38,7 +51,20 @@ class FirebaseStatsService implements StatsService {
   }
 
   @override
-  Future<void> recordMatch(String uid, MatchSummary match) {
+  Future<void> recordMatch(String uid, MatchSummary match) async {
+    for (var attempt = 0; ; attempt++) {
+      try {
+        return await _recordMatchOnce(uid, match);
+      } on FirebaseException catch (e) {
+        if (e.code != 'permission-denied' || attempt >= _rewardRetries.length) {
+          rethrow;
+        }
+        await Future<void>.delayed(_rewardRetries[attempt]);
+      }
+    }
+  }
+
+  Future<void> _recordMatchOnce(String uid, MatchSummary match) {
     final statsRef = _stats(uid);
     final marker = FirestoreStatsDocument.matchMarker(
       _firestore,

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/theme/app_colors.dart';
@@ -71,22 +73,23 @@ class _ReactionGameState extends State<ReactionGame>
 
   Widget _body() {
     final score = _myScore;
-    if (!_plays) return const Text('Este minijuego lo ves desde fuera.');
+    if (!_plays) return const MinigameSpectator();
     if (score != null) {
+      final fail = score == MinigameRules.noScore;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            switch (score) {
+          MinigameFeedback(
+            text: switch (score) {
               MinigameRules.noScore when _falseStart =>
                 '¡Te adelantaste! Quedas fuera',
               MinigameRules.noScore => 'Tu jugada no cuenta',
               _ => 'Tardaste $score ms',
             },
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            icon: fail ? Icons.front_hand_rounded : Icons.bolt_rounded,
+            color: fail ? AppColors.minigameOut : null,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
           MinigameWaiting(minigame: widget.minigame),
         ],
       );
@@ -99,20 +102,126 @@ class _ReactionGameState extends State<ReactionGame>
       behavior: HitTestBehavior.opaque,
       // Al apoyar el dedo, sin esperar a que lo levante.
       onTapDown: (_) => _tap(),
-      child: Container(
-        height: 200,
-        alignment: Alignment.center,
+      child: _Pad(go: go, sinceGoMs: _sinceGo, waitMs: elapsedMs),
+    );
+  }
+}
+
+/// El recuadro para tocar: rojo con un reloj de arena mientras se espera y
+/// verde con una mano cuando sale "¡YA!". El color cambia de golpe para que
+/// nadie tenga ventaja.
+class _Pad extends StatelessWidget {
+  const _Pad({required this.go, required this.sinceGoMs, required this.waitMs});
+
+  final bool go;
+
+  /// ms desde el "¡YA!" (negativo mientras se espera).
+  final int sinceGoMs;
+
+  /// ms del reloj, para que los puntitos de la espera respiren.
+  final int waitMs;
+
+  static const double _height = 210;
+  static const double _compactHeight = 160;
+  static const double _depth = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = go ? AppColors.reactionGo : AppColors.reactionWait;
+    final height = MinigameAccent.compactOf(context) ? _compactHeight : _height;
+    // Rebote corto al salir "¡YA!".
+    final pop = go && sinceGoMs < 220 ? sin(pi * sinceGoMs / 220) * 0.12 : 0.0;
+    // El reloj de arena se mece suave mientras se espera.
+    final sway = go ? 0.0 : sin(waitMs / 260) * 0.18;
+    return Container(
+      width: double.infinity,
+      height: height + _depth,
+      padding: const EdgeInsets.only(bottom: _depth),
+      child: DecoratedBox(
         decoration: BoxDecoration(
-          color: go ? AppColors.reactionGo : AppColors.reactionWait,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          go ? '¡YA!' : 'Prepárate...',
-          style: const TextStyle(
-            fontSize: 40,
-            fontWeight: FontWeight.bold,
-            color: AppColors.white,
+          borderRadius: BorderRadius.circular(26),
+          gradient: RadialGradient(
+            center: const Alignment(0, -0.3),
+            radius: 1.1,
+            colors: [minigameTint(color, 0.75), color],
           ),
+          border: Border.all(color: AppColors.white, width: 4),
+          boxShadow: [
+            BoxShadow(
+              color: minigameShade(color, 0.35),
+              offset: const Offset(0, _depth),
+            ),
+            const BoxShadow(
+              color: AppColors.pillShadow,
+              blurRadius: 10,
+              offset: Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Anillos suaves de fondo.
+            for (final size in [height * 0.9, height * 0.62])
+              Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.white.withValues(alpha: 0.18),
+                    width: 3,
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Transform.scale(
+                  scale: 1 + pop,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Transform.rotate(
+                        angle: sway,
+                        child: Icon(
+                          go
+                              ? Icons.touch_app_rounded
+                              : Icons.hourglass_top_rounded,
+                          color: AppColors.white,
+                          size: 52,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        go ? '¡YA!' : 'Prepárate...',
+                        style: minigameTextStyle.copyWith(
+                          fontSize: go ? 48 : 30,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.white,
+                          shadows: [
+                            Shadow(
+                              color: minigameShade(color, 0.5),
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!go)
+                        Text(
+                          'No toques todavía',
+                          style: minigameTextStyle.copyWith(
+                            fontSize: 14,
+                            color: AppColors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

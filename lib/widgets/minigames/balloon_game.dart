@@ -85,53 +85,56 @@ class _BalloonGameState extends State<BalloonGame>
       return MinigameIntro(leftMs: _rules.introMs - elapsedMs);
     }
     final current = _game.balloonPlayer;
-    final myTurn = current == widget.myId && _sentStep != _game.step;
+    final mine = current == widget.myId;
+    final myTurn = mine && _sentStep != _game.step;
     final players = widget.players;
     final popped = _popped;
+    final turnLeft = max(0, _turnLeftMs);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (popped != null)
-          Text(
-            '¡Reventó el globo de ${players.nameOf(popped)}!',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: AppColors.minigameOut,
-            ),
+        if (popped != null) ...[
+          _PoppedBanner(
+            text: '¡Reventó el globo de ${players.nameOf(popped)}!',
           ),
+          const SizedBox(height: 8),
+        ],
         _Balloon(
           scale: 1 + _game.pumps / _pumpsToDouble,
           color: players.colorOf(current),
+          clockMs: elapsedMs,
         ),
-        Text('Infladas: ${_game.pumps}'),
-        const SizedBox(height: 8),
-        Text(
-          current == widget.myId
-              ? 'Tu turno (${max(0, _turnLeftMs) ~/ 1000 + 1} s)'
-              : 'Turno de ${players.nameOf(current)}',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
+        MinigamePill(text: 'Infladas: ${_game.pumps}', icon: Icons.air_rounded),
         const SizedBox(height: 12),
+        _TurnBanner(
+          text: mine
+              ? 'Tu turno (${turnLeft ~/ 1000 + 1} s)'
+              : 'Turno de ${players.nameOf(current)}',
+          color: players.colorOf(current),
+          left: turnLeft / _rules.balloonTurnMs,
+        ),
+        const SizedBox(height: 14),
         if (myTurn)
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 10,
+            runSpacing: 10,
             alignment: WrapAlignment.center,
             children: [
               for (var times = 1; times <= _rules.maxPumps; times++)
                 MinigameButton(
                   label: '+$times',
+                  minWidth: 84,
                   onPressed: () => _inflate(times),
                 ),
             ],
           ),
         if (_game.out.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Text(
-            'Fuera: ${_game.out.map(players.nameOf).join(', ')}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.minigameOut),
+          MinigamePill(
+            text: 'Fuera: ${_game.out.map(players.nameOf).join(', ')}',
+            icon: Icons.heart_broken_rounded,
+            color: AppColors.minigameOut,
+            fontSize: 14,
           ),
         ],
       ],
@@ -139,35 +142,272 @@ class _BalloonGameState extends State<BalloonGame>
   }
 }
 
-/// El globo, más grande mientras más inflado, con el color de quien infla.
-class _Balloon extends StatelessWidget {
-  const _Balloon({required this.scale, required this.color});
+/// Aviso rojo cuando a alguien le revienta el globo.
+class _PoppedBanner extends StatelessWidget {
+  const _PoppedBanner({required this.text});
 
-  final double scale;
-  final Color color;
-
-  static const _base = 70.0;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    final size = _base * scale.clamp(1, 2.2);
-    return SizedBox(
-      height: _base * 2.3,
-      child: Center(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutBack,
-          width: size,
-          height: size * 1.15,
-          decoration: BoxDecoration(
-            color: Color.lerp(AppColors.balloon, color, 0.3),
-            borderRadius: BorderRadius.all(
-              Radius.elliptical(size, size * 1.15),
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(text),
+      tween: Tween(begin: 0.5, end: 1),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.elasticOut,
+      builder: (context, scale, child) =>
+          Transform.scale(scale: scale, child: child),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.minigameOut,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: minigameShade(AppColors.minigameOut, 0.35),
+              offset: const Offset(0, 4),
             ),
-            border: Border.all(color: AppColors.characterOutline, width: 3),
-          ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.flare_rounded, color: AppColors.white, size: 22),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: minigameTextStyle.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.white,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+/// De quién es el turno, con su color y una barrita del tiempo que le
+/// queda.
+class _TurnBanner extends StatelessWidget {
+  const _TurnBanner({
+    required this.text,
+    required this.color,
+    required this.left,
+  });
+
+  final String text;
+  final Color color;
+
+  /// De 1 (recién empieza) a 0 (se acabó).
+  final double left;
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = left.clamp(0, 1).toDouble();
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+      decoration: BoxDecoration(
+        color: minigameTint(color, 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color, width: 2.5),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.white, width: 2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  text,
+                  textAlign: TextAlign.center,
+                  style: minigameTextStyle.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: minigameShade(color, 0.3),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: SizedBox(
+              height: 8,
+              width: 180,
+              child: Stack(
+                children: [
+                  const Positioned.fill(
+                    child: ColoredBox(color: AppColors.minigameTrack),
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: fill,
+                    heightFactor: 1,
+                    child: ColoredBox(
+                      color: fill < 0.3 ? AppColors.minigameOut : color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// El globo, más grande mientras más inflado, con el color de quien infla.
+/// Se mece suave y, mientras más grande, más tiembla.
+class _Balloon extends StatelessWidget {
+  const _Balloon({
+    required this.scale,
+    required this.color,
+    required this.clockMs,
+  });
+
+  final double scale;
+  final Color color;
+
+  /// ms del reloj del minijuego, para el vaivén y el temblor.
+  final int clockMs;
+
+  static const _base = 70.0;
+  static const _compactBase = 50.0;
+  static const _maxScale = 2.2;
+
+  @override
+  Widget build(BuildContext context) {
+    final target = scale.clamp(1, _maxScale).toDouble();
+    final base = MinigameAccent.compactOf(context) ? _compactBase : _base;
+    final fill = Color.lerp(AppColors.balloon, color, 0.8)!;
+    return SizedBox(
+      height: base * _maxScale * 1.18 + _BalloonPainter.stringLength + 12,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(end: target),
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutBack,
+        builder: (context, value, _) {
+          // De 0 (desinflado) a 1 (lo más grande que se dibuja).
+          final tension = ((value - 1) / (_maxScale - 1)).clamp(0.0, 1.0);
+          final sway = sin(clockMs / 520) * 0.05;
+          final shake = sin(clockMs / 28) * 0.035 * tension * tension;
+          final width = base * value;
+          return Align(
+            alignment: Alignment.bottomCenter,
+            child: Transform.rotate(
+              angle: sway + shake,
+              alignment: Alignment.bottomCenter,
+              child: CustomPaint(
+                size: Size(width, width * 1.18 + _BalloonPainter.stringLength),
+                painter: _BalloonPainter(color: fill),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _BalloonPainter extends CustomPainter {
+  _BalloonPainter({required this.color});
+
+  final Color color;
+
+  static const stringLength = 50.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height - stringLength;
+    final outline = Paint()
+      ..color = AppColors.characterOutline
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeJoin = StrokeJoin.round;
+
+    // Hilo ondulado.
+    final knotY = h + 8;
+    final string = Path()
+      ..moveTo(w / 2, knotY)
+      ..cubicTo(
+        w / 2 - 12,
+        knotY + stringLength * 0.35,
+        w / 2 + 12,
+        knotY + stringLength * 0.65,
+        w / 2,
+        size.height,
+      );
+    canvas.drawPath(
+      string,
+      Paint()
+        ..color = AppColors.characterOutline
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Cuerpo con forma de gota (más angosto abajo).
+    final body = Path()
+      ..moveTo(w / 2, h)
+      ..cubicTo(w * 0.12, h * 0.86, -w * 0.02, h * 0.42, w * 0.08, h * 0.24)
+      ..cubicTo(w * 0.2, h * 0.02, w * 0.8, h * 0.02, w * 0.92, h * 0.24)
+      ..cubicTo(w * 1.02, h * 0.42, w * 0.88, h * 0.86, w / 2, h)
+      ..close();
+    canvas.drawPath(
+      body,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.35, -0.45),
+          radius: 0.9,
+          colors: [minigameTint(color, 0.7), color, minigameShade(color, 0.2)],
+          stops: const [0, 0.6, 1],
+        ).createShader(Rect.fromLTWH(0, 0, w, h)),
+    );
+    canvas.drawPath(body, outline);
+
+    // Brillo.
+    canvas.save();
+    canvas.translate(w * 0.3, h * 0.27);
+    canvas.rotate(-0.5);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: w * 0.16, height: h * 0.26),
+      Paint()..color = AppColors.minigameShine,
+    );
+    canvas.restore();
+    canvas.drawCircle(
+      Offset(w * 0.37, h * 0.47),
+      w * 0.035,
+      Paint()..color = AppColors.minigameShine,
+    );
+
+    // Nudo.
+    final knot = Path()
+      ..moveTo(w / 2, h - 1)
+      ..lineTo(w / 2 - 7, h + 8)
+      ..lineTo(w / 2 + 7, h + 8)
+      ..close();
+    canvas.drawPath(knot, Paint()..color = minigameShade(color, 0.15));
+    canvas.drawPath(knot, outline..strokeWidth = 2.5);
+  }
+
+  @override
+  bool shouldRepaint(_BalloonPainter old) => old.color != color;
 }

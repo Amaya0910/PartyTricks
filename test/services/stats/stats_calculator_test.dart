@@ -85,10 +85,7 @@ void main() {
     });
 
     test('un empate cuenta como ganada y como empate', () {
-      final next = calculator.applyMatch(
-        PlayerStats.empty,
-        match(tied: true),
-      );
+      final next = calculator.applyMatch(PlayerStats.empty, match(tied: true));
 
       expect(next.matches.won, 1);
       expect(next.matches.ties, 1);

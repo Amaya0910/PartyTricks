@@ -8,9 +8,11 @@ import 'package:party_tricks/controllers/preferences_controller.dart';
 import 'package:party_tricks/models/app_preferences.dart';
 import 'package:party_tricks/models/legal_document.dart';
 import 'package:party_tricks/models/user_profile.dart';
+import 'package:party_tricks/screens/admin/admin_screen.dart';
 import 'package:party_tricks/screens/blocked_players_screen.dart';
 import 'package:party_tricks/screens/change_password_screen.dart';
 import 'package:party_tricks/screens/legal_screen.dart';
+import 'package:party_tricks/services/admin/admin_providers.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/auth/auth_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
@@ -33,6 +35,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider).value;
     final authUser = ref.watch(authUserProvider).value;
+    final isAdmin = ref.watch(isAdminProvider).value ?? false;
 
     return Scaffold(
       body: Stack(
@@ -59,6 +62,7 @@ class SettingsScreen extends ConsumerWidget {
                               hasPassword: authUser?.hasPassword ?? false,
                             ),
                             const _PreferencesSection(),
+                            if (isAdmin) const _AdminSection(),
                             const _MoreSection(),
                           ],
                         ),
@@ -383,6 +387,26 @@ class _MoreSection extends ConsumerWidget {
           icon: Icons.logout,
           danger: true,
           onTap: () => _signOut(context, ref),
+        ),
+      ],
+    );
+  }
+}
+
+/// Entrada al panel de administración. Solo aparece en cuentas con su
+/// documento en `admins`.
+class _AdminSection extends StatelessWidget {
+  const _AdminSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsSection(
+      title: 'Administración',
+      children: [
+        SettingsTile(
+          label: 'Panel de administración',
+          icon: Icons.admin_panel_settings,
+          onTap: () => Navigator.of(context).push(AdminScreen.route()),
         ),
       ],
     );

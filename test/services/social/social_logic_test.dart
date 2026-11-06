@@ -100,10 +100,10 @@ void main() {
         },
       );
 
-      expect([for (final f in sections.friends) f.otherOf('me')], [
-        'beto',
-        'ana',
-      ]);
+      expect(
+        [for (final f in sections.friends) f.otherOf('me')],
+        ['beto', 'ana'],
+      );
     });
 
     test('sin amistades, está vacío', () {
