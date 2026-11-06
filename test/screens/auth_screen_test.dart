@@ -35,8 +35,9 @@ void main() {
     expect(find.text('Registrarse'), findsNothing);
   });
 
-  testWidgets('"¿Aun no te registras?" da la vuelta al registro',
-      (tester) async {
+  testWidgets('"¿Aun no te registras?" da la vuelta al registro', (
+    tester,
+  ) async {
     await pumpScreen(tester);
 
     await tester.tap(find.text('¿Aun no te registras?'));
@@ -47,8 +48,9 @@ void main() {
     expect(find.text('Inicio de sesion'), findsNothing);
   });
 
-  testWidgets('"¿Ya tienes una cuenta?" vuelve al inicio de sesión',
-      (tester) async {
+  testWidgets('"¿Ya tienes una cuenta?" vuelve al inicio de sesión', (
+    tester,
+  ) async {
     await pumpScreen(tester);
     await tester.tap(find.text('¿Aun no te registras?'));
     await tester.pumpAndSettle();
@@ -60,8 +62,7 @@ void main() {
     expect(find.text('Registrarse'), findsNothing);
   });
 
-  testWidgets('iniciar sesión con el correo llama al servicio',
-      (tester) async {
+  testWidgets('iniciar sesión con el correo llama al servicio', (tester) async {
     await pumpScreen(tester);
 
     await tester.enterText(field(0), 'tay@correo.com');
@@ -73,8 +74,9 @@ void main() {
     expect(service.lastIdentifier, 'tay@correo.com');
   });
 
-  testWidgets('iniciar sesión con el nombre de usuario llama al servicio',
-      (tester) async {
+  testWidgets('iniciar sesión con el nombre de usuario llama al servicio', (
+    tester,
+  ) async {
     await pumpScreen(tester);
 
     await tester.enterText(field(0), 'Tay_01');
@@ -86,8 +88,9 @@ void main() {
     expect(service.lastIdentifier, 'Tay_01');
   });
 
-  testWidgets('con los campos vacíos muestra el error y no llama al servicio',
-      (tester) async {
+  testWidgets('con los campos vacíos muestra el error y no llama al servicio', (
+    tester,
+  ) async {
     await pumpScreen(tester);
 
     await tester.tap(find.text('Entrar a la party'));
@@ -97,8 +100,9 @@ void main() {
     expect(service.signInCalls, 0);
   });
 
-  testWidgets('muestra el mensaje del servicio si el inicio falla',
-      (tester) async {
+  testWidgets('muestra el mensaje del servicio si el inicio falla', (
+    tester,
+  ) async {
     service.nextError = const AuthException(
       'Correo, usuario o contraseña incorrectos.',
     );
@@ -115,8 +119,9 @@ void main() {
     );
   });
 
-  testWidgets('registrarse con datos válidos llama al servicio',
-      (tester) async {
+  testWidgets('registrarse con datos válidos llama al servicio', (
+    tester,
+  ) async {
     await pumpScreen(tester);
     await tester.tap(find.text('¿Aun no te registras?'));
     await tester.pumpAndSettle();
@@ -131,8 +136,9 @@ void main() {
     expect(service.registerCalls, 1);
   });
 
-  testWidgets('registrarse con una contraseña débil muestra el error',
-      (tester) async {
+  testWidgets('registrarse con una contraseña débil muestra el error', (
+    tester,
+  ) async {
     await pumpScreen(tester);
     await tester.tap(find.text('¿Aun no te registras?'));
     await tester.pumpAndSettle();
@@ -144,7 +150,10 @@ void main() {
     await tester.tap(find.text('Entrar a la party'));
     await tester.pumpAndSettle();
 
-    expect(find.text('La contraseña debe incluir una mayúscula.'), findsOneWidget);
+    expect(
+      find.text('La contraseña debe incluir una mayúscula.'),
+      findsOneWidget,
+    );
     expect(service.registerCalls, 0);
   });
 

@@ -27,10 +27,7 @@ class StatPill extends StatelessWidget {
         children: [
           Icon(icon, size: 20, color: color),
           const SizedBox(width: 8),
-          Text(
-            '$value',
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
+          Text('$value', style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );

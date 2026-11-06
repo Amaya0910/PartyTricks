@@ -57,9 +57,7 @@ class StatsCard extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                children: [for (final row in rows) _Row(row: row)],
-              ),
+              child: Column(children: [for (final row in rows) _Row(row: row)]),
             ),
           ),
         ],

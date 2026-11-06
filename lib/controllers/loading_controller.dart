@@ -22,10 +22,9 @@ class LoadingController extends Notifier<LoadingState> {
 
   void _onTick(Timer timer) {
     final elapsed = _tick * timer.tick;
-    final progress =
-        (elapsed.inMilliseconds / _duration.inMilliseconds)
-            .clamp(0.0, 1.0)
-            .toDouble();
+    final progress = (elapsed.inMilliseconds / _duration.inMilliseconds)
+        .clamp(0.0, 1.0)
+        .toDouble();
     final isDone = elapsed >= _duration + _hold;
 
     state = LoadingState(progress: progress, isDone: isDone);
@@ -34,6 +33,4 @@ class LoadingController extends Notifier<LoadingState> {
 }
 
 final loadingControllerProvider =
-    NotifierProvider<LoadingController, LoadingState>(
-  LoadingController.new,
-);
+    NotifierProvider<LoadingController, LoadingState>(LoadingController.new);

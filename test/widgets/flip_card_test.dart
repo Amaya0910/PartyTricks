@@ -24,8 +24,9 @@ void main() {
     expect(find.text('atras'), findsNothing);
   });
 
-  testWidgets('muestra la cara de atrás cuando showBack es true',
-      (tester) async {
+  testWidgets('muestra la cara de atrás cuando showBack es true', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(showBack: true));
 
     expect(find.text('atras'), findsOneWidget);
