@@ -13,8 +13,8 @@ const Size kCharacterCanvas = Size(512, 768);
 /// Partes del cuerpo, en orden de dibujo (de atrás hacia adelante).
 ///
 /// Cada parte tiene dos PNG del mismo tamaño que el lienzo:
-///   assets/images/personaje/<id>_relleno.png   (blanco, se tiñe)
-///   assets/images/personaje/<id>_contorno.png  (negro, no se tiñe)
+///   `assets/images/personaje/relleno_<id>.png`  (blanco, se tiñe)
+///   `assets/images/personaje/linea_<id>.png`    (negro, no se tiñe)
 enum BodyPart {
   cuerpo('cuerpo', Offset(256, 555)),
   piernaIzquierda('pierna_izquierda', Offset(228, 511)),
