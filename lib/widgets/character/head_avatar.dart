@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:party_tricks/models/avatar_color.dart';
 import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/character/eyes_layer.dart';
+import 'package:party_tricks/widgets/character/face_photo_layer.dart';
 import 'package:party_tricks/widgets/character/mouth_layer.dart';
 
 /// Foto de perfil: la cabeza del personaje (con su piel, ojos y boca) sobre
@@ -21,6 +23,7 @@ class HeadAvatar extends StatelessWidget {
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor = MouthColor.defaultIndex,
     this.avatarColor = AvatarColor.defaultIndex,
+    this.facePhoto,
     this.size = 48,
   });
 
@@ -31,6 +34,9 @@ class HeadAvatar extends StatelessWidget {
   final MouthStyle mouth;
   final int mouthColor;
   final int avatarColor;
+
+  /// Foto de la cara; si hay, va en lugar de los ojos y la boca.
+  final FacePhoto? facePhoto;
   final double size;
 
   /// Zona de la cabeza en el lienzo (512x768): un cuadrado que la rodea.
@@ -70,16 +76,23 @@ class HeadAvatar extends StatelessWidget {
                           child: _layer(BodyPart.cabeza.fillAsset),
                         ),
                         _layer(BodyPart.cabeza.outlineAsset),
-                        EyesLayer(
-                          style: eyes,
-                          color: EyeColor.colorOf(eyeColor),
-                          size: kCharacterCanvas,
-                        ),
-                        MouthLayer(
-                          style: mouth,
-                          color: MouthColor.colorOf(mouthColor) ?? skin,
-                          size: kCharacterCanvas,
-                        ),
+                        if (facePhoto != null)
+                          FacePhotoLayer(
+                            photo: facePhoto!,
+                            size: kCharacterCanvas,
+                          )
+                        else ...[
+                          EyesLayer(
+                            style: eyes,
+                            color: EyeColor.colorOf(eyeColor),
+                            size: kCharacterCanvas,
+                          ),
+                          MouthLayer(
+                            style: mouth,
+                            color: MouthColor.colorOf(mouthColor) ?? skin,
+                            size: kCharacterCanvas,
+                          ),
+                        ],
                       ],
                     ),
                   ),
