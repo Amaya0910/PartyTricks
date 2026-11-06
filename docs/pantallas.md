@@ -63,8 +63,8 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 
 ## 3. Inicio
 
-- **Cabecera del jugador:** foto de perfil, nombre de usuario, monedas y diamantes. La foto es la **cabeza de tu personaje** (piel, ojos y boca) sobre el color de fondo que eliges en Ajustes. Los datos salen del perfil del jugador con la sesión iniciada.
-- **Personaje:** tu personaje animado en reposo (respira y mueve un poco la cabeza), con la piel, los ojos y la boca que tienes puestos. La ropa, el cabello y la nariz llegan después.
+- **Cabecera del jugador:** foto de perfil, nombre de usuario, monedas y diamantes. La foto es la **cabeza de tu personaje** (con tu foto de la cara, si pusiste una) sobre el color de fondo que eliges en Ajustes. Los datos salen del perfil del jugador con la sesión iniciada.
+- **Personaje:** tu personaje animado en reposo (respira y mueve un poco la cabeza), con la piel, los ojos y la boca que tienes puestos, o con tu foto en toda la cara. La ropa, el cabello y la nariz llegan después.
 - **Botón Jugar:** abre un menú emergente con tres opciones.
 
 ### Menú de Jugar
@@ -128,7 +128,7 @@ Archivo: `shop_screen.dart`.
 
 Archivo: `wardrobe_screen.dart`.
 
-- Arriba, tu **personaje animado** con lo que tienes puesto y el botón **Foto**, que todavía no hace nada: solo muestra "La cámara llega pronto".
+- Arriba, tu **personaje animado** con lo que tienes puesto y el botón **Foto**, que abre la pantalla de la foto de la cara (ver 5.1).
 - En el medio, la barra de **categorías**: Piel, Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos y Boca. Se desplaza si no caben.
 - **Piel:** una cuadrícula con **40 tonos**: 20 realistas, de claro a oscuro, y 20 fantasiosos (negro, blanco, azul...).
 - **Ojos** y **Boca:** arriba una línea de **20 colores** que se desplaza y, debajo, una cuadrícula con los que ya tienes (los gratis y los que compraste o ganaste en un cofre). El elegido lleva el borde azul. Los dibujos no llevan nombre.
@@ -136,6 +136,14 @@ Archivo: `wardrobe_screen.dart`.
   - En la boca, el primer color es **sin color**: lo blanco de la boca toma el tono de piel (en la línea se ve con ese tono). Las bocas 1, 9 y 10 no cambian de color.
 - Las demás categorías (camisa, pantalón, zapatos, cabello y nariz) muestran su mensaje "Aún no tienes..." mientras no existan esos cosméticos.
 - Provisional: en las categorías sin arte, el cosmético es un mapa fijo en el código (solo "Camisa 1"), sin nombre visible. Ver `decisiones.md`, D-19.
+
+### 5.1 Foto de la cara
+
+Archivo: `face_photo_screen.dart`. Es **opcional** y ponerla cubre toda la cabeza del personaje, en lugar de los ojos y la boca (ver `decisiones.md`, D-32). La primera vez abre directo en la cámara; con una foto guardada, abre en el resumen.
+
+- **Cámara** (`face_camera_view.dart`): la imagen en vivo con la **silueta de la cabeza** y dos líneas para alinear los ojos y la boca. Lo que queda fuera se oscurece: solo se usa lo de adentro. Abajo, **Galería**, el botón para tomar la foto y cambiar de cámara. Si no hay cámara o permiso, lo dice y se puede usar la galería.
+- **Editor** (`face_photo_editor.dart`): la foto a pantalla completa con la misma silueta, con el encuadre que tenía en la cámara. Un dedo la mueve y dos la acercan o la giran; también hay controles de **zoom** y **giro**, y los botones **Voltear** y **Restablecer**. Al lado, tu personaje muestra el recorte real. **Repetir** vuelve a la cámara y **Guardar** la deja puesta.
+- **Resumen:** tu personaje de pie sobre las colinas y, debajo, una hoja blanca con tu foto de perfil y las tarjetas **Otra foto** y **Ajustar**, el interruptor **Usar mi foto** y **Quitar mi foto**. Avisa que la ven los demás jugadores.
 
 ---
 
@@ -247,4 +255,5 @@ Pantallas que se deducen del diseño del juego y que **aún no aparecen en el mo
 - [x] Resultados de la partida (`results_screen.dart`).
 - [ ] Mensaje "Lo sentimos, no quedan jugadores :(" con el botón **[Regresar a menú]**.
 - [x] Tienda de ítems: ojos y bocas a la venta (ver sección 4). Faltan los demás cosméticos.
+- [x] Foto de la cara: cámara con silueta, editor y resumen (ver 5.1).
 - [x] Ajustes: cuenta, preferencias, cambio de contraseña, textos legales y bloqueados (ver sección 8).
