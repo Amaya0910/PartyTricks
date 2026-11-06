@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 
 /// El aspecto del personaje vive en el perfil (`users/{uid}`): campos
@@ -36,10 +37,23 @@ class FirebaseCharacterService implements CharacterService {
   }) =>
       _update(uid, 'avatarColor', avatarColor, 'No se pudo guardar el color.');
 
+  @override
+  Future<void> setFacePhoto({required String uid, required FacePhoto? photo}) =>
+      _update(
+        uid,
+        'facePhoto',
+        photo?.base64 ?? FieldValue.delete(),
+        'No se pudo guardar la foto.',
+      );
+
+  @override
+  Future<void> setUseFacePhoto({required String uid, required bool use}) =>
+      _update(uid, 'useFacePhoto', use, 'No se pudo guardar el cambio.');
+
   Future<void> _update(
     String uid,
     String field,
-    int value,
+    Object value,
     String failMessage,
   ) async {
     try {

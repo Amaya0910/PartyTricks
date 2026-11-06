@@ -1,3 +1,5 @@
+import 'package:party_tricks/models/face_photo.dart';
+
 /// Error al guardar el personaje, con un mensaje para mostrar.
 class CharacterException implements Exception {
   const CharacterException(this.message);
@@ -34,4 +36,12 @@ abstract class CharacterService {
   /// Guarda la posición del color de fondo de la foto de perfil. Lanza
   /// [CharacterException] si falla.
   Future<void> setAvatarColor({required String uid, required int avatarColor});
+
+  /// Guarda la foto de la cara. Con [photo] null, la borra. Lanza
+  /// [CharacterException] si falla.
+  Future<void> setFacePhoto({required String uid, required FacePhoto? photo});
+
+  /// Guarda si el jugador usa su foto en lugar de los ojos y la boca. Lanza
+  /// [CharacterException] si falla.
+  Future<void> setUseFacePhoto({required String uid, required bool use});
 }

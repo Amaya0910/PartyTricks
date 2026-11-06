@@ -205,6 +205,13 @@ service cloud.firestore {
         || request.resource.data.eyes in ownedEyesAfter();
     }
 
+    // La foto de la cara (D-32): un JPEG pequeño guardado como texto en base64.
+    // El tope es FacePhoto.maxLength de lib/models/face_photo.dart.
+    function facePhotoOk(data) {
+      return !('facePhoto' in data) || data.facePhoto == null
+        || (data.facePhoto is string && data.facePhoto.size() <= 60000);
+    }
+
     // Al crear la cuenta, si trae ojos, son de los gratis.
     function eyesAllowedOnCreate() {
       return !request.resource.data.keys().hasAny(['eyes']) || eyesOwned();
@@ -303,9 +310,10 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isUser(uid) || isAdmin();
       allow create: if isUser(uid) && walletIsEmpty()
-        && eyesAllowedOnCreate() && mouthAllowedOnCreate();
+        && eyesAllowedOnCreate() && mouthAllowedOnCreate()
+        && facePhotoOk(request.resource.data);
       allow update: if isUser(uid) && eyesChangeAllowed()
-        && mouthChangeAllowed()
+        && mouthChangeAllowed() && facePhotoOk(request.resource.data)
         && (!touchesWallet() || isAdmin() || isChestPurchase()
             || isMatchReward(uid) || isEyesPurchase() || isMouthPurchase());
       allow delete: if isUser(uid);
@@ -379,7 +387,7 @@ service cloud.firestore {
     // Lo que ven los demás: sin correo.
     match /publicProfiles/{uid} {
       allow read: if signedIn();
-      allow write: if isUser(uid);
+      allow write: if isUser(uid) && facePhotoOk(request.resource.data);
     }
 
     // Solicitudes y amistades. "get" va por id (así se puede leer aunque
