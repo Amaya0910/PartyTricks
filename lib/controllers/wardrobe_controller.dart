@@ -11,5 +11,5 @@ class WardrobeController extends Notifier<CosmeticCategory> {
 
 final wardrobeControllerProvider =
     NotifierProvider<WardrobeController, CosmeticCategory>(
-  WardrobeController.new,
-);
+      WardrobeController.new,
+    );

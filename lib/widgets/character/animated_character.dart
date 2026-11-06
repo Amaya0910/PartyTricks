@@ -1,6 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/character/eyes_layer.dart';
+import 'package:party_tricks/widgets/character/mouth_layer.dart';
 
 /// Tamaño del lienzo en el que están dibujadas todas las capas.
 const Size kCharacterCanvas = Size(512, 768);
@@ -8,8 +13,8 @@ const Size kCharacterCanvas = Size(512, 768);
 /// Partes del cuerpo, en orden de dibujo (de atrás hacia adelante).
 ///
 /// Cada parte tiene dos PNG del mismo tamaño que el lienzo:
-///   assets/images/personaje/<id>_relleno.png   (blanco, se tiñe)
-///   assets/images/personaje/<id>_contorno.png  (negro, no se tiñe)
+///   `assets/images/personaje/relleno_<id>.png`  (blanco, se tiñe)
+///   `assets/images/personaje/linea_<id>.png`    (negro, no se tiñe)
 enum BodyPart {
   cuerpo('cuerpo', Offset(256, 555)),
   piernaIzquierda('pierna_izquierda', Offset(228, 511)),
@@ -66,12 +71,15 @@ class IdleAnimation implements CharacterAnimation {
     final phase = t * 2 * math.pi;
     final breath = (1 - math.cos(phase)) / 2; // 0..1
     final lift = -5 * breath;
-  
+
     switch (part) {
       case BodyPart.cuerpo:
         return PartTransform(scaleY: 1 + 0.022 * breath);
       case BodyPart.cabeza:
-        return PartTransform(angle: math.sin(phase) * 2.5 * _deg, dy: lift * 1.1);
+        return PartTransform(
+          angle: math.sin(phase) * 1.2 * _deg,
+          dy: lift * 1.1,
+        );
       case BodyPart.brazoIzquierdo:
       case BodyPart.manoIzquierda:
         return PartTransform(angle: (1.5 + 1.5 * breath) * _deg, dy: lift);
@@ -85,17 +93,35 @@ class IdleAnimation implements CharacterAnimation {
   }
 }
 
-/// Personaje animado por capas con tono de piel configurable.
+/// Personaje animado por capas con tono de piel, ojos y boca configurables.
 class AnimatedCharacter extends StatefulWidget {
   const AnimatedCharacter({
     super.key,
     required this.skinTone,
     this.animation = const IdleAnimation(),
+    this.eyes = EyeStyle.defaultStyle,
+    this.eyeColor = AppColors.white,
+    this.mouth = MouthStyle.defaultStyle,
+    this.mouthColor,
     this.clothing = const [],
   });
 
   final Color skinTone;
   final CharacterAnimation animation;
+
+  /// Ojos equipados. Van pegados a la cabeza: se mueven con ella.
+  final EyeStyle eyes;
+
+  /// Color que toma la parte blanca de la línea de los ojos (blanco =
+  /// el dibujo original).
+  final Color eyeColor;
+
+  /// Boca equipada. Va pegada a la cabeza: se mueve con ella.
+  final MouthStyle mouth;
+
+  /// Color que toma la parte blanca de la boca. Null = sin color: toma el
+  /// tono de piel.
+  final Color? mouthColor;
 
   /// Capas de ropa/cara (mismo lienzo 512x768), se dibujan encima.
   final List<String> clothing;
@@ -106,9 +132,10 @@ class AnimatedCharacter extends StatefulWidget {
 
 class _AnimatedCharacterState extends State<AnimatedCharacter>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: widget.animation.period)
-        ..repeat();
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: widget.animation.period,
+  )..repeat();
 
   @override
   void dispose() {
@@ -132,6 +159,22 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
                     part: part,
                     transform: widget.animation.transformFor(part, t),
                     skinTone: widget.skinTone,
+                    overlay: part == BodyPart.cabeza
+                        ? Stack(
+                            children: [
+                              EyesLayer(
+                                style: widget.eyes,
+                                color: widget.eyeColor,
+                                size: kCharacterCanvas,
+                              ),
+                              MouthLayer(
+                                style: widget.mouth,
+                                color: widget.mouthColor ?? widget.skinTone,
+                                size: kCharacterCanvas,
+                              ),
+                            ],
+                          )
+                        : null,
                   ),
                 for (final asset in widget.clothing) _layer(asset),
               ],
@@ -148,11 +191,16 @@ class _TransformedPart extends StatelessWidget {
     required this.part,
     required this.transform,
     required this.skinTone,
+    this.overlay,
   });
 
   final BodyPart part;
   final PartTransform transform;
   final Color skinTone;
+
+  /// Capa que se dibuja encima de la parte y se mueve con ella (los ojos
+  /// y la boca en la cabeza).
+  final Widget? overlay;
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +219,7 @@ class _TransformedPart extends StatelessWidget {
             child: _layer(part.fillAsset),
           ),
           _layer(part.outlineAsset),
+          ?overlay,
         ],
       ),
     );
@@ -178,10 +227,10 @@ class _TransformedPart extends StatelessWidget {
 }
 
 Widget _layer(String asset) => Image.asset(
-      asset,
-      width: kCharacterCanvas.width,
-      height: kCharacterCanvas.height,
-      filterQuality: FilterQuality.medium,
-      // Si falta una capa (arte en progreso), no se dibuja en vez de fallar.
-      errorBuilder: (_, _, _) => const SizedBox.shrink(),
-    );
+  asset,
+  width: kCharacterCanvas.width,
+  height: kCharacterCanvas.height,
+  filterQuality: FilterQuality.medium,
+  // Si falta una capa (arte en progreso), no se dibuja en vez de fallar.
+  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+);

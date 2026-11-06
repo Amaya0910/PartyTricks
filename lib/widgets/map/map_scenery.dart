@@ -114,9 +114,7 @@ class _Sprite extends StatelessWidget {
     );
     return Positioned.fromRect(
       rect: sprite.rect,
-      child: sprite.flipX
-          ? Transform.flip(flipX: true, child: image)
-          : image,
+      child: sprite.flipX ? Transform.flip(flipX: true, child: image) : image,
     );
   }
 }

@@ -140,14 +140,10 @@ class _FriendsList extends ConsumerWidget {
                           for (final request in sections.incoming)
                             FriendRequestTile.incoming(
                               otherUid: request.otherOf(myUid),
-                              onAccept: () => _run(
-                                context,
-                                () => friends.accept(request),
-                              ),
-                              onReject: () => _run(
-                                context,
-                                () => friends.remove(request),
-                              ),
+                              onAccept: () =>
+                                  _run(context, () => friends.accept(request)),
+                              onReject: () =>
+                                  _run(context, () => friends.remove(request)),
                             ),
                         ],
                         if (sections.friends.isNotEmpty) ...[
@@ -168,10 +164,8 @@ class _FriendsList extends ConsumerWidget {
                           for (final request in sections.outgoing)
                             FriendRequestTile.outgoing(
                               otherUid: request.otherOf(myUid),
-                              onCancel: () => _run(
-                                context,
-                                () => friends.remove(request),
-                              ),
+                              onCancel: () =>
+                                  _run(context, () => friends.remove(request)),
                             ),
                         ],
                       ],

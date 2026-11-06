@@ -50,9 +50,7 @@ class ConfirmDialog extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.reject,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.reject),
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(confirmLabel),
             ),

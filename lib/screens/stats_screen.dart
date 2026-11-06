@@ -7,6 +7,7 @@ import 'package:party_tricks/screens/settings_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/stats/stats_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/my_avatar.dart';
 import 'package:party_tricks/widgets/player_header.dart';
 import 'package:party_tricks/widgets/stats_card.dart';
 
@@ -26,6 +27,7 @@ class StatsScreen extends ConsumerWidget {
           username: profile?.username ?? '',
           coins: profile?.coins ?? 0,
           diamonds: profile?.diamonds ?? 0,
+          avatar: const MyAvatar(size: 64),
           onAvatarTap: () => Navigator.of(context).push(SettingsScreen.route()),
         ),
         Expanded(

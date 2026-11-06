@@ -91,9 +91,9 @@ void main() {
     final container = ProviderScope.containerOf(
       tester.element(find.byType(FriendsScreen)),
     );
-    container.read(navigationControllerProvider.notifier).select(
-      AppSection.friends,
-    );
+    container
+        .read(navigationControllerProvider.notifier)
+        .select(AppSection.friends);
 
     await tester.tap(find.text('¡Escríbele!'));
     await tester.pump();

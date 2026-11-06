@@ -10,9 +10,7 @@ class LegalScreen extends StatelessWidget {
   final LegalDocument document;
 
   static Route<void> route(LegalDocument document) {
-    return MaterialPageRoute(
-      builder: (_) => LegalScreen(document: document),
-    );
+    return MaterialPageRoute(builder: (_) => LegalScreen(document: document));
   }
 
   @override

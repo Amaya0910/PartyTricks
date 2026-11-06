@@ -30,8 +30,7 @@ class AnimatedModeSwitch extends StatelessWidget {
         child: AnimatedAlign(
           duration: _duration,
           curve: _curve,
-          alignment:
-              isPrivate ? Alignment.centerLeft : Alignment.centerRight,
+          alignment: isPrivate ? Alignment.centerLeft : Alignment.centerRight,
           child: FractionallySizedBox(
             widthFactor: 0.52,
             heightFactor: 1,
@@ -39,9 +38,7 @@ class AnimatedModeSwitch extends StatelessWidget {
               duration: _duration,
               curve: _curve,
               decoration: BoxDecoration(
-                color: isPrivate
-                    ? AppColors.switchGreen
-                    : AppColors.authAccent,
+                color: isPrivate ? AppColors.switchGreen : AppColors.authAccent,
                 borderRadius: BorderRadius.circular(3),
               ),
               child: AnimatedSwitcher(
