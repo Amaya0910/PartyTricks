@@ -45,13 +45,131 @@ service cloud.firestore {
       );
     }
 
+    // Administradores (D-27): su documento admins/{uid} solo se crea a mano
+    // desde la consola de Firebase.
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ---------------------------------------------------------------------
+    // Cartera del perfil (D-28)
+    // ---------------------------------------------------------------------
+
+    function walletKeys() {
+      return ['coins', 'diamonds', 'extraDice', 'experience'];
+    }
+
+    // Cuánto cambia [key] con esta escritura (lo que falta cuenta como 0).
+    function delta(key) {
+      return request.resource.data.get(key, 0) - resource.data.get(key, 0);
+    }
+
+    function touchesWallet() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(walletKeys());
+    }
+
+    function walletIsEmpty() {
+      return request.resource.data.get('coins', 0) == 0
+        && request.resource.data.get('diamonds', 0) == 0
+        && request.resource.data.get('extraDice', 0) == 0
+        && request.resource.data.get('experience', 0) == 0;
+    }
+
+    // Compra de un cofre (D-18). Los precios (50, 100 y 150) y el premio de
+    // 100 monedas son los de lib/models/chest.dart: si cambian allá, hay
+    // que cambiarlos aquí.
+    function isChestPurchase() {
+      let spent = resource.data.get('diamonds', 0)
+        - request.resource.data.get('diamonds', 0);
+      return (spent == 50 || spent == 100 || spent == 150)
+        && request.resource.data.diamonds >= 0
+        && delta('experience') == 0
+        && ((delta('coins') == 0 && delta('extraDice') == 0)
+          || (delta('coins') == 100 && delta('extraDice') == 0)
+          || (delta('coins') == 0 && delta('extraDice') == 1));
+    }
+
+    // Premios de una partida: en la misma transacción se crea la marca
+    // stats/{uid}/matches/{id} (así se cobra una sola vez) y el perfil
+    // anota ese id en lastRewardMatch. Lo que se suma tiene que ser
+    // exactamente lo del jugador en matchResults/{id}.
+    function isMatchReward(uid) {
+      let id = request.resource.data.get('lastRewardMatch', '');
+      let marker = /databases/$(database)/documents/stats/$(uid)/matches/$(id);
+      let record = /databases/$(database)/documents/matchResults/$(id);
+      return id is string && id != ''
+        && !exists(marker) && existsAfter(marker)
+        && exists(record)
+        && delta('extraDice') == 0
+        && rewardMatches(get(record).data.players, uid);
+    }
+
+    // El jugador [uid] está en algún puesto de [players] (máximo 6) y lo
+    // que se suma es lo que dice ese puesto.
+    function rewardMatches(players, uid) {
+      return rewardAt(players, 0, uid) || rewardAt(players, 1, uid)
+        || rewardAt(players, 2, uid) || rewardAt(players, 3, uid)
+        || rewardAt(players, 4, uid) || rewardAt(players, 5, uid);
+    }
+
+    function rewardAt(players, i, uid) {
+      return players.size() > i
+        && players[i].uid == uid
+        && delta('coins') == players[i].coins
+        && delta('diamonds') == players[i].diamonds
+        && delta('experience') == players[i].experience;
+    }
+
+    // Topes de lo que una partida puede dar a cada jugador. La XP máxima
+    // sale de ExperienceCalculator (1.er puesto, 6 jugadores, 25 rondas =
+    // 280); los otros son holgados porque se ajustan con el diseño.
+    function playerWithinLimits(players, i) {
+      return players.size() <= i
+        || (players[i].coins is int && players[i].coins >= 0
+          && players[i].coins <= 10000
+          && players[i].diamonds is int && players[i].diamonds >= 0
+          && players[i].diamonds <= 100
+          && players[i].experience is int && players[i].experience >= 0
+          && players[i].experience <= 300);
+    }
+
+    function playersWithinLimits(players) {
+      return playerWithinLimits(players, 0) && playerWithinLimits(players, 1)
+        && playerWithinLimits(players, 2) && playerWithinLimits(players, 3)
+        && playerWithinLimits(players, 4) && playerWithinLimits(players, 5);
+    }
+
+    // ---------------------------------------------------------------------
+    // Administración (D-27)
+    // ---------------------------------------------------------------------
+
+    // Cada uno puede saber si él mismo es administrador. Nadie lo puede
+    // crear ni cambiar desde la app.
+    match /admins/{uid} {
+      allow get: if isUser(uid);
+      allow list, write: if false;
+    }
+
     // ---------------------------------------------------------------------
     // Cuentas (D-16, D-17, D-18)
     // ---------------------------------------------------------------------
 
-    // Perfil privado: solo su dueño (tiene el correo).
+    // Perfil privado: solo su dueño (tiene el correo). Los administradores
+    // pueden leerlos para las estadísticas de la app.
+    //
+    // La cartera (monedas, diamantes, dados extra y XP) no se escribe a
+    // mano (D-28): empieza en 0 y solo cambia al comprar un cofre, al
+    // cobrar los premios de una partida registrada o desde el panel de
+    // administración.
     match /users/{uid} {
-      allow read, write: if isUser(uid);
+      allow read: if isUser(uid) || isAdmin();
+      allow create: if isUser(uid) && walletIsEmpty();
+      allow update: if isUser(uid)
+        && (!touchesWallet() || isAdmin() || isChestPurchase()
+            || isMatchReward(uid));
+      allow delete: if isUser(uid);
     }
 
     // Reserva del nombre de usuario. Se lee sin sesión para poder iniciar
@@ -78,10 +196,16 @@ service cloud.firestore {
     // ---------------------------------------------------------------------
 
     match /stats/{uid} {
-      allow read, write: if isUser(uid);
+      allow read: if isUser(uid) || isAdmin();
+      allow write: if isUser(uid);
 
+      // Marca de una partida ya sumada. No se cambia ni se borra: si se
+      // pudiera borrar, los premios de esa partida se cobrarían otra vez
+      // (D-28).
       match /matches/{matchId} {
-        allow read, write: if isUser(uid);
+        allow read: if isUser(uid);
+        allow create: if isUser(uid);
+        allow update, delete: if false;
       }
     }
 
@@ -91,7 +215,8 @@ service cloud.firestore {
 
     // Registro de cada partida terminada, para rankings e historial. Lo crea
     // una sola vez el anfitrión, que tiene que haber jugado. No se edita ni
-    // se borra.
+    // se borra. Como de aquí salen los premios de cada jugador (D-28), lo
+    // de cada uno tiene topes.
     match /matchResults/{roomId} {
       allow read: if signedIn();
       allow create: if signedIn()
@@ -103,7 +228,8 @@ service cloud.firestore {
         && request.resource.data.playerIds.size() <= 6
         && request.resource.data.players is list
         && request.resource.data.players.size()
-          == request.resource.data.playerIds.size();
+          == request.resource.data.playerIds.size()
+        && playersWithinLimits(request.resource.data.players);
       allow update, delete: if false;
     }
 
