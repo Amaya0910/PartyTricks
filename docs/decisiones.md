@@ -342,3 +342,45 @@
   - Quien vuelve a abrir la app en pleno Para el Tiempo o Reacción empieza a contar de nuevo.
   - Las estadísticas por tipo de minijuego (`MinigameStats.byType`) todavía no se llenan: la partida guarda solo el último resultado.
 - **Cómo se probaron:** 61 pruebas nuevas (reglas de cada minijuego, desempate con el dado, cierre por tiempo, árbitro, cambio de anfitrión, reconexión, guardado en la base de datos y pantallas). Las reglas de Realtime Database no se probaron con el emulador en este bloque (en esta computadora falta Java 21).
+
+## D-27. Cuenta de administración y pruebas
+
+- **Fecha:** 2026-11-05
+- **Estado:** Propuesta
+- **Decisión:**
+  - Una cuenta es **administradora** si existe el documento `admins/{uid}` en Firestore. Se crea **a mano** desde la consola de Firebase (puede estar vacío); las reglas no dejan crearlo, cambiarlo ni listarlo desde la app. Cada cuenta solo puede leer el suyo.
+  - En Ajustes aparece la tarjeta **Administración** solo para esas cuentas. El panel vuelve a revisar el permiso al abrirse.
+  - El panel tiene cuatro partes:
+    - **Galería de pantallas:** práctica de minijuegos en el teléfono contra dos rivales de mentira (las mismas reglas de `MinigameJudge` y las mismas pantallas, sin Firebase), tarjetas de resultado de cada minijuego, tirada del dado, pantalla final con una partida de ejemplo, tonos de piel del personaje y algunos diálogos. Nada se guarda.
+    - **Estadísticas de la app:** cuentas, XP, monedas y diamantes guardados (`users`), partidas terminadas y públicas (`matchResults`), minijuegos ganados, tiempo en la app y diamantes gastados (`stats`), y las últimas 5 partidas. Se calculan con consultas de conteo y suma de Firestore, sin descargar los documentos.
+    - **Economía:** sumar monedas, diamantes y dados extra a la cuenta propia, o dejarlos en 0, para probar la tienda y los cofres.
+    - **Desarrollo:** uid (se puede copiar), correo, XP, tamaño de pantalla, tamaño de letra, modo de compilación, ver los bordes de los widgets (solo en depuración) y reiniciar las preferencias.
+- **En el código:** `lib/services/admin/` (`AdminService`, `FirebaseAdminService`, `admin_providers.dart`), `lib/models/admin/app_overview.dart`, `lib/controllers/admin_controller.dart`, `lib/screens/admin/` y la tarjeta en `settings_screen.dart`.
+- **Reglas (`firestore.rules`):** nueva función `isAdmin()`; `admins/{uid}` solo se lee por su dueño; `users` y `stats` se pueden **leer** (no escribir) si eres administrador. Hay que publicarlas con `firebase deploy --only firestore:rules`.
+- **Motivo:** probar las pantallas desde el teléfono sin armar una partida con varias personas, y ver cómo se usa la app, sin pagar el plan Blaze.
+- **Alternativas:** *custom claims* de Firebase Auth (necesitan el Admin SDK o Cloud Functions para asignarlas) o una lista de uids en el código (solo esconde el panel; no protege los datos).
+- **Riesgos que quedan:**
+  - Las herramientas de economía solo funcionan para administradores: desde D-28 las reglas no dejan que un jugador cambie su cartera a mano.
+  - Las sumas de toda la app leen todas las cuentas: con muchos jugadores habría que guardar contadores aparte.
+
+## D-28. Los jugadores no escriben su propia cartera
+
+- **Fecha:** 2026-11-05
+- **Estado:** Propuesta
+- **Decisión:**
+  - La **cartera** del perfil (`coins`, `diamonds`, `extraDice` y `experience` en `users/{uid}`) ya no se puede escribir libremente. Al crear la cuenta tiene que estar en 0, y cualquier otro cambio del perfil (nombre, correo, tono de piel...) no puede tocarla.
+  - Solo hay tres formas de cambiarla, y las reglas revisan cada una:
+    - **Comprar un cofre** (`isChestPurchase`): se restan exactamente 50, 100 o 150 diamantes, sin quedar en negativo, y como mucho se suman 100 monedas **o** 1 dado extra. La XP no cambia.
+    - **Cobrar una partida** (`isMatchReward`): en la misma transacción se crea la marca `stats/{uid}/matches/{id}` (que no existía) y el perfil anota el id en `lastRewardMatch`. Lo que se suma tiene que ser **exactamente** lo de ese jugador en `matchResults/{id}`. La marca ya no se puede cambiar ni borrar, así que cada partida se cobra una sola vez.
+    - **Administración** (D-27): el administrador puede cambiar su propia cartera.
+  - `matchResults` ahora tiene **topes** por jugador: monedas de 0 a 10 000, diamantes de 0 a 100 y XP de 0 a 300 (lo máximo que da `ExperienceCalculator` es 280).
+  - Como el anfitrión guarda `matchResults` al mismo tiempo que cada jugador cobra, `FirebaseStatsService.recordMatch` vuelve a intentar hasta 4 veces (a los 2, 4, 8 y 16 s) si las reglas lo rechazan.
+- **En el código:** `firestore.rules`, `FirestoreStatsDocument.matchRewards` (agrega `lastRewardMatch`), `FirebaseStatsService.recordMatch` (reintentos) y un aviso en `lib/models/chest.dart`: los precios y el premio de monedas también están en las reglas.
+- **Motivo:** antes cualquier jugador con una app modificada podía ponerse las monedas y diamantes que quisiera. Sin servidor propio, lo más que se puede hacer es que cada cambio tenga que coincidir con algo registrado.
+- **Alternativas:** Cloud Functions que entreguen los premios y cobren los cofres (lo más seguro, pero necesita el plan Blaze) o mover la cartera a otra colección sin escritura desde la app (igual necesitaría un servidor).
+- **Riesgos que quedan:**
+  - El sorteo del cofre sigue en el teléfono: una app modificada podría elegir siempre el premio que quiera, pero pagando el precio del cofre.
+  - Quien es anfitrión podría guardar un `matchResults` inventado (con un id nuevo) y cobrarlo, dentro de los topes. Las reglas de Firestore no pueden leer la partida de Realtime Database para comprobarlo.
+  - Un jugador desconectado (que no gana nada) podría cobrar lo que dice el registro.
+  - La XP de `publicProfiles` la sigue escribiendo cada jugador.
+  - Las reglas **no se probaron con el emulador** (en esta computadora faltan Firebase CLI y Java 21). Antes de publicarlas conviene probar: comprar cada cofre, terminar una partida (anfitrión y no anfitrión), cambiar el nombre y el tono, y que el panel de administración pueda sumar.
