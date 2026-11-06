@@ -2,6 +2,10 @@
 enum ChestOutcome { cosmetic, nothing, coins, dice }
 
 /// Monedas que da el premio "100 Monedas".
+///
+/// Este premio y los precios de [ChestType] también están en
+/// `firestore.rules` (`isChestPurchase`, D-28): si cambian aquí, hay que
+/// cambiarlos allá o las compras se rechazarán.
 const int chestCoinPrize = 100;
 
 /// Probabilidades de un cofre, en porcentaje. Deben sumar 100.
