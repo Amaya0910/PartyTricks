@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/minigames/minigame_kit.dart';
 import 'package:party_tricks/widgets/minigames/minigame_view.dart';
 
 /// Globo Bomba: por turnos, cada uno infla el globo 1, 2 o 3 veces. Nadie
@@ -94,7 +95,7 @@ class _BalloonGameState extends State<BalloonGame>
       mainAxisSize: MainAxisSize.min,
       children: [
         if (popped != null) ...[
-          _PoppedBanner(
+          MinigameAlert(
             text: '¡Reventó el globo de ${players.nameOf(popped)}!',
           ),
           const SizedBox(height: 8),
@@ -106,7 +107,7 @@ class _BalloonGameState extends State<BalloonGame>
         ),
         MinigamePill(text: 'Infladas: ${_game.pumps}', icon: Icons.air_rounded),
         const SizedBox(height: 12),
-        _TurnBanner(
+        MinigameTurnBanner(
           text: mine
               ? 'Tu turno (${turnLeft ~/ 1000 + 1} s)'
               : 'Turno de ${players.nameOf(current)}',
@@ -138,137 +139,6 @@ class _BalloonGameState extends State<BalloonGame>
           ),
         ],
       ],
-    );
-  }
-}
-
-/// Aviso rojo cuando a alguien le revienta el globo.
-class _PoppedBanner extends StatelessWidget {
-  const _PoppedBanner({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(text),
-      tween: Tween(begin: 0.5, end: 1),
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.elasticOut,
-      builder: (context, scale, child) =>
-          Transform.scale(scale: scale, child: child),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.minigameOut,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: minigameShade(AppColors.minigameOut, 0.35),
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.flare_rounded, color: AppColors.white, size: 22),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                text,
-                textAlign: TextAlign.center,
-                style: minigameTextStyle.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// De quién es el turno, con su color y una barrita del tiempo que le
-/// queda.
-class _TurnBanner extends StatelessWidget {
-  const _TurnBanner({
-    required this.text,
-    required this.color,
-    required this.left,
-  });
-
-  final String text;
-  final Color color;
-
-  /// De 1 (recién empieza) a 0 (se acabó).
-  final double left;
-
-  @override
-  Widget build(BuildContext context) {
-    final fill = left.clamp(0, 1).toDouble();
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-      decoration: BoxDecoration(
-        color: minigameTint(color, 0.12),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color, width: 2.5),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.white, width: 2),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  text,
-                  textAlign: TextAlign.center,
-                  style: minigameTextStyle.copyWith(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: minigameShade(color, 0.3),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: SizedBox(
-              height: 8,
-              width: 180,
-              child: Stack(
-                children: [
-                  const Positioned.fill(
-                    child: ColoredBox(color: AppColors.minigameTrack),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: fill,
-                    heightFactor: 1,
-                    child: ColoredBox(
-                      color: fill < 0.3 ? AppColors.minigameOut : color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

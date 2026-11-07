@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,7 @@ import 'package:party_tricks/services/admin/admin_providers.dart';
 import 'package:party_tricks/services/admin/admin_service.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
+import 'package:party_tricks/services/game_engine/random_source.dart';
 import 'package:party_tricks/widgets/minigames/minigame_result_overlay.dart';
 
 import '../services/admin/fake_admin_service.dart';
@@ -154,6 +157,35 @@ void main() {
       expect(find.text('Ganó Tú'), findsOneWidget);
 
       await tester.pump(MinigameResultOverlay.duration);
+    });
+
+    testWidgets('todos se pueden practicar y terminan aunque no toques nada', (
+      tester,
+    ) async {
+      tester.view
+        ..physicalSize = const Size(1800, 1000)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      for (final type in MinigameType.values) {
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MinigamePracticeScreen(
+              random: DartRandomSource(Random(type.index + 1)),
+            ),
+          ),
+        );
+        await tester.tap(find.text(type.title));
+        await tester.pump();
+
+        var seconds = 0.0;
+        while (find.byType(MinigameResultCard).evaluate().isEmpty) {
+          await tester.pump(const Duration(milliseconds: 250));
+          seconds += 0.25;
+          expect(seconds, lessThan(400), reason: '$type no terminó');
+        }
+        await tester.pump(MinigameResultOverlay.duration);
+      }
     });
   });
 }

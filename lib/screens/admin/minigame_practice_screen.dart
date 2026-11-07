@@ -28,8 +28,11 @@ class MinigamePracticeScreen extends StatefulWidget {
 class _MinigamePracticeScreenState extends State<MinigamePracticeScreen> {
   static const _rules = MinigameRules();
 
-  /// Lo que tardan los rivales en inflar en su turno.
+  /// Lo que tardan los rivales en inflar o cortar un cable en su turno.
   static const _botPumpDelay = Duration(milliseconds: 1100);
+
+  /// Lo que tardan los rivales en elegir en los juegos por vueltas.
+  static const _botPickDelay = Duration(milliseconds: 1400);
 
   /// Alto del panel de abajo del tablero, para ver la tarjeta compacta.
   static const _boardPanelHeight = 230.0;
@@ -77,8 +80,9 @@ class _MinigamePracticeScreenState extends State<MinigamePracticeScreen> {
   }
 
   /// Los rivales juegan solos: en Para el Tiempo paran cerca del objetivo,
-  /// en Reacción tocan entre 200 y 450 ms después del "¡YA!" y en el Globo
-  /// Bomba inflan de 1 a 3 en su turno.
+  /// en Reacción tocan entre 200 y 450 ms después del "¡YA!", en el Globo
+  /// Bomba inflan de 1 a 3 en su turno, en los juegos con puntaje terminan
+  /// con uno razonable y en los demás eligen al azar.
   void _scheduleBots(MinigameState state) {
     switch (state.type) {
       case MinigameType.stopwatch:
@@ -99,7 +103,82 @@ class _MinigamePracticeScreenState extends State<MinigamePracticeScreen> {
         }
       case MinigameType.balloon:
         _scheduleBalloonTurn(state);
+      case MinigameType.rhythm:
+        _botsScore(state, 9000, 15, 130);
+      case MinigameType.diceMemory:
+        _botsScore(state, 14000, 3, 8);
+      case MinigameType.coinRain:
+        _botsScore(state, _rules.coinRainMs, 8, 30);
+      case MinigameType.colorTrap:
+        _botsScore(state, 16000, 500, 1700);
+      case MinigameType.quickMath:
+        _botsScore(state, _rules.quickMathMs, 40, 170);
+      case MinigameType.safeLock:
+        _botsScore(state, 10000, 60, 320);
+      case MinigameType.wires:
+        _scheduleWireTurn(state);
+      case MinigameType.secretBid:
+      case MinigameType.highLow:
+      case MinigameType.ghostChair:
+        _scheduleRound(state);
     }
+  }
+
+  /// Los rivales terminan a los [ms] de empezar con un puntaje entre [low] y
+  /// [high].
+  void _botsScore(MinigameState state, int ms, int low, int high) {
+    for (final bot in AdminSamples.bots) {
+      final score = _random.nextInt(low, high);
+      _after(
+        Duration(milliseconds: _rules.introMs + ms),
+        () => _apply(bot, score),
+      );
+    }
+  }
+
+  /// Cables Rojos: si le toca a un rival, corta uno al azar.
+  void _scheduleWireTurn(MinigameState state) {
+    final current = state.balloonPlayer;
+    if (current == AdminSamples.me) return;
+    final wait = state.step == 0 ? _rules.introMs : 0;
+    final boom = state.stage > 0 && state.cut.isEmpty ? _rules.wiresBoomMs : 0;
+    final step = state.step;
+    _after(Duration(milliseconds: wait + boom) + _botPumpDelay, () {
+      final now = _state;
+      if (now == null || now.step != step) return;
+      final left = [
+        for (var wire = 0; wire < now.wires; wire++)
+          if (!now.cut.contains(wire)) wire,
+      ];
+      _apply(current, left[_random.nextInt(0, left.length - 1)]);
+    });
+  }
+
+  /// Por vueltas: cada rival que sigue en juego elige después de un momento.
+  void _scheduleRound(MinigameState state) {
+    final wait = state.stage == 0
+        ? _rules.introMs
+        : _rules.revealMs(state.type);
+    for (final bot in AdminSamples.bots) {
+      if (!state.alive.contains(bot)) continue;
+      final stage = state.stage;
+      _after(Duration(milliseconds: wait) + _botPickDelay, () {
+        final now = _state;
+        if (now == null || now.stage != stage) return;
+        _apply(bot, MinigamePick.encode(stage, _botPick(now, bot)));
+      });
+    }
+  }
+
+  int _botPick(MinigameState state, String bot) {
+    return switch (state.type) {
+      MinigameType.secretBid => _random.nextInt(
+        0,
+        (state.chips[bot] ?? 0).clamp(0, _rules.maxBid),
+      ),
+      MinigameType.highLow => state.card > _rules.maxCard ~/ 2 ? 0 : 1,
+      _ => _random.nextInt(0, _rules.chairs - 1),
+    };
   }
 
   void _scheduleBalloonTurn(MinigameState state) {
@@ -139,8 +218,19 @@ class _MinigamePracticeScreenState extends State<MinigamePracticeScreen> {
     final next = outcome.state;
     if (next == null) {
       _cancelTimers();
+    } else if (next.ending) {
+      // Ya se sabe cómo termina: se deja ver y se cierra.
+      final step = next.step;
+      _after(_rules.timeLimit(next), () {
+        final now = _state;
+        if (now != null && now.step == step) _handle(_judge.timeout(now, step));
+      });
     } else if (next.type == MinigameType.balloon) {
       _scheduleBalloonTurn(next);
+    } else if (next.type == MinigameType.wires) {
+      _scheduleWireTurn(next);
+    } else if (next.type.playsInRounds && next.scores.isEmpty) {
+      _scheduleRound(next);
     }
   }
 
@@ -248,13 +338,16 @@ class _Picker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-      child: Row(
+    return SizedBox(
+      height: 70,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
         children: [
           for (final type in MinigameType.values) ...[
             if (type != MinigameType.values.first) const SizedBox(width: 8),
-            Expanded(
+            SizedBox(
+              width: 104,
               child: FilledButton(
                 style: FilledButton.styleFrom(
                   backgroundColor: type == current
@@ -262,7 +355,7 @@ class _Picker extends StatelessWidget {
                       : minigameTint(type.accent, 0.55),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6,
-                    vertical: 10,
+                    vertical: 6,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
