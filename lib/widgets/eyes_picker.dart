@@ -93,11 +93,7 @@ class EyesThumbnail extends StatelessWidget {
                 top: -_crop.top,
                 width: kCharacterCanvas.width,
                 height: kCharacterCanvas.height,
-                child: EyesLayer(
-                  style: style,
-                  color: color,
-                  size: kCharacterCanvas,
-                ),
+                child: EyesLayer(style: style, color: color),
               ),
             ],
           ),

@@ -97,11 +97,7 @@ class MouthThumbnail extends StatelessWidget {
                 top: -_crop.top,
                 width: kCharacterCanvas.width,
                 height: kCharacterCanvas.height,
-                child: MouthLayer(
-                  style: style,
-                  color: color,
-                  size: kCharacterCanvas,
-                ),
+                child: MouthLayer(style: style, color: color),
               ),
             ],
           ),
