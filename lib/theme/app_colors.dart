@@ -389,6 +389,75 @@ class AppColors {
   static const Color minigameStopwatch = authAccent;
   static const Color minigameReaction = activeButton;
   static const Color minigameBalloon = chestDiamondStrong;
+  static const Color minigameRhythm = Color(0xFFE85D9E);
+  static const Color minigameDiceMemory = blueStrong;
+  static const Color minigameCoinRain = coin;
+  static const Color minigameColorTrap = Color(0xFF7B5BD6);
+  static const Color minigameQuickMath = Color(0xFF2E9B72);
+  static const Color minigameSafeLock = Color(0xFF4F6D8A);
+  static const Color minigameWires = authError;
+  static const Color minigameSecretBid = Color(0xFFB8467E);
+  static const Color minigameHighLow = Color(0xFF1E9AA6);
+  static const Color minigameGhostChair = Color(0xFF5E4AA8);
+
+  /// Pulso Perfecto: sombra del corazón y de los textos.
+  static const Color minigameRhythmDark = Color(0xFF9C2A68);
+
+  /// Cazamonedas: el fogonazo de una bomba.
+  static const Color coinRainFlash = Color(0x66D32F2F);
+
+  /// Color Tramposo: el fondo cuando vale la palabra.
+  static const Color colorTrapNight = Color(0xFF2B2650);
+
+  /// Cuenta Rápida: la pizarra, cuando fallas y la tiza.
+  static const Color chalkboard = Color(0xFF2F5D4E);
+  static const Color chalkboardWrong = Color(0xFF7A3434);
+  static const Color chalk = Color(0xFFF4F7EE);
+
+  /// Cofre Fuerte: el acero de la caja y el aro de la cerradura.
+  static const Color safeSteel = Color(0xFF5B7490);
+  static const Color safeSteelDark = Color(0xFF2C3E50);
+  static const Color safeRim = Color(0xFF9FB3C8);
+
+  /// Cables Rojos: la carcasa y la pantalla de la bomba.
+  static const Color bombCase = Color(0xFF4A4F57);
+  static const Color bombDisplay = Color(0xFFFF4D4D);
+  static const Color bombDisplayOff = Color(0xFF6B2020);
+
+  /// Cables Rojos: un color por cable.
+  static const List<Color> wireColors = [
+    Color(0xFFE53935),
+    Color(0xFF1E88E5),
+    Color(0xFF43A047),
+    Color(0xFFFDD835),
+    Color(0xFFF5F5F5),
+    Color(0xFFFB8C00),
+    Color(0xFF8E24AA),
+    Color(0xFFEC407A),
+  ];
+
+  /// Puja Secreta: el terciopelo de la mesa y la ficha boca abajo.
+  static const Color bidVelvet = Color(0xFF8E3A6B);
+  static const Color bidVelvetDark = Color(0xFF4D1F3A);
+  static const Color bidHidden = Color(0xFFB0BEC5);
+
+  /// Mayor o Menor: el botón de Mayor.
+  static const Color highLowUp = Color(0xFF2E9B5B);
+
+  /// Mayor o Menor: el paño de la mesa.
+  static const Color feltLight = Color(0xFF2FA58C);
+  static const Color feltDark = Color(0xFF14665C);
+
+  /// La Silla Fantasma: la noche, el piso, el brillo y las sillas.
+  static const Color ghostNight = Color(0xFF2A2352);
+  static const Color ghostFloor = Color(0xFF4B3B7C);
+  static const Color ghostFloorEdge = Color(0xFF362B60);
+  static const Color ghostGlow = Color(0xFF9CF5D9);
+  static const List<Color> ghostChairs = [
+    Color(0xFFC98B5A),
+    Color(0xFFB57A8C),
+    Color(0xFF7FA3C7),
+  ];
 
   /// Fondo suave de los recuadros de ayuda y de las píldoras.
   static const Color minigameSoft = Color(0xFFF2F8FC);
