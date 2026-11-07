@@ -119,27 +119,37 @@ class FirebaseRoomService implements RoomService {
   @override
   Future<int> cleanAbandoned(DisconnectionPolicy policy, DateTime now) async {
     final snapshot = await _db.ref('publicLobby').limitToFirst(20).get();
-    var removed = 0;
-    for (final child in snapshot.children) {
-      final id = child.key!;
-      try {
-        final room = await _room(id).get();
-        if (room.value == null) {
-          await _db.ref('publicLobby/$id').remove();
-          removed++;
-          continue;
-        }
-        final parsed = Room.fromMap(id, room.value as Map<Object?, Object?>);
-        if (policy.isAbandoned(parsed, now)) {
-          await _delete(parsed);
-          removed++;
-        }
-      } on FirebaseException {
-        // Otro la borró antes o el reloj no coincide con el del servidor:
-        // se intenta la próxima vez.
+    // Se revisan todas a la vez: esperarlas una por una hace lenta la
+    // búsqueda de partida.
+    final results = await Future.wait([
+      for (final child in snapshot.children)
+        _removeIfAbandoned(child.key!, policy, now),
+    ]);
+    return results.where((removed) => removed).length;
+  }
+
+  /// Quita la sala [id] de la lista pública si ya no existe o quedó
+  /// abandonada. Devuelve si la quitó.
+  Future<bool> _removeIfAbandoned(
+    String id,
+    DisconnectionPolicy policy,
+    DateTime now,
+  ) async {
+    try {
+      final room = await _room(id).get();
+      if (room.value == null) {
+        await _db.ref('publicLobby/$id').remove();
+        return true;
       }
+      final parsed = Room.fromMap(id, room.value as Map<Object?, Object?>);
+      if (!policy.isAbandoned(parsed, now)) return false;
+      await _delete(parsed);
+      return true;
+    } on FirebaseException {
+      // Otro la borró antes o el reloj no coincide con el del servidor: se
+      // intenta la próxima vez.
+      return false;
     }
-    return removed;
   }
 
   @override
