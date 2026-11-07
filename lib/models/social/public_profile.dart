@@ -1,6 +1,7 @@
 import 'package:party_tricks/models/avatar_color.dart';
 import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/models/skin_tone.dart';
@@ -24,6 +25,7 @@ class PublicProfile {
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor = MouthColor.defaultIndex,
     this.avatarColor = AvatarColor.defaultIndex,
+    this.facePhoto,
   });
 
   final String uid;
@@ -44,6 +46,10 @@ class PublicProfile {
   final MouthStyle mouth;
   final int mouthColor;
   final int avatarColor;
+
+  /// La foto de la cara del jugador, solo si la está usando: con ella se
+  /// dibujan sus ojos y su boca en lugar de los estilos de arriba.
+  final FacePhoto? facePhoto;
 
   factory PublicProfile.fromMap(String uid, Map<String, dynamic> map) {
     return PublicProfile(
@@ -66,6 +72,7 @@ class PublicProfile {
       avatarColor: AvatarColor.clamp(
         (map['avatarColor'] as num?)?.toInt() ?? AvatarColor.defaultIndex,
       ),
+      facePhoto: FacePhoto.fromStored(map['facePhoto']),
     );
   }
 
@@ -80,6 +87,7 @@ class PublicProfile {
     'mouth': mouth.number,
     'mouthColor': mouthColor,
     'avatarColor': avatarColor,
+    'facePhoto': facePhoto?.base64,
   };
 
   /// Si guardar [other] cambiaría algo (para no escribir de más).
@@ -94,6 +102,7 @@ class PublicProfile {
         eyeColor == other.eyeColor &&
         mouth == other.mouth &&
         mouthColor == other.mouthColor &&
-        avatarColor == other.avatarColor;
+        avatarColor == other.avatarColor &&
+        facePhoto == other.facePhoto;
   }
 }

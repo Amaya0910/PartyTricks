@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Party Tricks usa la cámara para que te tomes una foto y la pongas en la cara de tu personaje.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Party Tricks usa tus fotos para que elijas una y la pongas en la cara de tu personaje.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

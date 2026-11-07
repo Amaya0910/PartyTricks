@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
+import 'package:party_tricks/controllers/face_photo_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
 import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/controllers/wardrobe_controller.dart';
@@ -8,6 +9,7 @@ import 'package:party_tricks/models/cosmetic_category.dart';
 import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/skin_tone.dart';
+import 'package:party_tricks/screens/face_photo_screen.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/category_tab_bar.dart';
@@ -75,6 +77,7 @@ class WardrobeScreen extends ConsumerWidget {
                       eyeColor: EyeColor.colorOf(eyeColor),
                       mouth: mouthStyle,
                       mouthColor: MouthColor.colorOf(mouthColor),
+                      facePhoto: ref.watch(facePhotoProvider),
                     ),
                   ),
                 ),
@@ -82,9 +85,8 @@ class WardrobeScreen extends ConsumerWidget {
                   top: 12,
                   right: 12,
                   child: _PhotoButton(
-                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('La cámara llega pronto')),
-                    ),
+                    onPressed: () =>
+                        Navigator.of(context).push(FacePhotoScreen.route()),
                   ),
                 ),
               ],

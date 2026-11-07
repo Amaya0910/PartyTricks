@@ -2,9 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/character/eyes_layer.dart';
+import 'package:party_tricks/widgets/character/face_photo_layer.dart';
 import 'package:party_tricks/widgets/character/mouth_layer.dart';
 
 /// Tamaño del lienzo en el que están dibujadas todas las capas.
@@ -103,6 +105,7 @@ class AnimatedCharacter extends StatefulWidget {
     this.eyeColor = AppColors.white,
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor,
+    this.facePhoto,
     this.clothing = const [],
   });
 
@@ -122,6 +125,10 @@ class AnimatedCharacter extends StatefulWidget {
   /// Color que toma la parte blanca de la boca. Null = sin color: toma el
   /// tono de piel.
   final Color? mouthColor;
+
+  /// Foto de la cara del jugador. Si hay, se dibuja en lugar de los ojos y
+  /// la boca.
+  final FacePhoto? facePhoto;
 
   /// Capas de ropa/cara (mismo lienzo 512x768), se dibujan encima.
   final List<String> clothing;
@@ -160,20 +167,26 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
                     transform: widget.animation.transformFor(part, t),
                     skinTone: widget.skinTone,
                     overlay: part == BodyPart.cabeza
-                        ? Stack(
-                            children: [
-                              EyesLayer(
-                                style: widget.eyes,
-                                color: widget.eyeColor,
-                                size: kCharacterCanvas,
-                              ),
-                              MouthLayer(
-                                style: widget.mouth,
-                                color: widget.mouthColor ?? widget.skinTone,
-                                size: kCharacterCanvas,
-                              ),
-                            ],
-                          )
+                        ? (widget.facePhoto != null
+                              ? FacePhotoLayer(
+                                  photo: widget.facePhoto!,
+                                  size: kCharacterCanvas,
+                                )
+                              : Stack(
+                                  children: [
+                                    EyesLayer(
+                                      style: widget.eyes,
+                                      color: widget.eyeColor,
+                                      size: kCharacterCanvas,
+                                    ),
+                                    MouthLayer(
+                                      style: widget.mouth,
+                                      color:
+                                          widget.mouthColor ?? widget.skinTone,
+                                      size: kCharacterCanvas,
+                                    ),
+                                  ],
+                                ))
                         : null,
                   ),
                 for (final asset in widget.clothing) _layer(asset),
