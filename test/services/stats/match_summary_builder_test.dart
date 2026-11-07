@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/stats/match_summary_builder.dart';
 
 GameState game({
@@ -80,6 +81,35 @@ void main() {
     expect(summary.opponents, {'b': 'Beto', 'c': 'Caro'});
     expect(summary.playingTime, const Duration(minutes: 10));
     expect(summary.minigameTime, const Duration(minutes: 3));
+  });
+
+  test('lleva cómo le fue en cada minijuego', () {
+    final summary = builder.build(
+      matchId: 'sala-1',
+      game: game(
+        players: const [
+          PlayerState(
+            id: 'a',
+            username: 'Ana',
+            minigameTally: {
+              MinigameType.coinRain: MinigameTally(
+                played: 2,
+                won: 1,
+                bestScore: 21,
+              ),
+              MinigameType.wires: MinigameTally(played: 1),
+            },
+          ),
+          PlayerState(id: 'b', username: 'Beto'),
+        ],
+      ),
+      playerId: 'a',
+    )!;
+
+    expect(summary.minigamesByType.keys, ['coinRain', 'wires']);
+    final coins = summary.minigamesByType['coinRain']!;
+    expect((coins.played, coins.won, coins.bestScore), (2, 1, 21));
+    expect(summary.bestMinigameScore, 21);
   });
 
   test('el que no ganó: perdido, con su puesto y sus premios', () {

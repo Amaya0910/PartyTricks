@@ -138,6 +138,14 @@ class GameCodec {
     'diamonds': p.diamonds,
     'pendingEffect': p.pendingEffect?.name,
     'minigamesWon': p.minigamesWon,
+    'minigameTally': {
+      for (final MapEntry(key: type, value: tally) in p.minigameTally.entries)
+        type.name: {
+          'played': tally.played,
+          'won': tally.won,
+          'bestScore': tally.bestScore,
+        },
+    },
     'negativeTiles': p.negativeTiles,
     'purchases': p.purchases,
     'diceRolled': p.diceRolled,
@@ -170,6 +178,11 @@ class GameCodec {
           ? null
           : PendingEffect.values.byName(effect),
       minigamesWon: _int(data['minigamesWon']),
+      // Un minijuego que esta versión no conoce se ignora en vez de romper.
+      minigameTally: {
+        for (final entry in _map(data['minigameTally']).entries)
+          ?MinigameType.byId(entry.key): _decodeTally(_map(entry.value)),
+      },
       negativeTiles: _int(data['negativeTiles']),
       purchases: _int(data['purchases']),
       diceRolled: _int(data['diceRolled']),
@@ -193,6 +206,14 @@ class GameCodec {
       itemsUsed: _int(data['itemsUsed']),
       away: data['away'] as bool? ?? false,
       missedTurns: _int(data['missedTurns']),
+    );
+  }
+
+  MinigameTally _decodeTally(Map<Object?, Object?> data) {
+    return MinigameTally(
+      played: _int(data['played']),
+      won: _int(data['won']),
+      bestScore: _int(data['bestScore']),
     );
   }
 

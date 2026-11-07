@@ -1,12 +1,23 @@
+import 'dart:math';
+
 import 'package:party_tricks/models/stats/stats_map.dart';
 
-/// Resultados de un tipo de minijuego.
+/// Resultados de un minijuego, o de varios juntos.
 class MinigameTypeStats {
   const MinigameTypeStats({this.played = 0, this.won = 0, this.bestScore = 0});
 
   final int played;
   final int won;
   final int bestScore;
+
+  /// Estos resultados más los de [other].
+  MinigameTypeStats plus(MinigameTypeStats other) {
+    return MinigameTypeStats(
+      played: played + other.played,
+      won: won + other.won,
+      bestScore: max(bestScore, other.bestScore),
+    );
+  }
 
   factory MinigameTypeStats.fromMap(Map<String, dynamic> map) {
     return MinigameTypeStats(
@@ -23,10 +34,8 @@ class MinigameTypeStats {
   };
 }
 
-/// Minijuegos: totales y resultados por tipo.
-///
-/// Por tipo todavía queda vacío: la partida guarda solo el último minijuego
-/// (decisiones.md, D-26).
+/// Minijuegos: totales y resultados de cada uno. Se guardan por minijuego para
+/// no perder nada si después cambia el tipo de alguno; [groupedBy] los junta.
 class MinigameStats {
   const MinigameStats({
     this.won = 0,
@@ -53,14 +62,32 @@ class MinigameStats {
   /// Porcentaje de ganados, redondeado (0 si no ha jugado).
   int get winRate => played == 0 ? 0 : (won * 100 / played).round();
 
-  /// Id del minijuego más jugado, o null si no hay ninguno.
+  /// Id del más jugado, o null si no hay ninguno.
   String? get favoriteType => _topBy((stats) => stats.played);
 
-  /// Id del minijuego más ganado, o null si no ha ganado ninguno.
+  /// Id del más ganado, o null si no ha ganado ninguno.
   String? get mostWonType => _topBy((stats) => stats.won);
 
-  /// Cuántos minijuegos distintos ha jugado.
+  /// Cuántos distintos ha jugado.
   int get typesPlayed => byType.values.where((s) => s.played > 0).length;
+
+  /// Las mismas estadísticas con [byType] juntado según [groupOf], que dice a
+  /// qué grupo va cada id. Los que no tienen grupo no cuentan.
+  MinigameStats groupedBy(String? Function(String id) groupOf) {
+    final groups = <String, MinigameTypeStats>{};
+    byType.forEach((id, stats) {
+      final group = groupOf(id);
+      if (group == null) return;
+      groups[group] = (groups[group] ?? const MinigameTypeStats()).plus(stats);
+    });
+    return MinigameStats(
+      won: won,
+      lost: lost,
+      maxWonInMatch: maxWonInMatch,
+      bestScore: bestScore,
+      byType: groups,
+    );
+  }
 
   /// El de mayor valor; en un empate, el primero en orden alfabético para
   /// que el resultado no cambie de una vez a otra.

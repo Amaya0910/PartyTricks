@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:party_tricks/controllers/stats_presenter.dart';
+import 'package:party_tricks/models/player_stats.dart';
 import 'package:party_tricks/services/game/game_service.dart';
 import 'package:party_tricks/services/game/minigame_referee.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
@@ -10,6 +12,8 @@ import 'package:party_tricks/services/game_engine/game_engine.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/game_engine/random_source.dart';
+import 'package:party_tricks/services/stats/match_summary_builder.dart';
+import 'package:party_tricks/services/stats/stats_calculator.dart';
 
 import 'fake_random_source.dart';
 
@@ -860,6 +864,199 @@ void main() {
       }
       expect(MinigameCategory.byId('otro'), isNull);
       expect(MinigameCategory.byId(null), isNull);
+    });
+  });
+
+  group('lo que se anota de cada minijuego', () {
+    /// Beto, último del orden, sale de la tienda y empieza el minijuego.
+    const leave = LeaveShop('beto');
+
+    GameState lastTurn({int totalRounds = 3}) => GameState(
+      players: const {
+        'ana': PlayerState(id: 'ana', username: 'Ana'),
+        'beto': PlayerState(id: 'beto', username: 'Beto'),
+      },
+      turnOrder: const ['ana', 'beto'],
+      turnIndex: 1,
+      totalRounds: totalRounds,
+      diamondTileId: 3,
+      phase: GamePhase.shopping,
+    );
+
+    GameEngine engineFor(MinigameType type, List<int> random) => GameEngine(
+      board: buildDefaultBoard(),
+      random: FakeRandomSource(random),
+      minigames: [type],
+    );
+
+    test('quien gana y quien pierde, con los puntos que hizo', () {
+      final engine = engineFor(MinigameType.coinRain, [55]);
+      var state = engine.apply(lastTurn(), leave);
+      state = engine.apply(state, const MinigameMove('ana', 1, 21));
+      state = engine.apply(state, const MinigameMove('beto', 1, 8));
+
+      final ana = state.players['ana']!.minigameTally[MinigameType.coinRain]!;
+      expect((ana.played, ana.won, ana.bestScore), (1, 1, 21));
+      final beto = state.players['beto']!.minigameTally[MinigameType.coinRain]!;
+      expect((beto.played, beto.won, beto.bestScore), (1, 0, 8));
+    });
+
+    test('los que no dan puntos no cuentan para el mejor puntaje', () {
+      final engine = engineFor(MinigameType.reaction, [3000]);
+      var state = engine.apply(lastTurn(), leave);
+      state = engine.apply(state, const MinigameMove('ana', 1, 240));
+      state = engine.apply(state, const MinigameMove('beto', 1, 310));
+
+      final ana = state.players['ana']!.minigameTally[MinigameType.reaction]!;
+      expect((ana.played, ana.won, ana.bestScore), (1, 1, 0));
+    });
+
+    test('quien no jugó a tiempo también lo cuenta como jugado', () {
+      final engine = engineFor(MinigameType.quickMath, [55]);
+      var state = engine.apply(lastTurn(), leave);
+      state = engine.apply(state, const MinigameMove('ana', 1, 40));
+      state = engine.apply(state, MinigameTimeout(1, state.minigame!.step));
+
+      final beto =
+          state.players['beto']!.minigameTally[MinigameType.quickMath]!;
+      expect((beto.played, beto.won, beto.bestScore), (1, 0, 0));
+    });
+
+    test('los que terminan después de verse también se anotan', () {
+      final engine = engineFor(MinigameType.wires, [1]);
+      var state = engine.apply(lastTurn(), leave);
+      state = engine.apply(state, const MinigameMove('ana', 1, 0));
+      state = engine.apply(state, MinigameTimeout(1, state.minigame!.step));
+
+      final ana = state.players['ana']!.minigameTally[MinigameType.wires]!;
+      expect((ana.played, ana.won), (1, 0));
+      final beto = state.players['beto']!.minigameTally[MinigameType.wires]!;
+      expect((beto.played, beto.won), (1, 1));
+    });
+
+    test('quien gana sin rivales no lo cuenta como jugado', () {
+      final engine = engineFor(MinigameType.wires, []);
+      final game = lastTurn();
+      final state = engine.apply(
+        game.withPlayer(game.players['ana']!.copyWith(away: true)),
+        leave,
+      );
+
+      expect(state.lastMinigame!.winnerIds, ['beto']);
+      expect(state.players['ana']!.minigameTally, isEmpty);
+      expect(state.players['beto']!.minigameTally, isEmpty);
+    });
+
+    test('al repetirse, suma y guarda el mejor puntaje', () {
+      final engine = engineFor(MinigameType.safeLock, [55, 56]);
+      var state = engine.apply(lastTurn(), leave);
+      state = engine.apply(state, const MinigameMove('ana', 1, 200));
+      state = engine.apply(state, const MinigameMove('beto', 1, 90));
+      expect(state.round, 2);
+
+      state = engine.apply(
+        state.copyWith(turnIndex: 1, phase: GamePhase.shopping),
+        leave,
+      );
+      state = engine.apply(state, const MinigameMove('ana', 2, 120));
+      state = engine.apply(state, const MinigameMove('beto', 2, 300));
+
+      final ana = state.players['ana']!.minigameTally[MinigameType.safeLock]!;
+      expect((ana.played, ana.won, ana.bestScore), (2, 1, 200));
+    });
+
+    test('sobrevive a la base de datos', () {
+      const codec = GameCodec();
+      const game = GameState(
+        players: {
+          'ana': PlayerState(
+            id: 'ana',
+            username: 'Ana',
+            minigameTally: {
+              MinigameType.coinRain: MinigameTally(
+                played: 2,
+                won: 1,
+                bestScore: 21,
+              ),
+            },
+          ),
+        },
+        turnOrder: ['ana'],
+        totalRounds: 5,
+        diamondTileId: 1,
+      );
+      final read = codec.decodeState(codec.encodeState(game));
+      final tally = read.players['ana']!.minigameTally[MinigameType.coinRain]!;
+      expect((tally.played, tally.won, tally.bestScore), (2, 1, 21));
+    });
+
+    test('un minijuego de otra versión se ignora al leer', () {
+      const codec = GameCodec();
+      final read = codec.decodeState({
+        'players': {
+          'ana': {
+            'username': 'Ana',
+            'minigameTally': {
+              'futuro': {'played': 1},
+              'wires': {'played': 2, 'won': 1},
+            },
+          },
+        },
+        'turnOrder': ['ana'],
+        'phase': 'rolling',
+      });
+      expect(read.players['ana']!.minigameTally.keys, [MinigameType.wires]);
+    });
+
+    test('una partida completa llena "Minijuegos por tipo"', () {
+      const codec = GameCodec();
+      final engine = GameEngine(
+        board: buildDefaultBoard(),
+        random: DartRandomSource(Random(3)),
+        minigames: const [MinigameType.coinRain],
+      );
+      var stored = codec.encodeState(lastTurn(totalRounds: 2));
+      GameState read() => codec.decodeState(stored);
+      void send(GameAction action) {
+        final next = hostApply(engine, stored, codec.encodeAction(action));
+        expect(next, isNotNull, reason: '$action no valió');
+        stored = next!;
+      }
+
+      for (final round in const [1, 2]) {
+        send(leave);
+        send(MinigameMove('ana', round, 20 + round));
+        send(MinigameMove('beto', round, 5));
+        if (round == 1) {
+          stored = codec.encodeState(
+            read().copyWith(turnIndex: 1, phase: GamePhase.shopping),
+          );
+        }
+      }
+      expect(read().phase, GamePhase.finished);
+
+      final summary = const MatchSummaryBuilder().build(
+        matchId: 'sala',
+        game: read(),
+        playerId: 'ana',
+      )!;
+      final stats = const StatsCalculator().applyMatch(
+        PlayerStats.empty,
+        summary,
+      );
+      final saved = PlayerStats.fromMap(stats.toMap());
+      expect(saved.minigames.byType['coinRain']!.played, 2);
+      expect(saved.minigames.byType['coinRain']!.won, 2);
+      expect(saved.minigames.bestScore, 22);
+
+      final section = const StatsPresenter()
+          .sections(saved)
+          .firstWhere((section) => section.title == 'Minijuegos por tipo');
+      String value(String label) =>
+          section.rows.firstWhere((row) => row.label == label).value;
+      expect(value('Favorito:'), 'Reflejos');
+      expect(value('Más ganado:'), 'Reflejos');
+      expect(value('Tipos jugados:'), '1 de 5');
     });
   });
 

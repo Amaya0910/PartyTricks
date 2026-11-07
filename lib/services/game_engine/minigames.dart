@@ -93,6 +93,9 @@ enum MinigameType {
   /// Si gana el que menos saca (y no el que más).
   bool get lowerWins => this == reaction || this == rhythm;
 
+  /// Si su puntaje son puntos ganados (y no ms ni lo que eligió cada uno).
+  bool get givesPoints => usesSeed && !lowerWins;
+
   /// El tipo con ese id, o null si esta versión no lo conoce.
   static MinigameType? byId(Object? id) {
     for (final type in values) {
@@ -550,6 +553,31 @@ class MinigameResult {
 
   /// En qué orden fueron quedando fuera.
   final List<String> out;
+
+  /// Los puntos de [playerId], si este minijuego los da.
+  int pointsOf(String playerId) {
+    final score = scores[playerId] ?? 0;
+    return type.givesPoints && score > 0 ? score : 0;
+  }
+}
+
+/// Cómo le ha ido a un jugador en un minijuego durante la partida. Al terminar
+/// se suma a sus estadísticas.
+class MinigameTally {
+  const MinigameTally({this.played = 0, this.won = 0, this.bestScore = 0});
+
+  final int played;
+  final int won;
+  final int bestScore;
+
+  /// Agrega un minijuego más.
+  MinigameTally add({required bool won, required int score}) {
+    return MinigameTally(
+      played: played + 1,
+      won: this.won + (won ? 1 : 0),
+      bestScore: score > bestScore ? score : bestScore,
+    );
+  }
 }
 
 /// Lo que devuelve [MinigameJudge]: el minijuego sigue ([state]) o terminó

@@ -97,6 +97,42 @@ void main() {
       expect(const MinigameStats().favoriteType, isNull);
       expect(const MinigameStats().mostWonType, isNull);
     });
+
+    test('dos resultados se suman y queda el mejor puntaje', () {
+      final total = const MinigameTypeStats(
+        played: 2,
+        won: 1,
+        bestScore: 9,
+      ).plus(const MinigameTypeStats(played: 3, won: 2, bestScore: 4));
+      expect((total.played, total.won, total.bestScore), (5, 3, 9));
+    });
+
+    test('se pueden juntar por grupos; lo que no tiene grupo no cuenta', () {
+      const stats = MinigameStats(
+        won: 3,
+        byType: {
+          'carrera': MinigameTypeStats(played: 4, won: 1, bestScore: 2),
+          'saltos': MinigameTypeStats(played: 4, bestScore: 7),
+          'memoria': MinigameTypeStats(played: 2, won: 2),
+          'viejo': MinigameTypeStats(played: 50, won: 50),
+        },
+      );
+      final groups = stats.groupedBy(
+        (id) => switch (id) {
+          'carrera' || 'saltos' => 'cuerpo',
+          'memoria' => 'mente',
+          _ => null,
+        },
+      );
+
+      expect(groups.byType.keys, unorderedEquals(['cuerpo', 'mente']));
+      expect(groups.byType['cuerpo']!.played, 8);
+      expect(groups.byType['cuerpo']!.bestScore, 7);
+      expect(groups.favoriteType, 'cuerpo');
+      expect(groups.mostWonType, 'mente');
+      expect(groups.typesPlayed, 2);
+      expect(groups.won, 3, reason: 'los totales no cambian');
+    });
   });
 
   test('promedio del dado', () {

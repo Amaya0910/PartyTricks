@@ -3,6 +3,7 @@ import 'package:party_tricks/controllers/stats_presenter.dart';
 import 'package:party_tricks/models/player_stats.dart';
 import 'package:party_tricks/models/stats/board_stats.dart';
 import 'package:party_tricks/models/stats/match_stats.dart';
+import 'package:party_tricks/models/stats/minigame_stats.dart';
 import 'package:party_tricks/models/stats/shop_stats.dart';
 import 'package:party_tricks/models/stats/social_stats.dart';
 import 'package:party_tricks/models/stats/stats_section.dart';
@@ -70,6 +71,48 @@ void main() {
     expect(valueOf(sections, 'Tablero', 'Promedio del dado:'), '3,5');
     expect(valueOf(sections, 'Tienda', 'Cofre Básico:'), '2');
     expect(valueOf(sections, 'Social', 'Compañero más frecuente:'), 'Beto');
+  });
+
+  test('los minijuegos se cuentan por su tipo', () {
+    final sections = presenter.sections(
+      const PlayerStats(
+        minigames: MinigameStats(
+          byType: {
+            // Reflejos: 5 jugados, 1 ganado. Suerte: 4 jugados, 3 ganados.
+            'reaction': MinigameTypeStats(played: 3, won: 1),
+            'coinRain': MinigameTypeStats(played: 2),
+            'wires': MinigameTypeStats(played: 2, won: 2),
+            'highLow': MinigameTypeStats(played: 2, won: 1),
+          },
+        ),
+      ),
+    );
+
+    expect(valueOf(sections, 'Minijuegos por tipo', 'Favorito:'), 'Reflejos');
+    expect(valueOf(sections, 'Minijuegos por tipo', 'Más ganado:'), 'Suerte');
+    expect(
+      valueOf(sections, 'Minijuegos por tipo', 'Tipos jugados:'),
+      '2 de 5',
+    );
+  });
+
+  test('un minijuego que esta versión no conoce no cuenta', () {
+    final sections = presenter.sections(
+      const PlayerStats(
+        minigames: MinigameStats(
+          byType: {'quitado': MinigameTypeStats(played: 9, won: 9)},
+        ),
+      ),
+    );
+
+    expect(
+      valueOf(sections, 'Minijuegos por tipo', 'Favorito:'),
+      StatsFormat.none,
+    );
+    expect(
+      valueOf(sections, 'Minijuegos por tipo', 'Tipos jugados:'),
+      '0 de 5',
+    );
   });
 
   test('sin datos, los textos muestran una raya', () {

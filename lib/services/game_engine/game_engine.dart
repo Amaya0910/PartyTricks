@@ -420,10 +420,40 @@ class GameEngine {
             .copyWith(minigamesWon: winner.minigamesWon + 1),
       );
     }
+    if (result != null) {
+      current = _tally(current, result, state.minigame?.players ?? const []);
+    }
     if (state.round >= state.totalRounds) {
       return current.copyWith(phase: GamePhase.finished);
     }
     return current.copyWith(round: state.round + 1, phase: GamePhase.rolling);
+  }
+
+  /// Anota a cada uno de los que jugaron cómo le fue. De aquí salen sus
+  /// estadísticas de "Minijuegos por tipo".
+  GameState _tally(
+    GameState state,
+    MinigameResult result,
+    List<String> playerIds,
+  ) {
+    var current = state;
+    for (final id in playerIds) {
+      final player = current.players[id];
+      if (player == null) continue;
+      final tally = player.minigameTally[result.type] ?? const MinigameTally();
+      current = current.withPlayer(
+        player.copyWith(
+          minigameTally: {
+            ...player.minigameTally,
+            result.type: tally.add(
+              won: result.winnerIds.contains(id),
+              score: result.pointsOf(id),
+            ),
+          },
+        ),
+      );
+    }
+    return current;
   }
 
   void _checkTurn(GameState state, String playerId, GamePhase phase) {
