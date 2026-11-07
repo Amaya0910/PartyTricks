@@ -1,7 +1,7 @@
 # Arte de Party Tricks: lista de imágenes
 
 > Responsable del arte: **Isabella Amaya**. Programa de dibujo: Krita.
-> Última actualización: 28 de octubre de 2026.
+> Última actualización: 6 de noviembre de 2026.
 > Marca cada imagen con [x] cuando esté exportada y copiada en su carpeta.
 
 ## 1. Reglas para todas las imágenes
@@ -33,10 +33,10 @@ assets/
 │   ├── mapa/
 │   │   ├── piezas/                plataformas, marcas, tienda, flecha, puentes y textura del camino
 │   │   └── decoraciones/          flores, rocas, arbustos y árboles
-│   ├── personaje/                 hojas de animación del personaje
-│   ├── cosmeticos/
-│   │   ├── camisa/  pantalon/  zapatos/  cabello/  ojos/  nariz/  boca/
-│   │   └── miniaturas/
+│   ├── personaje/                 capas del cuerpo: linea_<parte> y relleno_<parte> (sección 7)
+│   │   ├── ojos/                  11 ojos (sección 8)
+│   │   └── bocas/                 10 bocas (sección 8)
+│   ├── cosmeticos/                (pendiente) camisa/  pantalon/  zapatos/  cabello/  nariz/
 │   └── iconos/                    barra de navegación y marcador del jugador
 ├── maps/
 │   └── mapa_01/                   mapa.json, fondo.png y minimapa.png (una carpeta por mapa)
@@ -167,34 +167,52 @@ Los caminos alternos miden lo mismo que el principal: dibújalos como ruta paral
 
 Carpeta: `assets/images/personaje/`
 
-- **Tamaño:** cada frame se **dibuja a 512 × 768** y se **exporta a 256 × 384**. Así los bordes salen limpios y queda espacio arriba para los brazos levantados.
-- **Hojas:** una sola fila por hoja, frames del mismo tamaño, sin espacio entre ellos y mirando a la **derecha** (la izquierda se logra volteando).
-- **Proporción:** la de tu `Bodysheet.kra`: cabeza enorme (casi la mitad de la altura), ojos de óvalo negro, nariz y boca mínimas.
-- **En el mapa:** el código lo dibuja al 70 % (unos 180 × 270 px); no hace falta otro tamaño.
+- **Lienzo:** todas las capas se dibujan y se exportan a **512 × 768**, el mismo lienzo para el cuerpo, los ojos y las bocas. Así cada capa queda en su lugar sin ajustes; el código la reduce al tamaño que necesite.
+- **Capas:** el cuerpo tiene 8 partes (cuerpo, pierna izquierda y derecha, brazo izquierdo y derecho, mano izquierda y derecha, cabeza). Cada parte tiene dos PNG: `relleno_<parte>.png` y `linea_<parte>.png`.
+  - **Relleno:** va en **blanco**. El código lo tiñe con el tono de piel elegido (el negro del dibujo no se ve afectado).
+  - **Línea:** el contorno negro, que no se tiñe. Va encima del relleno.
+- **Animación:** la hace el código, no hay hojas de frames. Cada parte gira o se mueve alrededor de su punto de giro (en reposo: respiración, y la cabeza y los brazos suben y se balancean un poco). Por eso ya no se dibujan `personaje_caminar`, `personaje_reposo`, `personaje_celebrar` ni `personaje_negativa`; si hacen falta otras animaciones, se programan como nuevos movimientos de las mismas capas.
+- **Proporción:** la de tu `Bodysheet.kra`: cabeza enorme (casi la mitad de la altura), nariz mínima.
+- **Tonos de piel:** 40 en `AppColors.skinTones`: 20 realistas, de claro a oscuro, y 20 fantasiosos (negro, blanco, azul, etc.). No hay que dibujar nada para ellos.
+- **Foto de perfil:** no es una imagen aparte. El código recorta la cabeza (relleno, línea, ojos y boca) en un cuadrado y la pone sobre un color de fondo que elige el jugador.
+- **Foto de la cara:** tampoco es arte. Cubre toda la cabeza y se recorta con su contorno, que está escrito en `head_shape.dart`. **Si cambias la forma de `relleno_cabeza.png`, hay que trazar otra vez ese contorno** o la foto no calzará.
 
-| Hecho | Archivo | Frames | Tamaño de la hoja (px) |
-|---|---|---|---|
-| [ ] | `personaje_caminar.png` | 6 | 1536 × 384 |
-| [ ] | `personaje_reposo.png` | 4 | 1024 × 384 |
-| [ ] | `personaje_celebrar.png` | 6 | 1536 × 384 |
-| [ ] | `personaje_negativa.png` | 4 | 1024 × 384 |
-
-> Para la animación usa la línea de tiempo de Krita y **Animación → Renderizar como secuencia de imágenes**. Luego los frames se unen en una hoja.
+| Hecho | Archivos | Cantidad |
+|---|---|---|
+| [x] | `relleno_<parte>.png` y `linea_<parte>.png` | 16 (8 partes × 2) |
 
 ## 8. Cosméticos
 
+### 8.1 Ojos y bocas (hechos)
+
+Carpetas: `assets/images/personaje/ojos/` y `assets/images/personaje/bocas/`. Son capas del mismo lienzo de 512 × 768 y se dibujan encima de la cabeza (se mueven con ella).
+
+| Hecho | Cosmético | Archivos |
+|---|---|---|
+| [x] | 11 ojos | `ojo_<n>.png` (1, 3, 6, 7, 8, 9 y 10) o dos capas `ojo_<n>_linea.png` y `ojo_<n>_relleno.png` (2, 4, 5 y 11) |
+| [x] | 10 bocas | `boca_<n>.png` (2 a 7, 9 y 10) o dos capas `boca_<n>_linea.png` y `boca_<n>_relleno.png` (1 y 8) |
+
+**Cómo se tiñen.** El color se aplica por código sobre lo que está en **blanco puro**; el negro y los demás colores del dibujo no cambian. Por eso, para que una parte pueda cambiar de color, se dibuja en blanco.
+
+- **Ojos:** se tiñe la capa `_linea` (o el PNG único); el `_relleno` no se tiñe. Hay 20 colores y el primero deja el ojo como está dibujado.
+- **Bocas:** se tiñe solo la capa que tiene el blanco (en la boca 8, la `_linea`; en las de un solo PNG, el PNG entero; en la 2 el blanco es el labial). Las bocas **1, 9 y 10 no se tiñen**: se ven siempre igual. Hay los mismos 20 colores, pero el primero es "sin color": lo blanco toma el **tono de piel** del personaje.
+- **Capa de relleno:** va **debajo** de la línea. Si se dibuja con colores propios (rojo oscuro, lengua), esos colores no se tiñen.
+
+La **rareza** de cada ojo y boca (que decide qué tan seguido salen en los cofres) y su precio no son arte: están en `eye_style.dart` y `mouth_style.dart` (ver D-29 a D-31 en `decisiones.md`).
+
+### 8.2 Ropa, cabello y nariz (pendientes)
+
 | Hecho | Archivo | Carpeta | Tamaño (px) |
 |---|---|---|---|
-| [ ] | `camisa_01`, `camisa_02` | `assets/images/cosmeticos/camisa/` | Frames de 256 × 384, mismo lienzo del personaje |
+| [ ] | `camisa_01`, `camisa_02` | `assets/images/cosmeticos/camisa/` | Lienzo de 512 × 768, igual que el personaje |
 | [ ] | `pantalon_01`, `pantalon_02` | `assets/images/cosmeticos/pantalon/` | Igual |
 | [ ] | `zapatos_01`, `zapatos_02` | `assets/images/cosmeticos/zapatos/` | Igual |
 | [ ] | `cabello_01`, `cabello_02` | `assets/images/cosmeticos/cabello/` | Igual |
-| [ ] | `ojos_01`, `ojos_02` | `assets/images/cosmeticos/ojos/` | Igual |
 | [ ] | `nariz_01`, `nariz_02` | `assets/images/cosmeticos/nariz/` | Igual |
-| [ ] | `boca_01`, `boca_02` | `assets/images/cosmeticos/boca/` | Igual |
-| [ ] | Una miniatura por cosmético (14), con el mismo nombre | `assets/images/cosmeticos/miniaturas/` | 128 × 128 |
 
-> **Pendiente antes de dibujar los cosméticos:** la ropa necesitaría un frame por cada frame de caminata, y eso es mucho trabajo. Hay que decidir cómo hacerlo (ropa por frames o piezas que siguen al cuerpo) cuando se trabaje la personalización.
+Las miniaturas ya no se dibujan: el Vestuario y la Tienda las sacan recortando el lienzo del personaje.
+
+> **Pendiente antes de dibujar la ropa:** como el cuerpo se anima por partes, lo natural es dibujar la ropa **por partes del cuerpo** (por ejemplo, una capa de camisa para el cuerpo y otra para cada brazo), para que siga el movimiento. Hay que confirmarlo cuando se trabaje esa categoría.
 
 ## 9. Interfaz e ícono de la app
 
@@ -231,8 +249,9 @@ Los botones y los marcos se siguen haciendo con Flutter, porque ya respetan `App
 | Decoraciones | 11 | 0 |
 | Minimapa y marcador | 2 | 0 |
 | Cofres, moneda, diamante y dados | 11 (5 son solo reexportar) | 0 |
-| Personaje | 4 hojas | 0 |
-| Cosméticos y miniaturas | 14 + 14 | 0 |
+| Personaje (8 partes × línea y relleno) | 16 | 16 |
+| Ojos y bocas | 11 + 10 | 21 |
+| Ropa, cabello y nariz | 10 | 0 |
 | Barra de navegación | 5 | 0 |
 | Ícono y logo de arranque | 4 | 0 |
 
@@ -242,9 +261,9 @@ Los botones y los marcos se siguen haciendo con Flutter, porque ya respetan `App
 2. Puentes, flecha y decoraciones.
 3. Armar el mapa en Tiled y luego pintar su fondo y sacar el minimapa.
 4. Reexportar cofres, moneda y diamante. Dibujar los dados.
-5. Hojas del personaje.
+5. Capas del personaje, ojos y bocas (hecho).
 6. Fondos de la app (`Fondo_Principal` y `Fondo_Carga`).
-7. Cosméticos y miniaturas, después de decidir cómo se anima la ropa.
+7. Ropa, cabello y nariz, después de decidir cómo se dibuja la ropa por partes del cuerpo.
 8. Barra de navegación, ícono de la app y logo de arranque.
 
 ## 13. Decisiones tomadas
@@ -256,13 +275,14 @@ Los botones y los marcos se siguen haciendo con Flutter, porque ya respetan `App
 - La luz viene de arriba a la izquierda. Las plataformas y la tienda **no se voltean**.
 - Las marcas de casilla van **planas sobre el pasto**; la **tienda** es un edificio **detrás** de su casilla.
 - El mundo mide 2880 × 4320. Cada jugador ve solo su propio personaje; los demás aparecen en el minimapa.
+- El personaje se arma con capas PNG por parte del cuerpo (línea y relleno) en un lienzo de 512 × 768 y se anima por código; no hay hojas de animación.
+- Los ojos y las bocas son capas del mismo lienzo. Su color se aplica por código sobre lo que está en blanco puro; el tono de piel y los colores fantasiosos también son solo código.
+- La foto de perfil es la cabeza del personaje sobre un color de fondo elegido en Ajustes (D-31). Si el jugador pone la foto de su cara, cubre toda la cabeza (D-32).
 - El fondo del mapa se pinta **después** de armar el mapa en Tiled, usando la imagen exportada como guía.
 - **Para Brayan:** el código del mapa toca `board_layout.dart` (que pasa a leer el JSON) y `board_screen.dart`, que son de su rama. Hay que avisarle antes de empezar, en la rama `feature/mapa-dibujado`.
 
 ## 14. Preguntas abiertas
 
 - [ ] ¿Qué es `AS.kra` (3072 × 3072, 79 capas)?
-- [ ] Con la **foto** del jugador, ¿se ocultan cabello, ojos, nariz y boca, o el cabello queda encima de la foto?
 - [ ] ¿El **contorno blanco tipo sticker** va solo en portadas o también sobre el personaje en el mapa?
-- [ ] ¿Cómo se anima la ropa: un frame por cada frame del cuerpo, o piezas que siguen al cuerpo?
-- [ ] ¿Firebase Storage está disponible en el plan Spark? Si no, la foto de la cara se guarda reducida a 128 × 128 dentro de `users/{uid}` en Firestore.
+- [ ] ¿La ropa se dibuja por partes del cuerpo (como las capas del personaje) o en una sola capa?

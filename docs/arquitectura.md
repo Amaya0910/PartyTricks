@@ -45,7 +45,7 @@ Los principios SOLID se aplican separando responsabilidades: las pantallas no ha
 | Authentication | Registro e inicio de sesión con correo y contraseña (Firebase guarda la contraseña, no la base de datos del juego) |
 | Cloud Firestore | Datos permanentes: perfiles, amigos, chat, catálogo de la tienda |
 | Realtime Database | Datos de la partida en vivo: salas, turnos, posiciones y detección de desconexiones |
-| Storage | Foto del rostro del personaje |
+| Storage | _(sin uso por ahora)_ La foto de la cara va en Firestore, reducida (D-32) |
 
 ---
 
@@ -55,7 +55,7 @@ Los principios SOLID se aplican separando responsabilidades: las pantallas no ha
 - Código de amistad (único).
 - Experiencia acumulada; el nivel se calcula a partir de ella.
 - Monedas y diamantes de la cuenta.
-- Cosméticos desbloqueados y equipados (el rostro del personaje es la foto de perfil).
+- Cómo se ve su personaje: tono de piel, ojos y boca con sus colores, los ojos y bocas comprados, el color de fondo de la foto de perfil y, si quiere, la foto de su cara. La **foto de perfil es la cabeza del personaje**; los demás la ven gracias a `publicProfiles`.
 - Lista de amigos y chats.
 
 ---
@@ -99,7 +99,7 @@ Toda la partida se guarda en Firebase y no solo en el celular del creador. Así,
 ## 9. Limitaciones conocidas
 
 - Con el celular del creador como "servidor", un jugador con la app modificada podría hacer trampa. Para un proyecto de aula es aceptable; si el juego se publicara, el cálculo se movería a Cloud Functions de Firebase.
-- Los jugadores pueden ser menores y se guardan fotos de rostros: la foto debe ser opcional y el chat debe permitir reportar y bloquear.
+- Los jugadores pueden ser menores y la foto de la cara la ven todos: es opcional y se puede quitar, pero todavía no hay moderación de imágenes (D-32). El chat debe permitir reportar y bloquear.
 
 ---
 
