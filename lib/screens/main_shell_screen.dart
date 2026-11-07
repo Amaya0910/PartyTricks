@@ -7,6 +7,7 @@ import 'package:party_tricks/screens/home_screen.dart';
 import 'package:party_tricks/screens/shop_screen.dart';
 import 'package:party_tricks/screens/stats_screen.dart';
 import 'package:party_tricks/screens/wardrobe_screen.dart';
+import 'package:party_tricks/widgets/app_background.dart';
 import 'package:party_tricks/widgets/app_navigation_bar.dart';
 import 'package:party_tricks/widgets/app_usage_tracker.dart';
 import 'package:party_tricks/widgets/invite_listener.dart';
@@ -42,16 +43,19 @@ class MainShellScreen extends ConsumerWidget {
         children: [
           // Fondo común a todas las secciones; las colinas quedan ancladas
           // abajo.
-          Image.asset(
-            'assets/images/Fondo_Principal.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.bottomCenter,
-          ),
+          const AppBackground(),
           // IndexedStack conserva el estado de cada sección al cambiar de
-          // pestaña.
+          // pestaña, pero deja sus animaciones corriendo aunque no se vean:
+          // TickerMode las detiene en las secciones ocultas.
           IndexedStack(
             index: selected.index,
-            children: AppSection.values.map(_screenFor).toList(),
+            children: [
+              for (final section in AppSection.values)
+                TickerMode(
+                  enabled: section == selected,
+                  child: _screenFor(section),
+                ),
+            ],
           ),
         ],
       ),

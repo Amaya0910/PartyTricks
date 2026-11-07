@@ -12,6 +12,7 @@ import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/app_background.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/face_camera_view.dart';
 import 'package:party_tricks/widgets/face_photo_editor.dart';
@@ -113,12 +114,7 @@ class _FacePhotoScreenState extends ConsumerState<FacePhotoScreen> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              'assets/images/Fondo_Principal.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.bottomCenter,
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
-            ),
+            const AppBackground(),
             switch (_stage) {
               _Stage.camera => FaceCameraView(
                 onCaptured: _captured,
@@ -181,12 +177,7 @@ class _Overview extends ConsumerWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.asset(
-                'assets/images/Fondo_Principal.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.bottomCenter,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-              ),
+              const AppBackground(),
               const _CharacterScene(),
               SafeArea(
                 child: Align(

@@ -5,6 +5,7 @@ import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/auth/auth_service.dart';
 import 'package:party_tricks/services/auth/auth_validators.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/app_background.dart';
 import 'package:party_tricks/widgets/auth_text_field.dart';
 import 'package:party_tricks/widgets/profile_avatar.dart';
 
@@ -71,11 +72,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/images/Fondo_Principal.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.bottomCenter,
-          ),
+          const AppBackground(),
           SafeArea(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
