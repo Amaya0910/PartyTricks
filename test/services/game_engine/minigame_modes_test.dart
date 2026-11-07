@@ -806,6 +806,63 @@ void main() {
     });
   });
 
+  group('los tipos de minijuego', () {
+    test('cada tipo tiene al menos dos minijuegos', () {
+      for (final category in MinigameCategory.values) {
+        final minigames = MinigameType.values.where(
+          (type) => type.category == category,
+        );
+        expect(minigames.length, greaterThan(1), reason: category.title);
+      }
+    });
+
+    test('cada minijuego está donde corresponde', () {
+      const expected = {
+        MinigameCategory.reflexes: [
+          MinigameType.reaction,
+          MinigameType.coinRain,
+        ],
+        MinigameCategory.precision: [
+          MinigameType.stopwatch,
+          MinigameType.rhythm,
+          MinigameType.safeLock,
+        ],
+        MinigameCategory.wits: [
+          MinigameType.diceMemory,
+          MinigameType.colorTrap,
+          MinigameType.quickMath,
+        ],
+        MinigameCategory.luck: [
+          MinigameType.wires,
+          MinigameType.highLow,
+          MinigameType.ghostChair,
+        ],
+        MinigameCategory.strategy: [
+          MinigameType.balloon,
+          MinigameType.secretBid,
+        ],
+      };
+      expected.forEach((category, minigames) {
+        for (final minigame in minigames) {
+          expect(minigame.category, category, reason: minigame.title);
+        }
+      });
+      expect(
+        expected.values.expand((list) => list),
+        unorderedEquals(MinigameType.values),
+        reason: 'no puede quedar ninguno sin tipo',
+      );
+    });
+
+    test('el id se lee de vuelta; uno desconocido no', () {
+      for (final category in MinigameCategory.values) {
+        expect(MinigameCategory.byId(category.name), category);
+      }
+      expect(MinigameCategory.byId('otro'), isNull);
+      expect(MinigameCategory.byId(null), isNull);
+    });
+  });
+
   test('una jugada guarda la vuelta y lo elegido', () {
     final score = MinigamePick.encode(3, 7);
     expect(MinigamePick.stageOf(score), 3);

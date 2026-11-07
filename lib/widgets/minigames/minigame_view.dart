@@ -432,7 +432,7 @@ class _CardHeader extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'MINIJUEGO',
+            'MINIJUEGO DE ${type.category.title.toUpperCase()}',
             textAlign: TextAlign.center,
             style: minigameTextStyle.copyWith(
               fontSize: 11,

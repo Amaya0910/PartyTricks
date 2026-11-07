@@ -1,51 +1,74 @@
 import 'package:party_tricks/services/game_engine/minigame_content.dart';
 import 'package:party_tricks/services/game_engine/random_source.dart';
 
+/// El tipo de un minijuego: qué hace falta para ganarlo. Es lo que cuentan las
+/// estadísticas de "Minijuegos por tipo". El nombre del valor es su id.
+enum MinigameCategory {
+  reflexes('Reflejos'),
+  precision('Precisión'),
+  wits('Ingenio'),
+  luck('Suerte'),
+  strategy('Estrategia');
+
+  const MinigameCategory(this.title);
+
+  final String title;
+
+  /// El tipo con ese id, o null si esta versión no lo conoce.
+  static MinigameCategory? byId(Object? id) {
+    for (final category in values) {
+      if (category.name == id) return category;
+    }
+    return null;
+  }
+}
+
 /// Los minijuegos (diseno_juego.md, sección 9). El nombre del valor es el id
 /// que se guarda en la partida y en las estadísticas.
 enum MinigameType {
   /// Para el Tiempo: parar el reloj lo más cerca posible del objetivo.
-  stopwatch('Para el Tiempo'),
+  stopwatch('Para el Tiempo', MinigameCategory.precision),
 
   /// Reacción: tocar apenas sale "¡YA!", sin adelantarse.
-  reaction('Reacción'),
+  reaction('Reacción', MinigameCategory.reflexes),
 
   /// Globo Bomba: por turnos se infla el globo; al que se le revienta, sale.
-  balloon('Globo Bomba'),
+  balloon('Globo Bomba', MinigameCategory.strategy),
 
   /// Pulso Perfecto: seguir un ritmo que se apaga sin desviarse.
-  rhythm('Pulso Perfecto'),
+  rhythm('Pulso Perfecto', MinigameCategory.precision),
 
   /// Memoria de Dados: repetir una fila de dados que cada vez es más larga.
-  diceMemory('Memoria de Dados'),
+  diceMemory('Memoria de Dados', MinigameCategory.wits),
 
   /// Cazamonedas: tocar lo que cae, menos las bombas.
-  coinRain('Cazamonedas'),
+  coinRain('Cazamonedas', MinigameCategory.reflexes),
 
   /// Color Tramposo: tocar el color de la tinta, no el que dice la palabra.
-  colorTrap('Color Tramposo'),
+  colorTrap('Color Tramposo', MinigameCategory.wits),
 
   /// Cuenta Rápida: resolver todas las cuentas que se pueda.
-  quickMath('Cuenta Rápida'),
+  quickMath('Cuenta Rápida', MinigameCategory.wits),
 
   /// Cofre Fuerte: detener la aguja en la marca de cada cerrojo.
-  safeLock('Cofre Fuerte'),
+  safeLock('Cofre Fuerte', MinigameCategory.precision),
 
   /// Cables Rojos: por turnos se corta un cable; uno hace explotar la bomba.
-  wires('Cables Rojos'),
+  wires('Cables Rojos', MinigameCategory.luck),
 
   /// Puja Secreta: pujar fichas en secreto; gana la más alta que no se repita.
-  secretBid('Puja Secreta'),
+  secretBid('Puja Secreta', MinigameCategory.strategy),
 
   /// Mayor o Menor: adivinar la siguiente carta o quedar fuera.
-  highLow('Mayor o Menor'),
+  highLow('Mayor o Menor', MinigameCategory.luck),
 
   /// La Silla Fantasma: elegir silla y rogar que el fantasma no llegue.
-  ghostChair('La Silla Fantasma');
+  ghostChair('La Silla Fantasma', MinigameCategory.luck);
 
-  const MinigameType(this.title);
+  const MinigameType(this.title, this.category);
 
   final String title;
+  final MinigameCategory category;
 
   /// Si su contenido sale de una semilla igual para todos.
   bool get usesSeed => switch (this) {

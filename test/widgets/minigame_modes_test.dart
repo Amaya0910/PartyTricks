@@ -80,6 +80,16 @@ void main() {
     }
   });
 
+  testWidgets('la tarjeta dice de qué tipo es el minijuego', (tester) async {
+    await show(tester, solo(MinigameType.coinRain));
+    expect(find.text('MINIJUEGO DE REFLEJOS'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+
+    await show(tester, solo(MinigameType.safeLock));
+    expect(find.text('MINIJUEGO DE PRECISIÓN'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('si ya jugó y vuelve a la partida, solo espera', (tester) async {
     await show(
       tester,
