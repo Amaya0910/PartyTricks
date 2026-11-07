@@ -50,14 +50,9 @@ class StatsCalculator {
 
   MinigameStats _minigames(MinigameStats s, MatchSummary m) {
     final byType = Map.of(s.byType);
-    for (final play in m.minigamePlays) {
-      final current = byType[play.type] ?? const MinigameTypeStats();
-      byType[play.type] = MinigameTypeStats(
-        played: current.played + 1,
-        won: current.won + (play.won ? 1 : 0),
-        bestScore: max(current.bestScore, play.score),
-      );
-    }
+    m.minigamesByType.forEach((id, match) {
+      byType[id] = (byType[id] ?? const MinigameTypeStats()).plus(match);
+    });
     return MinigameStats(
       won: s.won + m.minigamesWon,
       lost: s.lost + m.minigamesLost,

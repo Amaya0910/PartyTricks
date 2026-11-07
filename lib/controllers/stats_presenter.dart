@@ -1,6 +1,7 @@
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/player_stats.dart';
 import 'package:party_tricks/models/stats/stats_section.dart';
+import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/stats/stats_format.dart';
 
 /// Convierte las estadísticas en las tarjetas de la pantalla Stats, en orden.
@@ -147,17 +148,25 @@ class StatsPresenter {
   }
 
   StatsSection _minigameTypes(PlayerStats stats) {
-    final m = stats.minigames;
+    final types = stats.minigames.groupedBy(
+      (id) => MinigameType.byId(id)?.category.name,
+    );
+    final total = MinigameCategory.values.length;
     return StatsSection(
       title: 'Minijuegos por tipo',
       tone: StatsTone.darkBlue,
       rows: [
-        StatsRow('Favorito:', StatsFormat.text(m.favoriteType)),
-        StatsRow('Más ganado:', StatsFormat.text(m.mostWonType)),
-        StatsRow('Tipos jugados:', '${m.typesPlayed}'),
+        StatsRow('Favorito:', StatsFormat.text(_typeTitle(types.favoriteType))),
+        StatsRow(
+          'Más ganado:',
+          StatsFormat.text(_typeTitle(types.mostWonType)),
+        ),
+        StatsRow('Tipos jugados:', '${types.typesPlayed} de $total'),
       ],
     );
   }
+
+  String? _typeTitle(String? id) => MinigameCategory.byId(id)?.title;
 
   StatsSection _shop(PlayerStats stats) {
     final s = stats.shop;

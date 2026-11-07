@@ -1,15 +1,6 @@
 import 'package:party_tricks/models/stats/award_stats.dart';
 import 'package:party_tricks/models/stats/board_stats.dart';
-
-/// Un minijuego jugado dentro de una partida.
-class MinigamePlay {
-  const MinigamePlay({required this.type, required this.won, this.score = 0});
-
-  /// Id del minijuego.
-  final String type;
-  final bool won;
-  final int score;
-}
+import 'package:party_tricks/models/stats/minigame_stats.dart';
 
 /// Lo que un jugador se lleva de una partida terminada, para sus estadísticas.
 class MatchSummary {
@@ -29,7 +20,7 @@ class MatchSummary {
     this.isPublic = false,
     this.awards = const AwardStats(),
     this.board = const BoardStats(),
-    this.minigamePlays = const [],
+    this.minigamesByType = const {},
     this.opponents = const {},
     this.playedWithFriend = false,
     this.playingTime = Duration.zero,
@@ -75,9 +66,8 @@ class MatchSummary {
   final int minigamesWon;
   final int minigamesPlayed;
 
-  /// Minijuegos con su tipo y puntaje. Vacío hasta que existan minijuegos
-  /// de verdad (hoy se simula al ganador).
-  final List<MinigamePlay> minigamePlays;
+  /// Cómo le fue en cada minijuego de la partida, por id del minijuego.
+  final Map<String, MinigameTypeStats> minigamesByType;
 
   /// Los demás jugadores de la partida: uid → nombre.
   final Map<String, String> opponents;
@@ -99,8 +89,8 @@ class MatchSummary {
   /// Mejor puntaje en un minijuego de esta partida (0 si no hay puntajes).
   int get bestMinigameScore {
     var best = 0;
-    for (final play in minigamePlays) {
-      if (play.score > best) best = play.score;
+    for (final minigame in minigamesByType.values) {
+      if (minigame.bestScore > best) best = minigame.bestScore;
     }
     return best;
   }

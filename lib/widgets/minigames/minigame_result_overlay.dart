@@ -202,11 +202,15 @@ class MinigameResultCard extends StatelessWidget {
 
   /// Lo que hizo cada uno, según el minijuego.
   List<({String id, String text, bool out})> _lines() {
-    if (result.type == MinigameType.balloon) {
-      return [
-        for (final id in result.out)
-          (id: id, text: 'reventó el globo', out: true),
-      ];
+    final fate = switch (result.type) {
+      MinigameType.balloon => 'reventó el globo',
+      MinigameType.wires => 'hizo explotar la bomba',
+      MinigameType.highLow => 'falló la carta',
+      MinigameType.ghostChair => 'se quedó sin vidas',
+      _ => null,
+    };
+    if (fate != null) {
+      return [for (final id in result.out) (id: id, text: fate, out: true)];
     }
     return [
       for (final MapEntry(key: id, value: score) in result.scores.entries)
@@ -216,9 +220,22 @@ class MinigameResultCard extends StatelessWidget {
 
   String _score(int score) {
     if (score == MinigameRules.noScore) return 'no cuenta';
-    return result.type == MinigameType.stopwatch
-        ? formatSeconds(score)
-        : '$score ms';
+    return switch (result.type) {
+      MinigameType.stopwatch => formatSeconds(score),
+      MinigameType.rhythm => '$score ms de desvío',
+      MinigameType.diceMemory => '$score dados',
+      MinigameType.secretBid => _bid(score),
+      MinigameType.reaction => '$score ms',
+      _ => '$score puntos',
+    };
+  }
+
+  /// Puja Secreta: el puntaje guarda las vueltas ganadas y las fichas.
+  String _bid(int score) {
+    final won = score ~/ 100;
+    final chips = score % 100;
+    final rounds = won == 1 ? '1 puja ganada' : '$won pujas ganadas';
+    return '$rounds y $chips fichas';
   }
 }
 
