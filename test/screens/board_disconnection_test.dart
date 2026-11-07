@@ -160,6 +160,46 @@ void main() {
     expect(move.score, inInclusiveRange(4500, 5100));
   });
 
+  group('minijuego que ya terminó', () {
+    const rules = MinigameRules();
+    const ending = MinigameState(
+      type: MinigameType.wires,
+      round: 2,
+      players: ['host', 'ana', 'beto'],
+      wires: 5,
+      step: 6,
+      stage: 2,
+      cut: [1],
+      out: ['ana', 'beto'],
+      ending: true,
+    );
+
+    testWidgets('el anfitrión lo cierra apenas se termina de ver', (
+      tester,
+    ) async {
+      await pumpBoard(tester, me: 'host', settle: false);
+      games.emit(_game.copyWith(minigame: ending));
+      await tester.pump();
+      await tester.pump();
+      expect(games.sent.whereType<MinigameTimeout>(), isEmpty);
+
+      await tester.pump(Duration(milliseconds: rules.wiresBoomMs));
+      await tester.pump();
+      final close = games.sent.whereType<MinigameTimeout>().single;
+      expect((close.round, close.step), (2, 6));
+    });
+
+    testWidgets('los demás no hacen nada', (tester) async {
+      await pumpBoard(tester, me: 'ana', settle: false);
+      games.emit(_game.copyWith(minigame: ending));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(Duration(milliseconds: rules.wiresBoomMs));
+      await tester.pump();
+      expect(games.sent.whereType<MinigameTimeout>(), isEmpty);
+    });
+  });
+
   testWidgets('el anfitrión que pierde el lugar deja de aplicarlas', (
     tester,
   ) async {

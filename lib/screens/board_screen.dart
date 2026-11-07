@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/results_controller.dart';
@@ -7,6 +9,7 @@ import 'package:party_tricks/screens/results_screen.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/map/map_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
@@ -60,6 +63,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   /// La última tirada que se anima sobre el mapa.
   DiceRoll? _roll;
 
+  /// Cierra el minijuego cuando ya se vio cómo terminó.
+  Timer? _closeMinigame;
+
   bool get _isHost => _stopHost != null;
 
   @override
@@ -81,9 +87,22 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
 
   @override
   void dispose() {
+    _closeMinigame?.cancel();
     _stopHost?.call();
     _guard?.dispose();
     super.dispose();
+  }
+
+  /// Un minijuego que ya terminó solo espera a que todos lo vean. El árbitro
+  /// lo cerraría igual, pero revisa cada dos segundos: así no se queda la
+  /// pantalla quieta. Si este teléfono no es el anfitrión, no hace nada.
+  void _closeWhenSeen(MinigameState? minigame) {
+    _closeMinigame?.cancel();
+    if (minigame == null || !minigame.ending || !_isHost) return;
+    final rules = ref.read(gameEngineProvider).minigameRules;
+    _closeMinigame = Timer(rules.timeLimit(minigame), () {
+      _send(MinigameTimeout(minigame.round, minigame.step));
+    });
   }
 
   void _onIdentity(String? uid) {
@@ -176,6 +195,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   void _onGameChanged(GameState? game) {
     if (game == null) return;
     _watchDice(game);
+    _closeWhenSeen(game.minigame);
     _timeTracker.onPhase(game.phase);
     if (game.phase != GamePhase.finished || _statsRecorded) return;
     _statsRecorded = true;
