@@ -12,6 +12,7 @@ import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/social/social_exception.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/app_background.dart';
 import 'package:party_tricks/widgets/invite_friends_dialog.dart';
 import 'package:party_tricks/widgets/player_slot.dart';
 
@@ -75,8 +76,6 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
 
   void _tick() {
     if (!mounted) return;
-    setState(() {}); // Actualiza la cuenta regresiva.
-
     final room = ref.read(roomProvider(widget.roomId)).value;
     final me = ref.read(roomIdentityProvider).value;
     if (room == null || me == null || room.hostUid != me.uid) return;
@@ -152,11 +151,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              'assets/images/Fondo_Principal.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.bottomCenter,
-            ),
+            const AppBackground(),
             // Fondo desenfocado, como en el mockup.
             ClipRect(
               child: BackdropFilter(
@@ -219,10 +214,6 @@ class _Waiting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final left = room.lobbyEndsAt.difference(DateTime.now());
-    final seconds = left.isNegative ? 0 : left.inSeconds;
-    final clock =
-        '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
     final players = room.players.values.toList()
       ..sort((a, b) => a.joinedAt.compareTo(b.joinedAt));
 
@@ -260,7 +251,7 @@ class _Waiting extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _Header(clock: clock),
+                          _Header(endsAt: room.lobbyEndsAt),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                             child: Column(
@@ -345,9 +336,9 @@ class _Waiting extends StatelessWidget {
 
 /// Título azul de la tarjeta, con la cuenta regresiva debajo.
 class _Header extends StatelessWidget {
-  const _Header({required this.clock});
+  const _Header({required this.endsAt});
 
-  final String clock;
+  final DateTime endsAt;
 
   @override
   Widget build(BuildContext context) {
@@ -367,15 +358,51 @@ class _Header extends StatelessWidget {
               color: AppColors.white,
             ),
           ),
-          Text(
-            'Empieza en $clock',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.white,
-            ),
-          ),
+          _Countdown(endsAt: endsAt),
         ],
+      ),
+    );
+  }
+}
+
+/// Cuenta regresiva de la sala. Lleva su propio reloj para que cada segundo
+/// se redibuje solo este texto y no toda la pantalla.
+class _Countdown extends StatefulWidget {
+  const _Countdown({required this.endsAt});
+
+  final DateTime endsAt;
+
+  @override
+  State<_Countdown> createState() => _CountdownState();
+}
+
+class _CountdownState extends State<_Countdown> {
+  late final Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final left = widget.endsAt.difference(DateTime.now());
+    final seconds = left.isNegative ? 0 : left.inSeconds;
+    final clock =
+        '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+    return Text(
+      'Empieza en $clock',
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.white,
       ),
     );
   }

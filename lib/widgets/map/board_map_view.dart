@@ -99,6 +99,16 @@ class _BoardMapViewState extends State<BoardMapView>
   Size _viewport = Size.zero;
   bool _placedCamera = false;
 
+  /// La parte fija del mapa. Al ser siempre el mismo widget, no se vuelve a
+  /// armar (ni a ordenar sus piezas) con cada cambio de la partida.
+  late Widget _scenery = _buildScenery();
+
+  Widget _buildScenery() => MapScenery(
+    map: widget.map,
+    board: widget.board,
+    pathTexture: widget.pathTexture,
+  );
+
   bool get _anyWalking => _walkers.values.any((walker) => walker.walking);
 
   Offset _anchorOf(int tileId) =>
@@ -113,6 +123,11 @@ class _BoardMapViewState extends State<BoardMapView>
   @override
   void didUpdateWidget(BoardMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.map != widget.map ||
+        oldWidget.board != widget.board ||
+        oldWidget.pathTexture != widget.pathTexture) {
+      _scenery = _buildScenery();
+    }
     _coins.onRound(widget.state.round);
     _syncWalkers();
   }
@@ -243,11 +258,7 @@ class _BoardMapViewState extends State<BoardMapView>
                   size: widget.map.size,
                   child: Stack(
                     children: [
-                      MapScenery(
-                        map: widget.map,
-                        board: widget.board,
-                        pathTexture: widget.pathTexture,
-                      ),
+                      _scenery,
                       ..._coinWidgets(),
                       if (_diamondAnchor() case final diamond?)
                         Positioned(

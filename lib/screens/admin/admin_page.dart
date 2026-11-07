@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/app_background.dart';
 
 /// Marco de las pantallas del panel de administración, igual que Ajustes:
 /// el fondo principal, el botón Volver y un panel translúcido con las
@@ -18,13 +19,7 @@ class AdminPage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/images/Fondo_Principal.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.bottomCenter,
-            errorBuilder: (_, _, _) =>
-                const ColoredBox(color: AppColors.screenBackground),
-          ),
+          const AppBackground(),
           SafeArea(
             child: Column(
               children: [

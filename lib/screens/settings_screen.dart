@@ -19,6 +19,7 @@ import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/auth/auth_service.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/app_background.dart';
 import 'package:party_tricks/widgets/code_digits.dart';
 import 'package:party_tricks/widgets/confirm_dialog.dart';
 import 'package:party_tricks/widgets/my_avatar.dart';
@@ -45,11 +46,7 @@ class SettingsScreen extends ConsumerWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/images/Fondo_Principal.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.bottomCenter,
-          ),
+          const AppBackground(),
           SafeArea(
             child: Column(
               children: [

@@ -14,6 +14,17 @@ class FacePhoto {
   /// Largo máximo del texto en base64.
   static const int maxLength = 60000;
 
+  /// Cuántas fotos leídas se recuerdan (jugadores vistos hace poco).
+  static const int _rememberedLimit = 32;
+
+  /// Las últimas fotos leídas, de la más vieja a la más nueva.
+  ///
+  /// Firestore vuelve a entregar la foto cada vez que cambia algo del perfil
+  /// (por ejemplo, las monedas). Devolver la misma foto evita decodificarla
+  /// otra vez y, como la imagen en caché se identifica por sus bytes, evita
+  /// que Flutter la cargue de nuevo.
+  static final Map<String, FacePhoto> _remembered = {};
+
   /// La foto como texto, tal como se guarda en Firestore.
   final String base64;
 
@@ -32,8 +43,15 @@ class FacePhoto {
   /// grande o no es base64 válido (para no romper la pantalla).
   static FacePhoto? fromStored(Object? raw) {
     if (raw is! String || raw.isEmpty || raw.length > maxLength) return null;
+    final known = _remembered.remove(raw);
+    if (known != null) return _remembered[raw] = known;
     try {
-      return FacePhoto._(raw, base64Decode(raw));
+      final photo = FacePhoto._(raw, base64Decode(raw));
+      _remembered[raw] = photo;
+      if (_remembered.length > _rememberedLimit) {
+        _remembered.remove(_remembered.keys.first);
+      }
+      return photo;
     } on FormatException {
       return null;
     }
