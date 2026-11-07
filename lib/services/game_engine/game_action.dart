@@ -68,9 +68,13 @@ final class FinishMinigame extends GameAction {
 /// - Para el Tiempo: ms que dejó correr el reloj.
 /// - Reacción: ms que tardó después del "¡YA!".
 /// - Globo Bomba: cuántas veces infla (1 a 3).
+/// - Cables Rojos: qué cable corta.
+/// - Puja Secreta, Mayor o Menor y La Silla Fantasma: lo que elige, con su
+///   vuelta (`MinigamePick`).
+/// - Los demás: su puntaje al terminar.
 ///
-/// En Para el Tiempo y Reacción, `MinigameRules.noScore` (-1) es que no vale
-/// (se adelantó o no tocó a tiempo).
+/// Si juega por su lado, `MinigameRules.noScore` (-1) es que no vale (se
+/// adelantó o no terminó a tiempo).
 final class MinigameMove extends GameAction {
   const MinigameMove(this.playerId, this.round, this.score);
 

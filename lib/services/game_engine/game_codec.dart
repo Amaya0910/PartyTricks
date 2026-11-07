@@ -138,6 +138,14 @@ class GameCodec {
     'diamonds': p.diamonds,
     'pendingEffect': p.pendingEffect?.name,
     'minigamesWon': p.minigamesWon,
+    'minigameTally': {
+      for (final MapEntry(key: type, value: tally) in p.minigameTally.entries)
+        type.name: {
+          'played': tally.played,
+          'won': tally.won,
+          'bestScore': tally.bestScore,
+        },
+    },
     'negativeTiles': p.negativeTiles,
     'purchases': p.purchases,
     'diceRolled': p.diceRolled,
@@ -170,6 +178,11 @@ class GameCodec {
           ? null
           : PendingEffect.values.byName(effect),
       minigamesWon: _int(data['minigamesWon']),
+      // Un minijuego que esta versión no conoce se ignora en vez de romper.
+      minigameTally: {
+        for (final entry in _map(data['minigameTally']).entries)
+          ?MinigameType.byId(entry.key): _decodeTally(_map(entry.value)),
+      },
       negativeTiles: _int(data['negativeTiles']),
       purchases: _int(data['purchases']),
       diceRolled: _int(data['diceRolled']),
@@ -196,6 +209,14 @@ class GameCodec {
     );
   }
 
+  MinigameTally _decodeTally(Map<Object?, Object?> data) {
+    return MinigameTally(
+      played: _int(data['played']),
+      won: _int(data['won']),
+      bestScore: _int(data['bestScore']),
+    );
+  }
+
   Map<String, Object?> _encodeMinigame(MinigameState minigame) => {
     'type': minigame.type.name,
     'round': minigame.round,
@@ -208,6 +229,17 @@ class GameCodec {
     'turn': minigame.turn,
     'scores': minigame.scores,
     'out': minigame.out,
+    'seed': minigame.seed,
+    'stage': minigame.stage,
+    'wires': minigame.wires,
+    'cut': minigame.cut,
+    'card': minigame.card,
+    'previousCard': minigame.previousCard,
+    'points': minigame.points,
+    'chips': minigame.chips,
+    'picks': minigame.picks,
+    'cursed': minigame.cursed,
+    'ending': minigame.ending,
   };
 
   /// Un minijuego que esta versión no conoce se lee como ninguno.
@@ -227,6 +259,17 @@ class GameCodec {
       turn: _int(value['turn']),
       scores: _scores(value['scores']),
       out: _strings(value['out']),
+      seed: _int(value['seed']),
+      stage: _int(value['stage']),
+      wires: _int(value['wires']),
+      cut: [for (final wire in _list(value['cut'])) _int(wire)],
+      card: _int(value['card']),
+      previousCard: _int(value['previousCard']),
+      points: _scores(value['points']),
+      chips: _scores(value['chips']),
+      picks: _scores(value['picks']),
+      cursed: _int(value['cursed']),
+      ending: value['ending'] as bool? ?? false,
     );
   }
 

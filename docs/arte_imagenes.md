@@ -175,6 +175,7 @@ Carpeta: `assets/images/personaje/`
 - **Proporción:** la de tu `Bodysheet.kra`: cabeza enorme (casi la mitad de la altura), nariz mínima.
 - **Tonos de piel:** 40 en `AppColors.skinTones`: 20 realistas, de claro a oscuro, y 20 fantasiosos (negro, blanco, azul, etc.). No hay que dibujar nada para ellos.
 - **Foto de perfil:** no es una imagen aparte. El código recorta la cabeza (relleno, línea, ojos y boca) en un cuadrado y la pone sobre un color de fondo que elige el jugador.
+- **Foto de la cara:** tampoco es arte. Cubre toda la cabeza y se recorta con su contorno, que está escrito en `head_shape.dart`. **Si cambias la forma de `relleno_cabeza.png`, hay que trazar otra vez ese contorno** o la foto no calzará.
 
 | Hecho | Archivos | Cantidad |
 |---|---|---|
@@ -276,7 +277,7 @@ Los botones y los marcos se siguen haciendo con Flutter, porque ya respetan `App
 - El mundo mide 2880 × 4320. Cada jugador ve solo su propio personaje; los demás aparecen en el minimapa.
 - El personaje se arma con capas PNG por parte del cuerpo (línea y relleno) en un lienzo de 512 × 768 y se anima por código; no hay hojas de animación.
 - Los ojos y las bocas son capas del mismo lienzo. Su color se aplica por código sobre lo que está en blanco puro; el tono de piel y los colores fantasiosos también son solo código.
-- La foto de perfil es la cabeza del personaje sobre un color de fondo elegido en Ajustes (D-31), no una imagen subida.
+- La foto de perfil es la cabeza del personaje sobre un color de fondo elegido en Ajustes (D-31). Si el jugador pone la foto de su cara, cubre toda la cabeza (D-32).
 - El fondo del mapa se pinta **después** de armar el mapa en Tiled, usando la imagen exportada como guía.
 - **Para Brayan:** el código del mapa toca `board_layout.dart` (que pasa a leer el JSON) y `board_screen.dart`, que son de su rama. Hay que avisarle antes de empezar, en la rama `feature/mapa-dibujado`.
 
@@ -285,4 +286,3 @@ Los botones y los marcos se siguen haciendo con Flutter, porque ya respetan `App
 - [ ] ¿Qué es `AS.kra` (3072 × 3072, 79 capas)?
 - [ ] ¿El **contorno blanco tipo sticker** va solo en portadas o también sobre el personaje en el mapa?
 - [ ] ¿La ropa se dibuja por partes del cuerpo (como las capas del personaje) o en una sola capa?
-- [ ] ¿Firebase Storage está disponible en el plan Spark? Si no, la foto de la cara se guarda reducida a 128 × 128 dentro de `users/{uid}` en Firestore.

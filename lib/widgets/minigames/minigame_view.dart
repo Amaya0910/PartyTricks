@@ -1,10 +1,22 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/minigames/balloon_game.dart';
+import 'package:party_tricks/widgets/minigames/coin_rain_game.dart';
+import 'package:party_tricks/widgets/minigames/color_trap_game.dart';
+import 'package:party_tricks/widgets/minigames/dice_memory_game.dart';
+import 'package:party_tricks/widgets/minigames/ghost_chair_game.dart';
+import 'package:party_tricks/widgets/minigames/high_low_game.dart';
+import 'package:party_tricks/widgets/minigames/quick_math_game.dart';
 import 'package:party_tricks/widgets/minigames/reaction_game.dart';
+import 'package:party_tricks/widgets/minigames/rhythm_game.dart';
+import 'package:party_tricks/widgets/minigames/safe_lock_game.dart';
+import 'package:party_tricks/widgets/minigames/secret_bid_game.dart';
 import 'package:party_tricks/widgets/minigames/stopwatch_game.dart';
+import 'package:party_tricks/widgets/minigames/wires_game.dart';
 
 /// Quién juega: nombre y color de cada jugador, para todos los minijuegos.
 class MinigamePlayers {
@@ -65,6 +77,86 @@ class MinigameView extends StatelessWidget {
         rules: rules,
         onPlay: onPlay,
       ),
+      MinigameType.rhythm => RhythmGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
+      MinigameType.diceMemory => DiceMemoryGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
+      MinigameType.coinRain => CoinRainGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
+      MinigameType.colorTrap => ColorTrapGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
+      MinigameType.quickMath => QuickMathGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
+      MinigameType.safeLock => SafeLockGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
+      MinigameType.wires => WiresGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
+      MinigameType.secretBid => SecretBidGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
+      MinigameType.highLow => HighLowGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
+      MinigameType.ghostChair => GhostChairGame(
+        key: key,
+        minigame: minigame,
+        myId: myId,
+        players: players,
+        rules: rules,
+        onPlay: onPlay,
+      ),
     };
   }
 }
@@ -110,12 +202,32 @@ extension MinigameLook on MinigameType {
     MinigameType.stopwatch => AppColors.minigameStopwatch,
     MinigameType.reaction => AppColors.minigameReaction,
     MinigameType.balloon => AppColors.minigameBalloon,
+    MinigameType.rhythm => AppColors.minigameRhythm,
+    MinigameType.diceMemory => AppColors.minigameDiceMemory,
+    MinigameType.coinRain => AppColors.minigameCoinRain,
+    MinigameType.colorTrap => AppColors.minigameColorTrap,
+    MinigameType.quickMath => AppColors.minigameQuickMath,
+    MinigameType.safeLock => AppColors.minigameSafeLock,
+    MinigameType.wires => AppColors.minigameWires,
+    MinigameType.secretBid => AppColors.minigameSecretBid,
+    MinigameType.highLow => AppColors.minigameHighLow,
+    MinigameType.ghostChair => AppColors.minigameGhostChair,
   };
 
   IconData get icon => switch (this) {
     MinigameType.stopwatch => Icons.timer_rounded,
     MinigameType.reaction => Icons.bolt_rounded,
     MinigameType.balloon => Icons.celebration_rounded,
+    MinigameType.rhythm => Icons.favorite_rounded,
+    MinigameType.diceMemory => Icons.casino_rounded,
+    MinigameType.coinRain => Icons.monetization_on_rounded,
+    MinigameType.colorTrap => Icons.palette_rounded,
+    MinigameType.quickMath => Icons.calculate_rounded,
+    MinigameType.safeLock => Icons.lock_rounded,
+    MinigameType.wires => Icons.content_cut_rounded,
+    MinigameType.secretBid => Icons.toll_rounded,
+    MinigameType.highLow => Icons.swap_vert_rounded,
+    MinigameType.ghostChair => Icons.chair_rounded,
   };
 }
 
@@ -133,6 +245,20 @@ Color minigameTint(Color color, double amount) =>
 /// Versión oscura de [color] para sombras, bordes y textos.
 Color minigameShade(Color color, [double amount = 0.3]) =>
     Color.lerp(color, AppColors.characterOutline, amount)!;
+
+/// Sombras sin difuminar alrededor de un texto: juntas forman un contorno de
+/// [width] píxeles. Al ser parte del mismo texto, el contorno siempre coincide
+/// con las letras, sea cual sea el tamaño de letra del teléfono.
+List<Shadow> minigameOutline(Color color, double width) {
+  const copies = 16;
+  return [
+    for (var i = 0; i < copies; i++)
+      Shadow(
+        color: color,
+        offset: Offset.fromDirection(2 * math.pi * i / copies, width),
+      ),
+  ];
+}
 
 /// Pasa el color del minijuego a lo que hay dentro de la tarjeta (botones,
 /// cuenta regresiva, píldoras) y si hay que dibujar en tamaño compacto.
@@ -186,6 +312,10 @@ class MinigameCard extends StatelessWidget {
   /// Con menos alto que esto, las piezas se dibujan más chicas.
   static const double _compactBelow = 640;
 
+  /// Más grande que esto, el texto ya no cabe en los recuadros de los juegos,
+  /// aunque el teléfono tenga una letra enorme.
+  static const double _maxTextScale = 1.15;
+
   @override
   Widget build(BuildContext context) {
     final accent = type.accent;
@@ -234,31 +364,37 @@ class MinigameCard extends StatelessWidget {
                       child: MinigameAccent(
                         color: accent,
                         compact: compact,
-                        child: DefaultTextStyle.merge(
-                          style: minigameTextStyle,
-                          textAlign: TextAlign.center,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _CardHeader(type: type, compact: compact),
-                              Padding(
-                                padding: EdgeInsets.fromLTRB(
-                                  14,
-                                  compact ? 10 : 16,
-                                  14,
-                                  compact ? 14 : 20,
+                        child: MediaQuery.withClampedTextScaling(
+                          maxScaleFactor: _maxTextScale,
+                          child: DefaultTextStyle.merge(
+                            style: minigameTextStyle,
+                            textAlign: TextAlign.center,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _CardHeader(type: type, compact: compact),
+                                Padding(
+                                  padding: EdgeInsets.fromLTRB(
+                                    14,
+                                    compact ? 10 : 16,
+                                    14,
+                                    compact ? 14 : 20,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _Hint(
+                                        text: instructions,
+                                        compact: compact,
+                                      ),
+                                      SizedBox(height: compact ? 10 : 18),
+                                      child,
+                                    ],
+                                  ),
                                 ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _Hint(text: instructions, compact: compact),
-                                    SizedBox(height: compact ? 10 : 18),
-                                    child,
-                                  ],
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -296,7 +432,7 @@ class _CardHeader extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'MINIJUEGO',
+            'MINIJUEGO DE ${type.category.title.toUpperCase()}',
             textAlign: TextAlign.center,
             style: minigameTextStyle.copyWith(
               fontSize: 11,
@@ -462,6 +598,8 @@ class MinigameButton extends StatefulWidget {
     this.color,
     this.minWidth = 96,
     this.icon,
+    this.fontSize = 26,
+    this.height = 62,
   });
 
   final String label;
@@ -471,6 +609,8 @@ class MinigameButton extends StatefulWidget {
   final Color? color;
   final double minWidth;
   final IconData? icon;
+  final double fontSize;
+  final double height;
 
   @override
   State<MinigameButton> createState() => _MinigameButtonState();
@@ -478,7 +618,9 @@ class MinigameButton extends StatefulWidget {
 
 class _MinigameButtonState extends State<MinigameButton> {
   static const double _depth = 6;
-  static const double _height = 62;
+
+  /// Con colores más claros que esto, el texto blanco lleva contorno.
+  static const double _lightColor = 0.45;
 
   bool _pressed = false;
 
@@ -492,21 +634,27 @@ class _MinigameButtonState extends State<MinigameButton> {
     final base = widget.color ?? MinigameAccent.of(context);
     final color = enabled ? base : AppColors.sliderInactive;
     final sink = _pressed ? _depth - 2 : 0.0;
+    final ink = minigameShade(color, 0.5);
     return Semantics(
       button: true,
       enabled: enabled,
       child: GestureDetector(
-        onTapDown: enabled ? (_) => _setPressed(true) : null,
-        onTapUp: enabled ? (_) => _setPressed(false) : null,
-        onTapCancel: enabled ? () => _setPressed(false) : null,
+        // Estos tres no se quitan aunque el botón se desactive: si se quitaran
+        // con el dedo encima, Flutter cancelaría el toque mientras arma la
+        // pantalla, justo cuando no se permite usar setState.
+        onTapDown: (_) => _setPressed(enabled),
+        onTapUp: (_) => _setPressed(false),
+        onTapCancel: () => _setPressed(false),
         onTap: widget.onPressed,
         child: SizedBox(
-          height: _height + _depth,
+          height: widget.height + _depth,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 70),
             margin: EdgeInsets.only(top: sink, bottom: _depth - sink),
             constraints: BoxConstraints(minWidth: widget.minWidth),
-            padding: const EdgeInsets.symmetric(horizontal: 22),
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.minWidth == 0 ? 6 : 22,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
               gradient: LinearGradient(
@@ -536,18 +684,21 @@ class _MinigameButtonState extends State<MinigameButton> {
                   Icon(widget.icon, color: AppColors.white, size: 28),
                   const SizedBox(width: 8),
                 ],
-                Text(
-                  widget.label,
-                  style: minigameTextStyle.copyWith(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.white,
-                    shadows: [
-                      Shadow(
-                        color: minigameShade(color, 0.5),
-                        offset: const Offset(0, 2),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      widget.label,
+                      maxLines: 1,
+                      style: minigameTextStyle.copyWith(
+                        fontSize: widget.fontSize,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.white,
+                        shadows: color.computeLuminance() > _lightColor
+                            ? minigameOutline(ink, 1.5)
+                            : [Shadow(color: ink, offset: const Offset(0, 2))],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],

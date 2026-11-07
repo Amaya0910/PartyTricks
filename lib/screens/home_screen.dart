@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
+import 'package:party_tricks/controllers/face_photo_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
 import 'package:party_tricks/controllers/room_controller.dart';
 import 'package:party_tricks/controllers/skin_tone_controller.dart';
@@ -99,6 +100,7 @@ class HomeScreen extends ConsumerWidget {
                 eyeColor: EyeColor.colorOf(eyeColor),
                 mouth: mouthStyle,
                 mouthColor: MouthColor.colorOf(mouthColor),
+                facePhoto: ref.watch(facePhotoProvider),
               ),
             ),
           ),

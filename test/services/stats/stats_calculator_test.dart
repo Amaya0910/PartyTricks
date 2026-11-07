@@ -21,7 +21,7 @@ void main() {
     int minigamesWon = 3,
     bool isHost = false,
     bool isPublic = false,
-    List<MinigamePlay> plays = const [],
+    Map<String, MinigameTypeStats> byType = const {},
     Map<String, String> opponents = const {'u2': 'Beto'},
     Duration playingTime = const Duration(minutes: 12, seconds: 30),
   }) {
@@ -39,7 +39,7 @@ void main() {
       board: const BoardStats(diceRolled: 5, diceTotal: 17, laps: 1),
       minigamesWon: minigamesWon,
       minigamesPlayed: 5,
-      minigamePlays: plays,
+      minigamesByType: byType,
       opponents: opponents,
       playingTime: playingTime,
       minigameTime: const Duration(minutes: 4),
@@ -142,10 +142,10 @@ void main() {
           ),
         ),
         match(
-          plays: const [
-            MinigamePlay(type: 'carrera', won: true, score: 9),
-            MinigamePlay(type: 'memoria', won: false, score: 2),
-          ],
+          byType: const {
+            'carrera': MinigameTypeStats(played: 1, won: 1, bestScore: 9),
+            'memoria': MinigameTypeStats(played: 1, bestScore: 2),
+          },
         ),
       );
 

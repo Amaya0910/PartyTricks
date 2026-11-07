@@ -18,6 +18,7 @@ class PlayerState {
     this.diamonds = 0,
     this.pendingEffect,
     this.minigamesWon = 0,
+    this.minigameTally = const {},
     this.negativeTiles = 0,
     this.purchases = 0,
     this.diceRolled = 0,
@@ -51,6 +52,9 @@ class PlayerState {
   final int minigamesWon;
   final int negativeTiles;
   final int purchases;
+
+  /// Cómo le ha ido en cada minijuego. Los que no jugó no aparecen.
+  final Map<MinigameType, MinigameTally> minigameTally;
 
   // Contadores para las estadísticas del jugador (decisiones.md, D-21).
 
@@ -120,6 +124,7 @@ class PlayerState {
     PendingEffect? pendingEffect,
     bool clearPendingEffect = false,
     int? minigamesWon,
+    Map<MinigameType, MinigameTally>? minigameTally,
     int? negativeTiles,
     int? purchases,
     int? diceRolled,
@@ -147,6 +152,7 @@ class PlayerState {
           ? null
           : pendingEffect ?? this.pendingEffect,
       minigamesWon: minigamesWon ?? this.minigamesWon,
+      minigameTally: minigameTally ?? this.minigameTally,
       negativeTiles: negativeTiles ?? this.negativeTiles,
       purchases: purchases ?? this.purchases,
       diceRolled: diceRolled ?? this.diceRolled,

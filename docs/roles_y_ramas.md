@@ -184,7 +184,7 @@ Una tarea está terminada cuando:
 | `feature/auth` | Isabella | 🟢 Listo (incluye Ajustes, verificación del correo e inicio con Google) |
 | `feature/rooms-lobby` | Brayan | 🟢 Listo |
 | `feature/game-engine` | Brayan | 🟢 Listo |
-| `feature/player-profile` | Isabella | 🟡 En proceso (listos el Vestuario con piel, ojos y boca, la foto de perfil con la cabeza del personaje y las estadísticas; faltan la ropa, el cabello y la nariz) |
+| `feature/player-profile` | Isabella | 🟡 En proceso (listos el Vestuario con piel, ojos y boca, la foto de perfil, la foto de la cara y las estadísticas; faltan la ropa, el cabello y la nariz) |
 | `feature/board-turns` | Brayan | 🟢 Listo |
 | `feature/map-shop-items` | Brayan | 🟢 Listo |
 | `feature/results-xp` | Brayan | 🟢 Listo |

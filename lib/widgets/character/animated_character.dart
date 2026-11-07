@@ -2,13 +2,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/theme/app_colors.dart';
-import 'package:party_tricks/widgets/character/eyes_layer.dart';
-import 'package:party_tricks/widgets/character/mouth_layer.dart';
+import 'package:party_tricks/widgets/character/character_face.dart';
+import 'package:party_tricks/widgets/character/character_layer.dart';
 
-/// Tamaño del lienzo en el que están dibujadas todas las capas.
-const Size kCharacterCanvas = Size(512, 768);
+export 'package:party_tricks/widgets/character/character_layer.dart'
+    show kCharacterCanvas;
 
 /// Partes del cuerpo, en orden de dibujo (de atrás hacia adelante).
 ///
@@ -103,6 +104,7 @@ class AnimatedCharacter extends StatefulWidget {
     this.eyeColor = AppColors.white,
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor,
+    this.facePhoto,
     this.clothing = const [],
   });
 
@@ -122,6 +124,10 @@ class AnimatedCharacter extends StatefulWidget {
   /// Color que toma la parte blanca de la boca. Null = sin color: toma el
   /// tono de piel.
   final Color? mouthColor;
+
+  /// Foto de la cara del jugador. Si hay, se dibuja en lugar de los ojos y
+  /// la boca.
+  final FacePhoto? facePhoto;
 
   /// Capas de ropa/cara (mismo lienzo 512x768), se dibujan encima.
   final List<String> clothing;
@@ -143,59 +149,74 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
     super.dispose();
   }
 
+  /// Cómo queda [part] con [transform], alrededor de su pivote.
+  Matrix4 _matrixOf(BodyPart part, PartTransform transform) {
+    return Matrix4.identity()
+      ..translateByDouble(part.pivot.dx, part.pivot.dy + transform.dy, 0, 1)
+      ..rotateZ(transform.angle)
+      ..scaleByDouble(1, transform.scaleY, 1, 1)
+      ..translateByDouble(-part.pivot.dx, -part.pivot.dy, 0, 1);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FittedBox(
-      child: SizedBox.fromSize(
-        size: kCharacterCanvas,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final t = _controller.value;
-            return Stack(
-              children: [
-                for (final part in BodyPart.values)
-                  _TransformedPart(
-                    part: part,
-                    transform: widget.animation.transformFor(part, t),
-                    skinTone: widget.skinTone,
-                    overlay: part == BodyPart.cabeza
-                        ? Stack(
-                            children: [
-                              EyesLayer(
-                                style: widget.eyes,
-                                color: widget.eyeColor,
-                                size: kCharacterCanvas,
-                              ),
-                              MouthLayer(
-                                style: widget.mouth,
-                                color: widget.mouthColor ?? widget.skinTone,
-                                size: kCharacterCanvas,
-                              ),
-                            ],
-                          )
-                        : null,
-                  ),
-                for (final asset in widget.clothing) _layer(asset),
-              ],
-            );
-          },
+    // Las capas no cambian de un cuadro a otro: se arman una vez y en cada
+    // cuadro solo se recalcula dónde va cada parte.
+    final parts = [
+      for (final part in BodyPart.values)
+        _PartLayers(
+          part: part,
+          skinTone: widget.skinTone,
+          overlay: part == BodyPart.cabeza
+              ? CharacterFace(
+                  eyes: widget.eyes,
+                  eyeColor: widget.eyeColor,
+                  mouth: widget.mouth,
+                  mouthColor: widget.mouthColor ?? widget.skinTone,
+                  photo: widget.facePhoto,
+                )
+              : null,
+        ),
+    ];
+    final clothing = [
+      for (final asset in widget.clothing) CharacterLayer(asset),
+    ];
+
+    // Aísla la animación: el resto de la pantalla no se repinta con ella.
+    return RepaintBoundary(
+      child: FittedBox(
+        child: SizedBox.fromSize(
+          size: kCharacterCanvas,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              final t = _controller.value;
+              return Stack(
+                children: [
+                  for (final layers in parts)
+                    Transform(
+                      transform: _matrixOf(
+                        layers.part,
+                        widget.animation.transformFor(layers.part, t),
+                      ),
+                      child: layers,
+                    ),
+                  ...clothing,
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 }
 
-class _TransformedPart extends StatelessWidget {
-  const _TransformedPart({
-    required this.part,
-    required this.transform,
-    required this.skinTone,
-    this.overlay,
-  });
+/// Las capas de una parte del cuerpo, sin mover.
+class _PartLayers extends StatelessWidget {
+  const _PartLayers({required this.part, required this.skinTone, this.overlay});
 
   final BodyPart part;
-  final PartTransform transform;
   final Color skinTone;
 
   /// Capa que se dibuja encima de la parte y se mueve con ella (los ojos
@@ -204,33 +225,12 @@ class _TransformedPart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final matrix = Matrix4.identity()
-      ..translateByDouble(part.pivot.dx, part.pivot.dy + transform.dy, 0, 1)
-      ..rotateZ(transform.angle)
-      ..scaleByDouble(1, transform.scaleY, 1, 1)
-      ..translateByDouble(-part.pivot.dx, -part.pivot.dy, 0, 1);
-
-    return Transform(
-      transform: matrix,
-      child: Stack(
-        children: [
-          ColorFiltered(
-            colorFilter: ColorFilter.mode(skinTone, BlendMode.modulate),
-            child: _layer(part.fillAsset),
-          ),
-          _layer(part.outlineAsset),
-          ?overlay,
-        ],
-      ),
+    return Stack(
+      children: [
+        CharacterLayer(part.fillAsset, tint: skinTone),
+        CharacterLayer(part.outlineAsset),
+        ?overlay,
+      ],
     );
   }
 }
-
-Widget _layer(String asset) => Image.asset(
-  asset,
-  width: kCharacterCanvas.width,
-  height: kCharacterCanvas.height,
-  filterQuality: FilterQuality.medium,
-  // Si falta una capa (arte en progreso), no se dibuja en vez de fallar.
-  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-);

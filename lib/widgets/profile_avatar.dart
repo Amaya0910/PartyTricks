@@ -38,6 +38,7 @@ class ProfileAvatar extends StatelessWidget {
       mouth: profile.mouth,
       mouthColor: profile.mouthColor,
       avatarColor: profile.avatarColor,
+      facePhoto: profile.facePhoto,
       size: size,
     );
   }

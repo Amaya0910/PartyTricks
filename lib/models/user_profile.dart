@@ -1,5 +1,6 @@
 import 'package:party_tricks/models/avatar_color.dart';
 import 'package:party_tricks/models/eye_color.dart';
+import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/mouth_style.dart';
@@ -26,6 +27,8 @@ class UserProfile {
     this.mouthColor = MouthColor.defaultIndex,
     this.ownedMouths = const {},
     this.avatarColor = AvatarColor.defaultIndex,
+    this.facePhoto,
+    this.useFacePhoto = true,
     this.usernameChangedAt,
   });
 
@@ -82,6 +85,16 @@ class UserProfile {
   /// Posición del color de fondo de la foto de perfil en [AvatarColor].
   final int avatarColor;
 
+  /// La foto de la cara que el jugador guardó (campo `facePhoto`), si la hay.
+  final FacePhoto? facePhoto;
+
+  /// Si quiere ver su foto en la cara del personaje en lugar de los ojos y
+  /// la boca (campo `useFacePhoto`).
+  final bool useFacePhoto;
+
+  /// La foto que se dibuja: la guardada, si la está usando.
+  FacePhoto? get shownFacePhoto => useFacePhoto ? facePhoto : null;
+
   /// Si puede ponerse [style]: es gratis o ya la compró.
   bool ownsMouth(MouthStyle style) =>
       style.isFree || ownedMouths.contains(style.number);
@@ -123,6 +136,8 @@ class UserProfile {
       avatarColor: AvatarColor.clamp(
         (map['avatarColor'] as num?)?.toInt() ?? AvatarColor.defaultIndex,
       ),
+      facePhoto: FacePhoto.fromStored(map['facePhoto']),
+      useFacePhoto: map['useFacePhoto'] as bool? ?? true,
       usernameChangedAt: changed is num
           ? DateTime.fromMillisecondsSinceEpoch(changed.toInt())
           : null,
@@ -146,6 +161,8 @@ class UserProfile {
       'mouthColor': mouthColor,
       'ownedMouths': ownedMouths.toList()..sort(),
       'avatarColor': avatarColor,
+      if (facePhoto != null) 'facePhoto': facePhoto!.base64,
+      'useFacePhoto': useFacePhoto,
       if (usernameChangedAt != null)
         'usernameChangedAt': usernameChangedAt!.millisecondsSinceEpoch,
     };
@@ -167,6 +184,9 @@ class UserProfile {
     int? mouthColor,
     Set<int>? ownedMouths,
     int? avatarColor,
+    FacePhoto? facePhoto,
+    bool clearFacePhoto = false,
+    bool? useFacePhoto,
     DateTime? usernameChangedAt,
   }) {
     return UserProfile(
@@ -186,6 +206,8 @@ class UserProfile {
       mouthColor: mouthColor ?? this.mouthColor,
       ownedMouths: ownedMouths ?? this.ownedMouths,
       avatarColor: avatarColor ?? this.avatarColor,
+      facePhoto: clearFacePhoto ? null : facePhoto ?? this.facePhoto,
+      useFacePhoto: useFacePhoto ?? this.useFacePhoto,
       usernameChangedAt: usernameChangedAt ?? this.usernameChangedAt,
     );
   }

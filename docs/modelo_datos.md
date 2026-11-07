@@ -13,7 +13,7 @@
 | Credenciales | Firebase Authentication | Correo y contraseña (la contraseña **no** se guarda en la base de datos del juego) |
 | Datos permanentes | Cloud Firestore | Perfil, amigos, chat, catálogo de la tienda, inventario |
 | Datos de la partida en vivo | Realtime Database | Salas, turnos, posiciones, presencia (desconexiones) |
-| Archivos | Storage | _(sin uso por ahora)_ Foto del rostro; la foto de perfil es la cabeza del personaje, que se dibuja con las capas de arte (D-31) |
+| Archivos | Storage | _(sin uso por ahora)_ La foto de la cara va en Firestore, reducida (D-32), y la foto de perfil se dibuja con las capas de arte |
 
 ---
 
@@ -43,7 +43,8 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | `bocasCompradas` | `ownedMouths` | Lista con los números de las bocas compradas o ganadas. Las gratis (1 y 3) no se guardan. Solo cambia al comprar o abrir un cofre (D-30 y D-31) |
 | `colorFondoFoto` | `avatarColor` | Posición del color de fondo de la foto de perfil (0 a 15), que se elige en Ajustes |
 | _(ropa, cabello y nariz)_ | _(por construir)_ | Cuando existan esos cosméticos |
-| `fotoRostro` | _(sin uso)_ | La foto de perfil ahora es la cabeza del personaje; no se sube ninguna imagen |
+| `fotoCara` | `facePhoto` | Opcional. La foto de la cara: un JPEG de 256 × 256 en base64, de hasta 60 000 caracteres. Reemplaza a los ojos y la boca y cubre toda la cabeza (D-32) |
+| `usarFotoCara` | `useFacePhoto` | Si la foto se está usando o se prefieren los ojos y la boca. Si falta, `true` |
 
 #### Colecciones de Firestore de la cuenta
 
@@ -132,7 +133,7 @@ Viven en Cloud Firestore (ver `decisiones.md`, D-22). Las fechas se guardan en m
 
 | Colección | Documento | Campos | Para qué |
 |---|---|---|---|
-| `publicProfiles` | `{uid}` | `username`, `friendCode`, `experience`, `photoUrl` (sin uso) y cómo se ve la cabeza: `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor` y `avatarColor` | Lo que ven los demás (sin el correo). La app lo mantiene igual al perfil. Con los datos de la cabeza se dibuja la foto de perfil de los demás |
+| `publicProfiles` | `{uid}` | `username`, `friendCode`, `experience`, `photoUrl` (sin uso) y cómo se ve la cabeza: `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor`, `avatarColor` y `facePhoto` (solo si la foto está activa) | Lo que ven los demás (sin el correo). La app lo mantiene igual al perfil. Con los datos de la cabeza se dibuja la foto de perfil de los demás |
 | `friendships` | `{id de pareja}` | `members` (los dos uid), `requestedBy`, `status` (`pending` o `accepted`), `createdAt` | Solicitud y amistad |
 | `chats` | `{id de pareja}` | `members`, `lastMessage` (copia del último mensaje), `lastReadAt` (uid → fecha) | Lista de amigos: último mensaje y sin leer |
 | `chats/{id}/messages` | automático | `senderId`, `text`, `sentAt`, `type` (`text` o `invite`) y, en invitaciones, `roomId` y `roomCode` | Mensajes |
@@ -217,9 +218,10 @@ Los modelos viven en `lib/models/`. Hoy existen:
 | `loading_state.dart` | Estado de la pantalla de carga |
 | `play_option.dart` | Opciones del menú de Jugar |
 | `room.dart` | Sala de juego: configuración, jugadores y cuándo arranca o se cierra |
-| `user_profile.dart` | Perfil del jugador (correo, nombre de usuario y fecha de su último cambio, código de amistad, experiencia, monedas, diamantes, dados extra y cómo se ve su personaje: piel, ojos, boca, sus colores, lo comprado y el color de fondo de la foto) |
+| `user_profile.dart` | Perfil del jugador (correo, nombre de usuario y fecha de su último cambio, código de amistad, experiencia, monedas, diamantes, dados extra y cómo se ve su personaje: piel, ojos, boca, sus colores, lo comprado, el color de fondo de la foto y la foto de la cara) |
 | `eye_style.dart`, `mouth_style.dart` | Los ojos y las bocas: nombre, descripción, precio, rareza y capas de arte (ver 2.2) |
 | `eye_color.dart`, `mouth_color.dart`, `skin_tone.dart`, `avatar_color.dart` | Posición y color de los ojos, las bocas, el tono de piel y el fondo de la foto de perfil |
+| `face_photo.dart` | La foto de la cara (`FacePhoto`), la foto lista para editar (`FaceSourceImage`) y cómo se acomoda en la cabeza (`FaceCrop`) |
 | `rarity.dart` | Rareza de los cosméticos: índice, nombre, peso en los cofres y color |
 | `auth_user.dart` | La sesión: uid, correo, si está verificado y con qué entra (contraseña o Google) |
 | `app_preferences.dart` | Preferencias de Ajustes guardadas en el celular |
@@ -247,3 +249,4 @@ Los modelos de datos de este documento que faltan se agregarán a esa carpeta a 
 - [x] Estructura de las salas y de la partida en Realtime Database (ver D-14 y D-15).
 - [ ] Qué se guarda para permitir reconexión a una partida.
 - [x] Guardar el cosmético ganado en un cofre (ver 2.3 y D-31). Falta usar el dado extra dentro de la partida.
+- [ ] Moderación de la foto de la cara, que hoy ven todos los jugadores (ver D-32).

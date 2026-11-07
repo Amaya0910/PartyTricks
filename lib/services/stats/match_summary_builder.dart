@@ -1,6 +1,7 @@
 import 'package:party_tricks/models/match_summary.dart';
 import 'package:party_tricks/models/stats/award_stats.dart';
 import 'package:party_tricks/models/stats/board_stats.dart';
+import 'package:party_tricks/models/stats/minigame_stats.dart';
 import 'package:party_tricks/services/game_engine/award_calculator.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/match_results.dart';
@@ -46,6 +47,15 @@ class MatchSummaryBuilder {
       minigamesWon: player.minigamesWon,
       // Hay un minijuego por ronda y la partida termina en la última.
       minigamesPlayed: game.round,
+      minigamesByType: {
+        for (final MapEntry(key: type, value: tally)
+            in player.minigameTally.entries)
+          type.name: MinigameTypeStats(
+            played: tally.played,
+            won: tally.won,
+            bestScore: tally.bestScore,
+          ),
+      },
       opponents: {
         for (final other in game.players.values)
           if (other.id != playerId) other.id: other.username,
