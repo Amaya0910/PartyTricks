@@ -13,7 +13,8 @@ import 'package:party_tricks/widgets/step_dot_slider.dart';
 class CreateRoomDialog extends StatefulWidget {
   const CreateRoomDialog({super.key, this.maps = MapCatalog.all});
 
-  /// Los mapas para elegir. Empieza en [MapCatalog.defaultMap].
+  /// Los mapas para elegir; los ocultos no se muestran. Empieza en
+  /// [MapCatalog.defaultMap].
   final List<MapDefinition> maps;
 
   static Future<RoomSettings?> show(BuildContext context) {
@@ -37,9 +38,10 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
   bool _isPrivate = true;
   int _maxPlayers = _defaultPlayers;
   int _rounds = _defaultRounds;
-  late MapDefinition _map = widget.maps.firstWhere(
+  late final List<MapDefinition> _maps = MapCatalog.onlySelectable(widget.maps);
+  late MapDefinition _map = _maps.firstWhere(
     (map) => map.id == MapCatalog.defaultMap.id,
-    orElse: () => widget.maps.first,
+    orElse: () => _maps.first,
   );
 
   RoomSettings _buildSettings() {
@@ -57,10 +59,10 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
       selectedId: _map.id,
       rounds: _rounds,
       players: _maxPlayers,
-      maps: widget.maps,
+      maps: _maps,
     );
     if (id == null || !mounted) return;
-    setState(() => _map = widget.maps.firstWhere((map) => map.id == id));
+    setState(() => _map = _maps.firstWhere((map) => map.id == id));
   }
 
   void _submit() => Navigator.of(context).pop(_buildSettings());

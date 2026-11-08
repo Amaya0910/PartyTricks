@@ -115,7 +115,19 @@ class MapThemeCatalog {
     directory: 'assets/images/mapa/piezas',
   );
 
-  static const all = [classic];
+  /// Golosinas: el de Mundo Dulce. Lo que todavía no está dibujado se toma
+  /// del clásico.
+  static const candy = MapTheme(
+    id: 'dulces',
+    directory: '$themesDirectory/dulces',
+    colors: MapThemeColors(
+      ground: AppColors.candyGround,
+      path: AppColors.candyPath,
+      accent: AppColors.candyAccent,
+    ),
+  );
+
+  static const all = [classic, candy];
 
   /// Donde van los temas nuevos: `assets/themes/<id>/`.
   static const themesDirectory = 'assets/themes';

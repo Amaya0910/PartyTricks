@@ -36,6 +36,8 @@ flutter:
     - assets/images/cofres/
     - assets/images/mapa/piezas/
     - assets/maps/mapa_01/
+    - assets/maps/mapa_dulces/
+    - assets/themes/dulces/
 
   # Tipografía del mockup.
   fonts:

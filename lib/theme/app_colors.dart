@@ -109,6 +109,12 @@ class AppColors {
   /// Camino del mapa dibujado si su textura no carga.
   static const Color mapPath = Color(0xFFB8AFA3);
 
+  /// Tema de Mundo Dulce: suelo si el fondo no carga, camino sin textura y
+  /// color del mapa en el selector.
+  static const Color candyGround = Color(0xFFF9D6E3);
+  static const Color candyPath = Color(0xFFE2A66B);
+  static const Color candyAccent = Color(0xFFE0457B);
+
   // ---------------------------------------------------------------------------
   // Resultados
   // ---------------------------------------------------------------------------

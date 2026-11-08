@@ -11,12 +11,13 @@ enum BoardSize {
 
   final String label;
 
-  /// Hasta 60 casillas es pequeño, hasta 100 mediano, hasta 130 grande y de
-  /// ahí en adelante enorme. El primer mapa (42) es pequeño.
+  /// Hasta 50 casillas es pequeño, hasta 80 mediano, hasta 120 grande y de
+  /// ahí en adelante enorme: el primer mapa (42) es pequeño, Mundo Dulce
+  /// (60) mediano y un mapa de 150, enorme.
   static BoardSize of(int tiles) => switch (tiles) {
-    <= 60 => small,
-    <= 100 => medium,
-    <= 130 => large,
+    <= 50 => small,
+    <= 80 => medium,
+    <= 120 => large,
     _ => huge,
   };
 }

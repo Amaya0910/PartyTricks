@@ -435,3 +435,24 @@
   - Ya no hay dependencias visuales globales en el mapa: se quitaron `MapAssets` y `pathTextureProvider`. `MapScenery`, `MapPathsPainter` y `BoardMapView` reciben el tema cargado (`LoadedMapTheme`), y el selector usa el color de acento del mapa elegido.
 - **Validación:** `validateTheme` detecta archivos con nombre de dibujo del tema pero mal escritos (por ejemplo `marca_especal.png`, que la app nunca usaría). Las pruebas revisan, para cada tema registrado: su carpeta en `pubspec.yaml`, los nombres de sus archivos, que ningún dibujo pase de 4096 px y que el clásico tenga lo básico.
 - **Fuera de alcance:** el tablero de respaldo de cuadritos y los colores de los jugadores no cambian con el tema (los jugadores tienen que reconocerse igual en todos los mapas).
+
+## D-32. Mundo Dulce en el código (fase 1)
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - Nuevo nivel `ProtocolLevel.candyMap = 3`, y `AppProtocol.current` pasa a ese nivel. `mapa_dulces` pide `candyMap`: sus salas van en `publicLobbyByProtocol/3` y las versiones anteriores no pueden entrar. Las salas de `mapa_01` siguen pidiendo 1, así que la 1.0.0 las sigue jugando.
+  - El tablero es `buildCandyBoard()` (`lib/services/map/boards/mapa_dulces.dart`), con el diseño aprobado en el documento de producción:
+    - 60 casillas: 35 positivas, 14 negativas, 7 especiales, 3 tiendas y la salida.
+    - Bifurcaciones `{4: 32, 11: 49, 37: 54}`, reencuentros `{48: 27, 53: 20, 59: 45}` y tiendas `{3, 16, 41}`.
+    - Vueltas de 32, 29, 27 y 26 pasos.
+  - Los tableros de los mapas nuevos van en `lib/services/map/boards/`, uno por archivo. `buildDefaultBoard()` (el de `mapa_01`) se queda donde está para no tocar el motor.
+  - Tema `MapThemeCatalog.candy` (`assets/themes/dulces/`) con colores propios (suelo, camino y acento del selector). Por ahora solo trae una textura del camino provisional; lo demás lo toma del clásico y lo avisa en el log.
+  - `MapCatalog.mapaDulces` está registrado pero **oculto** (`selectable: false`). `MapDefinition.selectable` (por defecto `true`) decide si un mapa aparece en el selector y en "Alista tu party". `MapCatalog.all`, `byId` y `require` siguen viendo todos los mapas, así que una sala o partida de un mapa oculto carga bien. **El mapa por defecto sigue siendo `mapa_01`**, y tiene que poder elegirse (lo revisan las pruebas).
+  - Para habilitar Mundo Dulce basta con quitar `selectable: false`. Antes hacen falta: el arte final, el `.tmj` definitivo, las reglas de Firebase desplegadas y suficientes jugadores con esta versión del protocolo. El ocultamiento es solo en la app; las reglas no impiden que una app modificada cree una sala con ese mapa.
+  - Se cambian los cortes de `BoardSize`: pequeño hasta 50 casillas, mediano hasta 80, grande hasta 120 y enorme desde ahí. Con los de antes, Mundo Dulce (60) salía "pequeño", lo contrario de lo que busca el diseño.
+- **Assets provisionales** (en `assets/maps/mapa_dulces/` y `assets/themes/dulces/`; no son el arte final):
+  - `mapa.tmj`: las 60 casillas con las piezas del Mapa 1 y la geometría validada, en un mundo de 2880 × 6400 (lóbulos redondeados, plaza en zigzag suave y bifurcaciones a 180°, 79° y 76°). Conexiones de 328 a 440 px, sin plataformas encimadas. La propiedad del mapa `provisional` lo marca como tal.
+  - `fondo.png` liso (1440 × 3200), `preview.png` compuesta con esas piezas (480 × 1067) y `textura_camino.png` (la clásica teñida).
+- **Medidas que cambian respecto del documento original:** el mundo es de 2880 × **6400** y no de 6208, para dejar lugar arriba al edificio de la Chocolatería (casilla 16, en el borde superior). El fondo pasa a 1440 × 3200 y la vista previa a 480 × 1067. El documento de producción ya está actualizado.
+- **Pendientes:** el arte de Isabella (tema, plataformas, tiendas, decoraciones, fondo y vista previa) y el `.tmj` definitivo de level design.

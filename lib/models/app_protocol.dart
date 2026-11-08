@@ -12,16 +12,19 @@ abstract final class ProtocolLevel {
   /// entrar a una sala. No agrega nada que la 1.0.0 no pueda jugar.
   static const roomProtocol = 2;
 
+  /// Conoce Mundo Dulce (`mapa_dulces`) y su tema.
+  static const candyMap = 3;
+
   // Al agregar algo que una versión vieja no entiende (un mapa, un
-  // minijuego, una acción...), se agrega aquí un nivel nuevo, por ejemplo
-  // `static const candyMap = 3;`, y se sube [AppProtocol.current].
+  // minijuego, una acción...), se agrega aquí un nivel nuevo y se sube
+  // [AppProtocol.current].
 }
 
 /// El protocolo de esta versión de la app.
 abstract final class AppProtocol {
   /// Lo que entiende esta versión. Siempre el nivel más alto de
   /// [ProtocolLevel].
-  static const current = ProtocolLevel.roomProtocol;
+  static const current = ProtocolLevel.candyMap;
 
   /// El de las salas y jugadores guardados sin el campo.
   static const legacy = ProtocolLevel.base;

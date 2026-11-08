@@ -10,6 +10,8 @@ import 'package:party_tricks/services/map/board_validator.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/map/tiled_map_parser.dart';
 
+import 'fake_maps.dart';
+
 /// Lee el archivo de Tiled de [definition] tal como lo hace la app.
 BoardMap _load(MapDefinition definition) {
   final json = jsonDecode(File(definition.tiledMap).readAsStringSync());
@@ -87,6 +89,42 @@ void main() {
       expect(tile.type, original.tile(tile.id).type);
       expect(tile.next, original.tile(tile.id).next);
     }
+  });
+
+  group('mapas ocultos', () {
+    test('mapa_01 se puede elegir, y el mapa por defecto siempre', () {
+      expect(MapCatalog.mapa01.selectable, isTrue);
+      expect(MapCatalog.defaultMap.selectable, isTrue);
+      expect(MapCatalog.selectable, contains(MapCatalog.defaultMap));
+    });
+
+    test('Mundo Dulce está en el catálogo pero no en el selector', () {
+      expect(MapCatalog.mapaDulces.selectable, isFalse);
+      expect(MapCatalog.all, contains(MapCatalog.mapaDulces));
+      expect(MapCatalog.selectable, isNot(contains(MapCatalog.mapaDulces)));
+      // Las salas y partidas que lo usan lo siguen encontrando.
+      expect(MapCatalog.byId('mapa_dulces'), same(MapCatalog.mapaDulces));
+      expect(MapCatalog.require('mapa_dulces'), same(MapCatalog.mapaDulces));
+    });
+
+    test('onlySelectable deja los que se pueden elegir, en orden', () {
+      expect(
+        MapCatalog.onlySelectable([
+          hiddenMap,
+          MapCatalog.mapa01,
+          enabled(hiddenMap),
+        ]).map((m) => m.id),
+        ['mapa_01', 'mapa_oculto'],
+      );
+    });
+
+    test('habilitarlo es solo quitar selectable: false', () {
+      final dulces = enabled(MapCatalog.mapaDulces);
+      expect(dulces.selectable, isTrue);
+      expect(dulces.minProtocol, MapCatalog.mapaDulces.minProtocol);
+      expect(dulces.theme, MapCatalog.mapaDulces.theme);
+      expect(dulces.summary.tiles, 60);
+    });
   });
 
   test('los ids de los mapas no se repiten', () {

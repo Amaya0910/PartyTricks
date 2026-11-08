@@ -5,11 +5,11 @@ import 'package:party_tricks/services/map/board_summary.dart';
 void main() {
   test('el tamaño sale de la cantidad de casillas', () {
     expect(BoardSize.of(42), BoardSize.small);
-    expect(BoardSize.of(60), BoardSize.small);
-    expect(BoardSize.of(70), BoardSize.medium);
-    expect(BoardSize.of(100), BoardSize.medium);
+    expect(BoardSize.of(50), BoardSize.small);
+    expect(BoardSize.of(60), BoardSize.medium);
+    expect(BoardSize.of(80), BoardSize.medium);
+    expect(BoardSize.of(100), BoardSize.large);
     expect(BoardSize.of(120), BoardSize.large);
-    expect(BoardSize.of(130), BoardSize.large);
     expect(BoardSize.of(150), BoardSize.huge);
   });
 

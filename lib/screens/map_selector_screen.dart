@@ -11,7 +11,8 @@ import 'package:party_tricks/widgets/map/map_preview_image.dart';
 /// - En la tablet (o el celular acostado): el detalle a la izquierda y la
 ///   lista a la derecha.
 ///
-/// Sirve para cualquier cantidad de mapas: la lista se desliza.
+/// Sirve para cualquier cantidad de mapas: la lista se desliza. Solo muestra
+/// los que se pueden elegir (`MapDefinition.selectable`).
 class MapSelectorScreen extends StatefulWidget {
   const MapSelectorScreen({
     super.key,
@@ -55,9 +56,10 @@ class MapSelectorScreen extends StatefulWidget {
 }
 
 class _MapSelectorScreenState extends State<MapSelectorScreen> {
-  late MapDefinition _selected = widget.maps.firstWhere(
+  late final List<MapDefinition> _maps = MapCatalog.onlySelectable(widget.maps);
+  late MapDefinition _selected = _maps.firstWhere(
     (map) => map.id == widget.selectedId,
-    orElse: () => widget.maps.first,
+    orElse: () => _maps.first,
   );
 
   void _choose() => Navigator.of(context).pop(_selected.id);
@@ -91,7 +93,7 @@ class _MapSelectorScreenState extends State<MapSelectorScreen> {
                   SizedBox(
                     width: 300,
                     child: _MapList(
-                      maps: widget.maps,
+                      maps: _maps,
                       selected: _selected,
                       direction: Axis.vertical,
                       onSelect: (map) => setState(() => _selected = map),
@@ -104,11 +106,11 @@ class _MapSelectorScreenState extends State<MapSelectorScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(child: detail),
-                if (widget.maps.length > 1)
+                if (_maps.length > 1)
                   SizedBox(
                     height: 150,
                     child: _MapList(
-                      maps: widget.maps,
+                      maps: _maps,
                       selected: _selected,
                       direction: Axis.horizontal,
                       onSelect: (map) => setState(() => _selected = map),

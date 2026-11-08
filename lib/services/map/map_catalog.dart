@@ -3,6 +3,7 @@ import 'package:party_tricks/models/map/map_id.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/map/board_summary.dart';
+import 'package:party_tricks/services/map/boards/mapa_dulces.dart';
 import 'package:party_tricks/services/map/map_theme.dart';
 
 /// Un mapa que se puede jugar: su tablero (tipos de casilla y conexiones),
@@ -24,6 +25,7 @@ class MapDefinition implements ProtocolFeature {
     required this.buildBoard,
     required this.minProtocol,
     this.theme = MapThemeCatalog.classic,
+    this.selectable = true,
     this.secondsPerTurn = defaultSecondsPerTurn,
     this.recommendedPlayers = const (
       min: Room.minPlayers,
@@ -69,6 +71,12 @@ class MapDefinition implements ProtocolFeature {
   /// clásico.
   final MapTheme theme;
 
+  /// Si se puede elegir al crear una sala. Un mapa oculto sigue en el
+  /// catálogo (las salas y partidas que lo usan cargan bien), pero no
+  /// aparece en el selector. Para habilitarlo basta con quitar
+  /// `selectable: false` de su definición.
+  final bool selectable;
+
   /// Cuánto tarda un turno en este mapa. Un mapa con caminos más largos
   /// entre casillas o más bifurcaciones puede subirlo.
   final int secondsPerTurn;
@@ -113,7 +121,34 @@ class MapCatalog {
     minProtocol: ProtocolLevel.base,
   );
 
-  static const all = [mapa01];
+  static const mapaDulces = MapDefinition(
+    id: 'mapa_dulces',
+    name: 'Mundo Dulce',
+    shortDescription: 'Dos mundos de golosinas con vueltas cortas.',
+    longDescription:
+        'Desde la Plaza de Caramelo eliges el Reino de Chocolate al norte o '
+        'el Río de Caramelo al sur. Cada lado tiene su atajo y su tienda, y '
+        'las vueltas son cortas: ideal para tus primeras partidas.',
+    assetDirectory: 'assets/maps/mapa_dulces',
+    buildBoard: buildCandyBoard,
+    // Las versiones anteriores no lo conocen: no pueden entrar a sus salas.
+    minProtocol: ProtocolLevel.candyMap,
+    theme: MapThemeCatalog.candy,
+    // Oculto hasta tener el arte final, el .tmj definitivo, las reglas
+    // desplegadas y suficientes jugadores con esta versión.
+    selectable: false,
+  );
+
+  /// Todos los mapas que esta versión conoce, se puedan elegir o no.
+  static const all = [mapa01, mapaDulces];
+
+  /// Los que aparecen en el selector.
+  static List<MapDefinition> get selectable => onlySelectable(all);
+
+  static List<MapDefinition> onlySelectable(List<MapDefinition> maps) => [
+    for (final map in maps)
+      if (map.selectable) map,
+  ];
 
   /// El mapa que se juega si no se elige otro.
   static const defaultMap = mapa01;
