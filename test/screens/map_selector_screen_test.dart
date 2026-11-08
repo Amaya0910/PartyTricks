@@ -53,7 +53,11 @@ void main() {
   testWidgets('muestra la información de mapa_01 en un celular', (
     tester,
   ) async {
-    await openSelector(tester, size: const Size(360, 640));
+    await openSelector(
+      tester,
+      size: const Size(360, 640),
+      maps: const [MapCatalog.mapa01],
+    );
 
     expect(tester.takeException(), isNull);
     expect(find.text('Mapa 1'), findsOneWidget);
@@ -68,6 +72,58 @@ void main() {
     expect(find.byType(MapPreviewImage), findsOneWidget);
     // Con un solo mapa no hace falta la lista.
     expect(find.byKey(const Key('map-list')), findsNothing);
+  });
+
+  testWidgets('con el catálogo real, Mundo Dulce no aparece', (tester) async {
+    await openSelector(tester, size: const Size(360, 640));
+
+    expect(find.text('Mapa 1'), findsOneWidget);
+    expect(find.text('Mundo Dulce'), findsNothing);
+    expect(find.byKey(const ValueKey('map-thumb-mapa_dulces')), findsNothing);
+    // Solo queda mapa_01, así que no hace falta la lista.
+    expect(find.byKey(const Key('map-list')), findsNothing);
+  });
+
+  testWidgets('un mapa oculto no aparece aunque se lo pasen', (tester) async {
+    await openSelector(
+      tester,
+      size: const Size(360, 640),
+      maps: [...fakeMaps(3), hiddenMap],
+      selectedId: 'mapa_oculto',
+    );
+
+    expect(find.byKey(const Key('map-list')), findsOneWidget);
+    expect(find.byKey(const ValueKey('map-thumb-mapa_oculto')), findsNothing);
+    expect(find.text('Oculto'), findsNothing);
+    // Pedir un mapa oculto empieza en el primero que se puede elegir.
+    expect(find.text('Jugar en Mapa 1'), findsOneWidget);
+  });
+
+  testWidgets('al habilitar Mundo Dulce aparece y se puede elegir', (
+    tester,
+  ) async {
+    final results = await openSelector(
+      tester,
+      size: const Size(360, 640),
+      maps: [MapCatalog.mapa01, enabled(MapCatalog.mapaDulces)],
+    );
+
+    expect(find.byKey(const Key('map-list')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('map-thumb-mapa_dulces')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('60 casillas · Mediano'), findsOneWidget);
+    expect(find.text('3 atajos'), findsOneWidget);
+    expect(find.text('3 tiendas'), findsOneWidget);
+    expect(
+      find.text(
+        'Requiere la app actualizada (protocolo ${ProtocolLevel.candyMap})',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Jugar en Mundo Dulce'));
+    await tester.pumpAndSettle();
+    expect(results, ['mapa_dulces']);
   });
 
   testWidgets('elegir devuelve el id del mapa; volver devuelve null', (
@@ -157,6 +213,7 @@ void main() {
       tester,
       size: const Size(360, 640),
       selectedId: 'no_existe',
+      maps: const [MapCatalog.mapa01],
     );
 
     expect(find.text('Mapa 1'), findsOneWidget);

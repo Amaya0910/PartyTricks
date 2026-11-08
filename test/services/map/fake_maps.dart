@@ -29,3 +29,29 @@ List<MapDefinition> fakeMaps(int count) => [
       theme: i.isEven ? candyTheme : MapThemeCatalog.classic,
     ),
 ];
+
+/// Un mapa de prueba que no se puede elegir.
+const hiddenMap = MapDefinition(
+  id: 'mapa_oculto',
+  name: 'Oculto',
+  shortDescription: 'Todavía no está listo',
+  assetDirectory: 'assets/maps/mapa_oculto',
+  buildBoard: buildTestBoard,
+  minProtocol: ProtocolLevel.base,
+  selectable: false,
+);
+
+/// [map] tal como quedaría al habilitarlo: la misma definición sin
+/// `selectable: false`.
+MapDefinition enabled(MapDefinition map) => MapDefinition(
+  id: map.id,
+  name: map.name,
+  shortDescription: map.shortDescription,
+  longDescription: map.longDescription,
+  assetDirectory: map.assetDirectory,
+  buildBoard: map.buildBoard,
+  minProtocol: map.minProtocol,
+  theme: map.theme,
+  secondsPerTurn: map.secondsPerTurn,
+  recommendedPlayers: map.recommendedPlayers,
+);

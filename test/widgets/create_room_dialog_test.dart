@@ -80,6 +80,34 @@ void main() {
     expect(settings.rounds, 10);
   });
 
+  testWidgets('con el catálogo real no se puede elegir Mundo Dulce', (
+    tester,
+  ) async {
+    final results = await openDialog(tester);
+
+    await tester.tap(find.byKey(const Key('choose-map')));
+    await tester.pumpAndSettle();
+    expect(find.text('Mundo Dulce'), findsNothing);
+    await tester.tap(find.text('Jugar en Mapa 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Crear'));
+    await tester.pumpAndSettle();
+
+    expect(results.single!.mapId, 'mapa_01');
+  });
+
+  testWidgets('un mapa oculto no se muestra ni aunque sea el primero', (
+    tester,
+  ) async {
+    final results = await openDialog(tester, maps: [hiddenMap, ...fakeMaps(2)]);
+
+    expect(find.text('Oculto'), findsNothing);
+    await tester.tap(find.text('Crear'));
+    await tester.pumpAndSettle();
+
+    expect(results.single!.mapId, 'mapa_01');
+  });
+
   testWidgets('volver del selector sin elegir deja el mapa que estaba', (
     tester,
   ) async {

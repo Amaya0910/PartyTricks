@@ -8,7 +8,7 @@ Un número entero que dice qué entiende una versión de la app. Todo está en u
 
 | Nombre | Qué es |
 |---|---|
-| `ProtocolLevel` | Los niveles con nombre (`base = 1`, `roomProtocol = 2`, ...). **Los únicos números del protocolo en todo el proyecto.** |
+| `ProtocolLevel` | Los niveles con nombre (`base = 1`, `roomProtocol = 2`, `candyMap = 3`, ...). **Los únicos números del protocolo en todo el proyecto.** |
 | `AppProtocol.current` | El protocolo de esta versión: el nivel más alto de `ProtocolLevel`. |
 | `AppProtocol.legacy` | El de la 1.0.0 (`base`), que no escribe ningún campo de protocolo. |
 | `ProtocolFeature` | Algo de la partida que necesita un protocolo mínimo (`minProtocol`). Hoy lo implementa `MapDefinition`. |
