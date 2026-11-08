@@ -1,3 +1,5 @@
+import 'package:party_tricks/models/map/map_id.dart';
+
 /// En qué momento está la sala.
 enum RoomStatus { waiting, playing, closed }
 
@@ -10,6 +12,7 @@ class RoomSettings {
     required this.isPublic,
     this.maxPlayers = 6,
     this.rounds = 10,
+    this.mapId = defaultMapId,
   }) {
     if (maxPlayers < Room.minPlayers || maxPlayers > Room.maxAllowedPlayers) {
       throw ArgumentError('La sala debe ser de 2 a 6 jugadores');
@@ -22,6 +25,9 @@ class RoomSettings {
   final bool isPublic;
   final int maxPlayers;
   final int rounds;
+
+  /// El mapa que se va a jugar. Por ahora siempre el de por defecto.
+  final String mapId;
 }
 
 /// Un jugador dentro de la sala.
@@ -81,6 +87,7 @@ class Room {
     required this.rounds,
     required this.status,
     required this.lobbyEndsAt,
+    this.mapId = defaultMapId,
     this.lastActiveAt,
     this.players = const {},
   });
@@ -100,6 +107,8 @@ class Room {
       lobbyEndsAt: DateTime.fromMillisecondsSinceEpoch(
         meta['lobbyEndsAt'] as int,
       ),
+      // Las salas de antes de los varios mapas no lo tienen.
+      mapId: meta['mapId'] as String? ?? defaultMapId,
       lastActiveAt: _time(meta['lastActiveAt']),
       players: {
         for (final entry in players.entries)
@@ -127,6 +136,10 @@ class Room {
 
   /// Hora en que se acaba la espera de 1:30.
   final DateTime lobbyEndsAt;
+
+  /// El mapa que se va a jugar. Al arrancar se copia a la partida
+  /// (`GameState.mapId`), que es la que manda desde ahí.
+  final String mapId;
 
   /// Última vez que el anfitrión dio señales (lo renueva mientras juega).
   /// Sirve para saber si la sala quedó abandonada.
@@ -156,6 +169,7 @@ class Room {
     'rounds': rounds,
     'status': status.name,
     'lobbyEndsAt': lobbyEndsAt.millisecondsSinceEpoch,
+    'mapId': mapId,
     if (lastActiveAt != null)
       'lastActiveAt': lastActiveAt!.millisecondsSinceEpoch,
   };

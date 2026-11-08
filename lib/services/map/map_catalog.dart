@@ -1,3 +1,4 @@
+import 'package:party_tricks/models/map/map_id.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 
 /// Un mapa que se puede jugar: su tablero (tipos de casilla y conexiones) y
@@ -18,7 +19,7 @@ class MapDefinition {
   static const tiledMapFile = 'mapa.tmj';
   static const backgroundFile = 'fondo.png';
 
-  /// Id estable, por ejemplo `mapa_01`. Más adelante se guardará en la
+  /// Id estable, por ejemplo `mapa_01`. Se guarda en la sala y en la
   /// partida, así que no se debe cambiar.
   final String id;
 
@@ -42,7 +43,7 @@ class MapCatalog {
   const MapCatalog._();
 
   static const mapa01 = MapDefinition(
-    id: 'mapa_01',
+    id: defaultMapId,
     name: 'Mapa 1',
     description: '42 casillas con dos atajos y dos tiendas.',
     assetDirectory: 'assets/maps/mapa_01',
@@ -51,7 +52,7 @@ class MapCatalog {
 
   static const all = [mapa01];
 
-  /// El mapa que se juega mientras no se pueda elegir.
+  /// El mapa que se juega si no se elige otro.
   static const defaultMap = mapa01;
 
   /// El mapa con [id], o null si no existe.
@@ -61,4 +62,18 @@ class MapCatalog {
     }
     return null;
   }
+
+  /// El mapa con [id]. Lanza [UnknownMapException] si esta versión de la
+  /// app no lo tiene (una partida creada con una versión más nueva).
+  static MapDefinition require(String id) =>
+      byId(id) ?? (throw UnknownMapException(id));
+}
+
+class UnknownMapException implements Exception {
+  const UnknownMapException(this.mapId);
+
+  final String mapId;
+
+  @override
+  String toString() => 'Esta versión de la app no tiene el mapa "$mapId".';
 }

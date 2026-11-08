@@ -355,3 +355,20 @@
 - **Motivo:** dejar listo el terreno para más mapas sin cambiar lo que ve el jugador, y que un mapa mal armado se detecte en las pruebas (`map_catalog_test.dart` valida cada mapa del catálogo contra su `.tmj`) y no en una partida.
 - **Alternativas:** cambiar el respaldo por una pantalla de error. Se descartó porque, en una partida multijugador, quien no ve el mapa igual tiene que poder tirar y elegir camino; si no, el resto lo marca como ausente.
 - **Pendientes:** fase 2 (`mapId` en la sala y en la partida, providers por mapa) y fase 3 (tipos y conexiones en Tiled).
+
+## D-28. `mapId` en la sala y en la partida (fase 2 de varios mapas)
+
+- **Fecha:** 2026-11-07
+- **Estado:** Propuesta
+- **Decisión:**
+  - `mapId` (por defecto `defaultMapId` = `mapa_01`, en `lib/models/map/map_id.dart`) se guarda en `RoomSettings`, en `Room` (`rooms/{id}/meta/mapId`) y en `GameState` (`rooms/{id}/game/mapId`). Las salas y partidas guardadas antes, sin el campo, se leen como `mapa_01` (`Room.fromMap`, `GameCodec.decodeState` y `GameCodec.mapIdOf`).
+  - Al arrancar, la partida copia el mapa de la sala. **Desde ahí manda el de la partida**: el anfitrión aplica cada acción con el motor del `mapId` guardado en la partida, no con uno global.
+  - `GameEngine` tiene `mapId`: las partidas que arma son de ese mapa y rechaza (`StateError`) las acciones de partidas de otro, así un motor nunca juega con un tablero que no es el suyo.
+  - Providers por mapa: `mapDefinitionProvider(mapId)`, `boardProvider(mapId)`, `boardMapProvider(mapId)` y `gameEngineProvider(mapId)`. `FirebaseGameService` recibe una función `mapId → motor`. Se quita `currentMapProvider`.
+  - Mapa desconocido (una partida creada con una versión más nueva): `MapCatalog.require` lanza `UnknownMapException`. El anfitrión descarta las acciones de esa partida y la pantalla del tablero pide actualizar la app, con un botón para salir. Con un solo mapa hoy no puede pasar.
+- **Reglas (`database.rules.json`):** `meta/mapId` es opcional (las salas viejas no lo tienen) y debe ser texto `^[a-z0-9_]{1,32}$`. En una sala que ya existe no se puede cambiar por otro valor; sí puede desaparecer, porque una versión vieja de la app que tome el lugar del anfitrión reescribe `meta` sin él (se lee como `mapa_01`). `game` no cambia.
+- **Importante al publicar:** hay que **desplegar las reglas antes** de publicar esta versión. Con las reglas de antes, `meta` rechaza campos desconocidos y no se podrían crear salas.
+- **Motivo:** guardar el mapa en la partida hace que una reconexión o un cambio de anfitrión sigan jugando el mapa correcto sin pasos extra (como los minijuegos, D-26).
+- **Pendientes:**
+  - Antes de agregar un segundo mapa, las versiones viejas de la app (que no conocen `mapId`) jugarían cualquier partida con `mapa_01`. Hace falta una versión mínima o que el anfitrión revise la versión de los jugadores.
+  - Selector o sorteo del mapa (hoy siempre `mapa_01`).

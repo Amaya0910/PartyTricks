@@ -231,4 +231,24 @@ void main() {
       expect(rooms.activeGames['ana'], isNull);
     });
   });
+
+  testWidgets('si la partida es de un mapa que no conoce, pide actualizar', (
+    tester,
+  ) async {
+    games = _FakeGameService()
+      ..emit(
+        const GameState(
+          players: {'ana': PlayerState(id: 'ana', username: 'Ana')},
+          turnOrder: ['ana'],
+          totalRounds: 5,
+          diamondTileId: 1,
+          mapId: 'mapa_99',
+        ),
+      );
+    await pumpBoard(tester, me: 'ana');
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Actualízala para jugarla'), findsOneWidget);
+    expect(find.text('Salir'), findsOneWidget);
+  });
 }

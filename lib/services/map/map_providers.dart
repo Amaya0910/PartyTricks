@@ -8,14 +8,18 @@ import 'package:party_tricks/services/map/map_assets.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/map/tiled_map_parser.dart';
 
-/// El mapa que se juega. Por ahora siempre el primero.
-final currentMapProvider = Provider<MapDefinition>(
-  (ref) => MapCatalog.defaultMap,
+/// El mapa con ese id (el `mapId` de la partida). Lanza
+/// [UnknownMapException] si esta versión de la app no lo tiene.
+final mapDefinitionProvider = Provider.family<MapDefinition, String>(
+  (ref, mapId) => MapCatalog.require(mapId),
 );
 
-/// El mapa dibujado que se juega, leído del archivo de Tiled.
-final boardMapProvider = FutureProvider<BoardMap>((ref) async {
-  final definition = ref.watch(currentMapProvider);
+/// El mapa dibujado, leído de su archivo de Tiled.
+final boardMapProvider = FutureProvider.family<BoardMap, String>((
+  ref,
+  mapId,
+) async {
+  final definition = ref.watch(mapDefinitionProvider(mapId));
   final text = await rootBundle.loadString(definition.tiledMap);
   return const TiledMapParser().parse(
     jsonDecode(text) as Map<String, dynamic>,
