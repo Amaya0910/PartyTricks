@@ -8,6 +8,7 @@ import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/map/board_validator.dart';
+import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/map/map_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
@@ -246,6 +247,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     if (game != null && me != null && game.phase == GamePhase.finished) {
       return ResultsScreen(game: game, myId: me.uid, onExit: _leave);
     }
+    if (game != null && MapCatalog.byId(game.mapId) == null) {
+      return _UnknownMap(onLeave: _confirmLeave);
+    }
     final mapView = game == null || me == null ? null : _mapView(game, me.uid);
     final players = game == null ? null : _minigamePlayers(game);
     final minigame = game?.minigame;
@@ -272,7 +276,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                               myId: me.uid,
                               players: players!,
                               rules: ref
-                                  .watch(gameEngineProvider)
+                                  .watch(gameEngineProvider(game.mapId))
                                   .minigameRules,
                               onPlay: (score) => _send(
                                 MinigameMove(me.uid, minigame.round, score),
@@ -283,7 +287,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                 Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: BoardView(
-                                    board: ref.watch(boardProvider),
+                                    board: ref.watch(boardProvider(game.mapId)),
                                     state: game,
                                   ),
                                 ),
@@ -291,7 +295,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                           MinigameResultOverlay(
                             result: game.lastMinigame,
                             players: players!,
-                            coins: ref.watch(gameEngineProvider).minigameCoins,
+                            coins: ref
+                                .watch(gameEngineProvider(game.mapId))
+                                .minigameCoins,
                           ),
                         ],
                       ),
@@ -328,9 +334,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   /// tablero. En ese caso se muestra el tablero de cuadritos para que se
   /// pueda jugar.
   Widget? _mapView(GameState game, String myId) {
-    final map = ref.watch(boardMapProvider);
+    final map = ref.watch(boardMapProvider(game.mapId));
     final texture = ref.watch(pathTextureProvider).value;
-    final board = ref.watch(boardProvider);
+    final board = ref.watch(boardProvider(game.mapId));
     if (map.hasError) debugPrint('Mapa: ${map.error}');
     final loaded = map.value;
     if (loaded == null || texture == null) return null;
@@ -570,6 +576,39 @@ class _Button extends StatelessWidget {
       ),
       onPressed: onPressed,
       child: Text(label),
+    );
+  }
+}
+
+/// La partida es de un mapa que esta versión de la app no tiene (la creó
+/// alguien con una versión más nueva). No se puede mostrar ni jugar.
+class _UnknownMap extends StatelessWidget {
+  const _UnknownMap({required this.onLeave});
+
+  final VoidCallback onLeave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.screenBackground,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Esta partida usa un mapa que tu versión de la app no tiene. '
+                'Actualízala para jugarla.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 24),
+              _Button(label: 'Salir', onPressed: onLeave),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

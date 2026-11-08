@@ -63,4 +63,35 @@ void main() {
     expect(read.players.keys, ['u0', 'u1']);
     expect(read.players['u1']!.username, 'Jugador 1');
   });
+
+  group('mapId', () {
+    test('por defecto la sala es del primer mapa', () {
+      expect(RoomSettings(isPublic: true).mapId, 'mapa_01');
+      expect(roomWith(2).mapId, 'mapa_01');
+    });
+
+    test('se guarda en meta y se lee igual', () {
+      final room = Room(
+        id: 'sala1',
+        code: 'ABC234',
+        isPublic: false,
+        hostUid: 'u0',
+        maxPlayers: 4,
+        rounds: 10,
+        status: RoomStatus.waiting,
+        lobbyEndsAt: start,
+        mapId: 'mapa_02',
+      );
+      final meta = room.metaToMap();
+
+      expect(meta['mapId'], 'mapa_02');
+      expect(Room.fromMap('sala1', {'meta': meta}).mapId, 'mapa_02');
+    });
+
+    test('una sala guardada antes de los mapas se lee como mapa_01', () {
+      final meta = roomWith(2).metaToMap()..remove('mapId');
+
+      expect(Room.fromMap('sala1', {'meta': meta}).mapId, 'mapa_01');
+    });
+  });
 }

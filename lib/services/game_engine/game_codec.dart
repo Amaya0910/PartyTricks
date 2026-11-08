@@ -1,3 +1,4 @@
+import 'package:party_tricks/models/map/map_id.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
@@ -8,7 +9,8 @@ import 'package:party_tricks/services/game_engine/tile_effects.dart';
 /// Database (`rooms/{id}/game` y `rooms/{id}/actions`), y de vuelta.
 ///
 /// Los campos que faltan se leen vacíos, así las partidas guardadas antes de
-/// las tiendas o de los minijuegos siguen funcionando.
+/// las tiendas o de los minijuegos siguen funcionando. Las de antes de los
+/// varios mapas se leen como [defaultMapId].
 class GameCodec {
   const GameCodec();
 
@@ -16,6 +18,7 @@ class GameCodec {
     'players': {for (final p in state.players.values) p.id: _encodePlayer(p)},
     'turnOrder': state.turnOrder,
     'totalRounds': state.totalRounds,
+    'mapId': state.mapId,
     'round': state.round,
     'turnIndex': state.turnIndex,
     'phase': state.phase.name,
@@ -51,6 +54,7 @@ class GameCodec {
       },
       turnOrder: [for (final id in data['turnOrder'] as List) id as String],
       totalRounds: _int(data['totalRounds']),
+      mapId: mapIdOf(data),
       round: _int(data['round']),
       turnIndex: _int(data['turnIndex']),
       phase: GamePhase.values.byName(data['phase'] as String),
@@ -195,6 +199,10 @@ class GameCodec {
       missedTurns: _int(data['missedTurns']),
     );
   }
+
+  /// El mapa de una partida guardada, sin leer el resto.
+  String mapIdOf(Map<Object?, Object?> data) =>
+      data['mapId'] as String? ?? defaultMapId;
 
   Map<String, Object?> _encodeMinigame(MinigameState minigame) => {
     'type': minigame.type.name,

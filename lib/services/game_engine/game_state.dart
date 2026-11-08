@@ -1,3 +1,4 @@
+import 'package:party_tricks/models/map/map_id.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
@@ -174,6 +175,7 @@ class GameState {
     required this.turnOrder,
     required this.totalRounds,
     required this.diamondTileId,
+    this.mapId = defaultMapId,
     this.round = 1,
     this.turnIndex = 0,
     this.phase = GamePhase.rolling,
@@ -192,6 +194,9 @@ class GameState {
   /// Ids de los jugadores en el orden en que juegan.
   final List<String> turnOrder;
   final int totalRounds;
+
+  /// El mapa de la partida. No cambia durante la partida.
+  final String mapId;
 
   /// Ronda actual, empieza en 1.
   final int round;
@@ -251,6 +256,7 @@ class GameState {
       players: players ?? this.players,
       turnOrder: turnOrder,
       totalRounds: totalRounds,
+      mapId: mapId,
       round: round ?? this.round,
       turnIndex: turnIndex ?? this.turnIndex,
       phase: phase ?? this.phase,

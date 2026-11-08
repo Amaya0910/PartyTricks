@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:party_tricks/models/map/map_id.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
@@ -17,6 +18,7 @@ class GameEngine {
   const GameEngine({
     required this.board,
     required this.random,
+    this.mapId = defaultMapId,
     this.tileEffects = const TileEffects(),
     this.itemRules = const ItemRules(),
     this.minigameRules = const MinigameRules(),
@@ -27,6 +29,10 @@ class GameEngine {
 
   final BoardLayout board;
   final RandomSource random;
+
+  /// El mapa de [board]. Las partidas que arma son de este mapa y solo
+  /// acepta acciones de partidas de este mapa.
+  final String mapId;
   final TileEffects tileEffects;
   final ItemRules itemRules;
   final MinigameRules minigameRules;
@@ -57,12 +63,17 @@ class GameEngine {
       },
       turnOrder: const TurnOrderResolver().resolve(initialRolls),
       totalRounds: totalRounds,
+      mapId: mapId,
       diamondTileId: _randomDiamondTile(exclude: BoardLayout.startId),
     );
   }
 
-  /// Aplica [action]. Lanza [StateError] si no se puede hacer en este momento.
+  /// Aplica [action]. Lanza [StateError] si no se puede hacer en este momento
+  /// o si la partida es de otro mapa.
   GameState apply(GameState state, GameAction action) {
+    if (state.mapId != mapId) {
+      throw StateError('La partida es del mapa ${state.mapId}, no del $mapId');
+    }
     return switch (action) {
       RollDice(:final playerId) => _roll(_back(state, playerId), playerId),
       ChooseBranch(:final playerId, :final branch) => _chooseBranch(

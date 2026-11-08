@@ -211,4 +211,34 @@ void main() {
       expect((leave as LeaveShop).playerId, 'a');
     });
   });
+
+  group('mapId', () {
+    const state = GameState(
+      players: {'a': PlayerState(id: 'a', username: 'Ana')},
+      turnOrder: ['a'],
+      totalRounds: 5,
+      diamondTileId: 3,
+      mapId: 'mapa_02',
+    );
+
+    test('se guarda y se lee igual', () {
+      final data = codec.encodeState(state);
+
+      expect(data['mapId'], 'mapa_02');
+      expect(codec.decodeState(data).mapId, 'mapa_02');
+      expect(codec.mapIdOf(data), 'mapa_02');
+    });
+
+    test('una partida guardada antes de los mapas se lee como mapa_01', () {
+      final old = codec.encodeState(state)..remove('mapId');
+
+      expect(codec.decodeState(old).mapId, 'mapa_01');
+      expect(codec.mapIdOf(old), 'mapa_01');
+    });
+
+    test('no se pierde al aplicar cambios al estado', () {
+      expect(state.copyWith(round: 2).mapId, 'mapa_02');
+      expect(state.withPlayer(state.currentPlayer).mapId, 'mapa_02');
+    });
+  });
 }

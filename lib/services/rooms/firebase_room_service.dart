@@ -36,6 +36,7 @@ class FirebaseRoomService implements RoomService {
       hostUid: uid,
       maxPlayers: settings.maxPlayers,
       rounds: settings.rounds,
+      mapId: settings.mapId,
       status: RoomStatus.waiting,
       lobbyEndsAt: now.add(Room.lobbyDuration),
       players: {uid: RoomPlayer(uid: uid, username: username, joinedAt: now)},
