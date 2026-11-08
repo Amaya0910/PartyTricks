@@ -456,3 +456,15 @@
   - `fondo.png` liso (1440 × 3200), `preview.png` compuesta con esas piezas (480 × 1067) y `textura_camino.png` (la clásica teñida).
 - **Medidas que cambian respecto del documento original:** el mundo es de 2880 × **6400** y no de 6208, para dejar lugar arriba al edificio de la Chocolatería (casilla 16, en el borde superior). El fondo pasa a 1440 × 3200 y la vista previa a 480 × 1067. El documento de producción ya está actualizado.
 - **Pendientes:** el arte de Isabella (tema, plataformas, tiendas, decoraciones, fondo y vista previa) y el `.tmj` definitivo de level design.
+
+## D-33. Indicador del diamante fuera de pantalla
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - Si el diamante queda fuera de la vista, `BoardMapView` muestra un indicador en el borde, sobre la línea que va del centro de la pantalla al diamante, a 12 px del borde. Es un círculo con el estilo de las flechas de bifurcación (fondo de panel y sombra), con el diamante del tema adentro (su dibujo, o el ícono si no lo tiene) y una punta que apunta hacia él. Abajo dice a cuántas casillas está, contando desde tu personaje por el camino más corto. Si el diamante se ve, no hay indicador.
+  - El tamaño en pantalla no depende del zoom: un 11 % del lado corto de la vista, entre 40 y 52 px. Por lejos que esté el diamante, el indicador se queda en el borde con el mismo tamaño; solo cambia el número.
+  - Al tocarlo, la cámara va hasta el diamante sin cambiar el zoom. Va en una capa debajo de las flechas de bifurcación, para no tapar la elección de camino.
+  - La geometría está aparte, en `placeOffscreenMarker` (`lib/widgets/map/offscreen_marker.dart`), para probarla sin widgets. Se recalcula solo cuando se mueve la cámara (`AnimatedBuilder` sobre el `TransformationController`), y la distancia en casillas solo cuando cambia la partida.
+- **Error de la cámara corregido de paso:** el zoom se leía con `getMaxScaleOnAxis()`, que también mira el eje z. Ese eje vale 1 en las matrices de la cámara, así que con zoom menor a 1 la función devolvía 1. Por eso el zoom inicial previsto (unas 5 casillas de ancho) nunca se aplicaba: la cámara arrancaba en el zoom máximo de cerca. Por la misma razón, al caminar se volvía a acercar aunque el jugador hubiera alejado el zoom. Ahora se lee del eje x (`_cameraScale`).
+- **No cambia:** el protocolo, `GameState`, Firebase ni las reglas.
