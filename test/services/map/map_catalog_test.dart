@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/map/board_map.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/map/board_validator.dart';
@@ -23,6 +24,10 @@ void main() {
     expect(MapCatalog.defaultMap, same(MapCatalog.mapa01));
     expect(MapCatalog.byId('mapa_01'), same(MapCatalog.mapa01));
     expect(MapCatalog.byId('no_existe'), isNull);
+  });
+
+  test('mapa_01 lo juega la 1.0.0', () {
+    expect(MapCatalog.mapa01.minProtocol, ProtocolLevel.base);
   });
 
   test('mapa_01 conserva las rutas de siempre', () {
@@ -61,6 +66,13 @@ void main() {
           map: _load(definition),
         );
         expect(problems, isEmpty, reason: problems.join('\n'));
+      });
+
+      test('esta versión entiende su protocolo', () {
+        expect(
+          definition.minProtocol,
+          inInclusiveRange(AppProtocol.legacy, AppProtocol.current),
+        );
       });
 
       test('existen todas las imágenes que usa', () {

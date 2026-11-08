@@ -1,3 +1,4 @@
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/map/map_id.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 
@@ -7,13 +8,14 @@ import 'package:party_tricks/services/game_engine/board_layout.dart';
 /// La carpeta guarda, por convención, el archivo de Tiled [tiledMapFile] y el
 /// fondo [backgroundFile]. Las piezas compartidas (plataformas, marcas,
 /// textura del camino) están en `MapAssets`.
-class MapDefinition {
+class MapDefinition implements ProtocolFeature {
   const MapDefinition({
     required this.id,
     required this.name,
     required this.description,
     required this.assetDirectory,
     required this.buildBoard,
+    required this.minProtocol,
   });
 
   static const tiledMapFile = 'mapa.tmj';
@@ -34,6 +36,11 @@ class MapDefinition {
   /// `casilla` de las plataformas en Tiled.
   final BoardLayout Function() buildBoard;
 
+  /// Desde qué [ProtocolLevel] la app conoce este mapa. Un mapa nuevo usa un
+  /// nivel nuevo: así las versiones viejas no pueden entrar a sus salas.
+  @override
+  final int minProtocol;
+
   String get tiledMap => '$assetDirectory/$tiledMapFile';
   String get background => '$assetDirectory/$backgroundFile';
 }
@@ -48,6 +55,8 @@ class MapCatalog {
     description: '42 casillas con dos atajos y dos tiendas.',
     assetDirectory: 'assets/maps/mapa_01',
     buildBoard: buildDefaultBoard,
+    // La 1.0.0 ya lo juega.
+    minProtocol: ProtocolLevel.base,
   );
 
   static const all = [mapa01];
