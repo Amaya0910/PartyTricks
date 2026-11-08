@@ -7,6 +7,7 @@ import 'package:party_tricks/screens/results_screen.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/map/board_validator.dart';
 import 'package:party_tricks/services/map/map_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
@@ -323,8 +324,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     );
   }
 
-  /// El mapa dibujado, o null si todavía no carga o le faltan casillas. En
-  /// ese caso se muestra el tablero de cuadritos para que se pueda jugar.
+  /// El mapa dibujado, o null si todavía no carga o no coincide con el
+  /// tablero. En ese caso se muestra el tablero de cuadritos para que se
+  /// pueda jugar.
   Widget? _mapView(GameState game, String myId) {
     final map = ref.watch(boardMapProvider);
     final texture = ref.watch(pathTextureProvider).value;
@@ -332,9 +334,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     if (map.hasError) debugPrint('Mapa: ${map.error}');
     final loaded = map.value;
     if (loaded == null || texture == null) return null;
-    final missing = loaded.missingTiles(board.tiles.map((tile) => tile.id));
-    if (missing.isNotEmpty) {
-      debugPrint('Mapa: faltan las casillas $missing');
+    final problems = validateBoard(board, map: loaded);
+    if (problems.isNotEmpty) {
+      debugPrint('Mapa: ${problems.join(' ')}');
       return null;
     }
     return BoardMapView(

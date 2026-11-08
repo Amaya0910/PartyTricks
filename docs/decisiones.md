@@ -342,3 +342,16 @@
   - Quien vuelve a abrir la app en pleno Para el Tiempo o Reacción empieza a contar de nuevo.
   - Las estadísticas por tipo de minijuego (`MinigameStats.byType`) todavía no se llenan: la partida guarda solo el último resultado.
 - **Cómo se probaron:** 61 pruebas nuevas (reglas de cada minijuego, desempate con el dado, cierre por tiempo, árbitro, cambio de anfitrión, reconexión, guardado en la base de datos y pantallas). Las reglas de Realtime Database no se probaron con el emulador en este bloque (en esta computadora falta Java 21).
+
+## D-27. Catálogo de mapas y validación del tablero (fase 1 de varios mapas)
+
+- **Fecha:** 2026-11-07
+- **Estado:** Propuesta
+- **Decisión:**
+  - Cada mapa se registra como un `MapDefinition` (`id`, `name`, `description`, `assetDirectory`, `buildBoard`) en `MapCatalog`. Por ahora solo está `mapa_01`, que es el `defaultMap`. La carpeta de cada mapa guarda `mapa.tmj` y `fondo.png`; las piezas compartidas siguen en `MapAssets`. Se quita `MapAssets.firstMap`.
+  - `currentMapProvider` da el mapa que se juega (siempre `defaultMap`); `boardProvider` y `boardMapProvider` salen de él. Todavía **no** hay `mapId` en la partida ni selector, y Firebase no cambia.
+  - `validateBoard(board, map:)` revisa: ids seguidos desde 0, que la 0 sea la única salida, que todo `next` exista (sin repetidos ni a sí misma), como mucho 2 caminos por bifurcación, que desde la salida se llegue a todo, que desde cada casilla se pueda volver a la salida (sin ciclos que la eviten ni callejones) y, con el mapa, que el dibujo tenga exactamente las mismas casillas. `board_screen.dart` lo usa en lugar de `missingTiles`: si hay problemas, los imprime y muestra el tablero de respaldo.
+  - El tablero de respaldo ya no usa una cuadrícula fija de 9 × 8: `BoardGrid.of(board)` pone el camino principal en el borde y los atajos adentro (o en filas extra abajo), para cualquier cantidad de casillas.
+- **Motivo:** dejar listo el terreno para más mapas sin cambiar lo que ve el jugador, y que un mapa mal armado se detecte en las pruebas (`map_catalog_test.dart` valida cada mapa del catálogo contra su `.tmj`) y no en una partida.
+- **Alternativas:** cambiar el respaldo por una pantalla de error. Se descartó porque, en una partida multijugador, quien no ve el mapa igual tiene que poder tirar y elegir camino; si no, el resto lo marca como ausente.
+- **Pendientes:** fase 2 (`mapId` en la sala y en la partida, providers por mapa) y fase 3 (tipos y conexiones en Tiled).

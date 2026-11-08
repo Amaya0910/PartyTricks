@@ -22,7 +22,7 @@ class TiledMapException implements Exception {
 /// - Cualquier otra capa de objetos (tiendas, puentes, decoraciones).
 ///
 /// Las rutas de las imágenes se toman relativas a la carpeta del mapa, como
-/// las guarda Tiled.
+/// las guarda Tiled. El fondo no está en el archivo: lo da quien llama.
 class TiledMapParser {
   const TiledMapParser();
 
@@ -33,7 +33,11 @@ class TiledMapParser {
   static const _flipHorizontal = 0x80000000;
   static const _gidMask = 0x0FFFFFFF;
 
-  BoardMap parse(Map<String, dynamic> json, {required String mapDir}) {
+  BoardMap parse(
+    Map<String, dynamic> json, {
+    required String mapDir,
+    required String background,
+  }) {
     final size = Size(
       _number(json, 'width') * _number(json, 'tilewidth'),
       _number(json, 'height') * _number(json, 'tileheight'),
@@ -81,7 +85,7 @@ class TiledMapParser {
       size: size,
       tiles: tiles,
       objects: objects,
-      background: '$mapDir/fondo.png',
+      background: background,
     );
   }
 
