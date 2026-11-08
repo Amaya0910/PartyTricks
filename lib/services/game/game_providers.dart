@@ -7,8 +7,12 @@ import 'package:party_tricks/services/game_engine/game_engine.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/game_engine/random_source.dart';
+import 'package:party_tricks/services/map/map_providers.dart';
 
-final boardProvider = Provider<BoardLayout>((ref) => buildDefaultBoard());
+/// El tablero del mapa que se juega.
+final boardProvider = Provider<BoardLayout>(
+  (ref) => ref.watch(currentMapProvider).buildBoard(),
+);
 
 /// Las reglas. El anfitrión las aplica; la pantalla las usa para saber qué
 /// ítems se pueden comprar o usar.

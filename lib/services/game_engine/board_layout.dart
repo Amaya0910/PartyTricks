@@ -46,7 +46,8 @@ class BoardLayout {
 /// Tablero del primer mapa dibujado: 42 casillas y 2 bifurcaciones.
 ///
 /// El camino principal va de la 0 a la 31 y vuelve a la salida. Los dos
-/// desvíos son atajos. Las posiciones están en `assets/maps/mapa_01/mapa.tmj`.
+/// desvíos son atajos. Las posiciones están en `assets/maps/mapa_01/mapa.tmj`
+/// y el mapa está registrado en `MapCatalog.mapa01`.
 BoardLayout buildDefaultBoard() {
   const lastMainTile = 31;
   // Casilla de la bifurcación -> primera casilla del desvío.

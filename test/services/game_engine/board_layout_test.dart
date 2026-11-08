@@ -4,7 +4,7 @@ import 'package:party_tricks/services/game_engine/board_layout.dart';
 void main() {
   final board = buildDefaultBoard();
 
-   test('tiene 42 casillas, 2 bifurcaciones y 2 tiendas', () {
+  test('tiene 42 casillas, 2 bifurcaciones y 2 tiendas', () {
     expect(board.tiles.length, 42);
     expect(board.tiles.where((t) => t.isFork).length, 2);
     expect(board.tiles.where((t) => t.type == TileType.shop).length, 2);
@@ -29,12 +29,5 @@ void main() {
       }
     }
     expect(reached.length, board.tiles.length);
-  });
-
-  test('tiene 42 casillas, 2 bifurcaciones y 2 tiendas', () {
-    expect(board.tiles.length, 42);
-    expect(board.tiles.where((t) => t.isFork).length, 2);
-    expect(board.tiles.where((t) => t.type == TileType.shop).length, 2);
-    expect(board.tile(BoardLayout.startId).type, TileType.start);
   });
 }
