@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/widgets/character/character_layer.dart';
 
@@ -10,16 +11,22 @@ import 'package:party_tricks/widgets/character/character_layer.dart';
 ///
 /// [color] es el color elegido, o el tono de piel si no eligió ninguno.
 class MouthLayer extends StatelessWidget {
-  const MouthLayer({super.key, required this.style, required this.color});
+  const MouthLayer({
+    super.key,
+    required this.style,
+    required this.color,
+    this.view = CharacterView.frente,
+  });
 
   final MouthStyle style;
   final Color color;
+  final CharacterView view;
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        for (final layer in style.layers)
+        for (final layer in style.layersIn(view))
           CharacterLayer(layer.asset, tint: layer.tinted ? color : null),
       ],
     );

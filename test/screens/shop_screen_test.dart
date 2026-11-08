@@ -3,11 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:party_tricks/controllers/accessory_controller.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
+import 'package:party_tricks/controllers/shirt_controller.dart';
+import 'package:party_tricks/models/accessory_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
 import 'package:party_tricks/models/user_profile.dart';
 import 'package:party_tricks/screens/shop_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
@@ -51,6 +55,36 @@ class _FakeShopService implements ShopService {
     _profile = _profile.copyWith(
       coins: _profile.coins - mouth.price,
       ownedMouths: {..._profile.ownedMouths, mouth.number},
+    );
+    profiles.add(_profile);
+  }
+
+  @override
+  Future<void> buyShirt({
+    required String uid,
+    required ShirtStyle shirt,
+  }) async {
+    if (_profile.coins < shirt.price) {
+      throw const ShopException('No tienes suficientes monedas.');
+    }
+    _profile = _profile.copyWith(
+      coins: _profile.coins - shirt.price,
+      ownedShirts: {..._profile.ownedShirts, shirt.id},
+    );
+    profiles.add(_profile);
+  }
+
+  @override
+  Future<void> buyAccessory({
+    required String uid,
+    required AccessoryStyle accessory,
+  }) async {
+    if (_profile.coins < accessory.price) {
+      throw const ShopException('No tienes suficientes monedas.');
+    }
+    _profile = _profile.copyWith(
+      coins: _profile.coins - accessory.price,
+      ownedAccessories: {..._profile.ownedAccessories, accessory.id},
     );
     profiles.add(_profile);
   }
@@ -136,6 +170,9 @@ void main() {
 
   testWidgets('se puede ordenar por precio y por rareza', (tester) async {
     await pump(tester);
+    // Solo los ojos: la lista es larga y solo se dibuja lo que se ve.
+    await tester.tap(find.text('Ojos'));
+    await tester.pump();
     double top(String title) => tester.getTopLeft(find.text(title)).dy;
 
     await tester.tap(find.byTooltip('Ordenar'));
@@ -211,5 +248,78 @@ void main() {
       container.read(eyesControllerProvider).selectStyle(EyeStyle.ojo8),
       throwsA(isA<CharacterException>()),
     );
+  });
+
+  testWidgets('muestra las camisas y los accesorios que no tienes', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.text('Camisas'));
+    await tester.pump();
+    expect(find.text(ShirtStyle.red.title), findsOneWidget);
+    expect(find.text(ShirtStyle.stripe.title), findsOneWidget);
+    // La camisa azul de inicio es gratis y no se vende.
+    expect(find.text(ShirtStyle.blue.title), findsNothing);
+    expect(find.text(EyeStyle.ojo1.title), findsNothing);
+
+    await tester.tap(find.text('Accesorios'));
+    await tester.pump();
+    expect(find.text(AccessoryStyle.ogre.title), findsOneWidget);
+    expect(find.text(AccessoryStyle.jester.title), findsOneWidget);
+    expect(find.text(ShirtStyle.red.title), findsNothing);
+  });
+
+  testWidgets('comprar una camisa la quita de la Tienda', (tester) async {
+    await pump(tester);
+    await tester.tap(find.text('Camisas'));
+    await tester.pump();
+    await tester.tap(find.text(ShirtStyle.red.title));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Tienes 50 monedas'), findsOneWidget);
+
+    await tester.tap(find.text('Comprar'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(container.read(ownedShirtsProvider), contains(ShirtStyle.red));
+    expect(
+      container.read(shirtsForSaleProvider),
+      isNot(contains(ShirtStyle.red)),
+    );
+    expect(
+      find.text('¡Compraste Camisa Básica Roja! Está en tu Vestuario'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('comprar un accesorio, si alcanzan las monedas', (tester) async {
+    await pump(tester);
+    await tester.tap(find.text('Accesorios'));
+    await tester.pump();
+    await tester.tap(find.text(AccessoryStyle.ogre.title));
+    await tester.pump(const Duration(milliseconds: 300));
+    // Cuesta 75 y el jugador tiene 50.
+    expect(find.text('Te faltan 25 monedas'), findsOneWidget);
+    await tester.tap(find.text('Comprar'));
+    await tester.pump();
+    expect(
+      container.read(ownedAccessoriesProvider),
+      isNot(contains(AccessoryStyle.ogre)),
+    );
+  });
+
+  testWidgets('no deja ponerse una camisa ni un accesorio sin comprar', (
+    tester,
+  ) async {
+    await pump(tester);
+    await expectLater(
+      container.read(shirtControllerProvider).select(ShirtStyle.green),
+      throwsA(isA<CharacterException>()),
+    );
+    await expectLater(
+      container.read(accessoryControllerProvider).select(AccessoryStyle.ogre),
+      throwsA(isA<CharacterException>()),
+    );
+    // Quitarse el accesorio siempre se puede (ya no lleva ninguno).
+    await container.read(accessoryControllerProvider).select(null);
   });
 }

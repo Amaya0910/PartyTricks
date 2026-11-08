@@ -1,9 +1,11 @@
+import 'package:party_tricks/models/accessory_style.dart';
 import 'package:party_tricks/models/avatar_color.dart';
 import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 
 /// Perfil permanente del jugador (vive en Cloud Firestore, colección `users`).
@@ -26,6 +28,10 @@ class UserProfile {
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor = MouthColor.defaultIndex,
     this.ownedMouths = const {},
+    this.shirt = ShirtStyle.defaultStyle,
+    this.ownedShirts = const {},
+    this.accessory,
+    this.ownedAccessories = const {},
     this.avatarColor = AvatarColor.defaultIndex,
     this.facePhoto,
     this.useFacePhoto = true,
@@ -82,6 +88,28 @@ class UserProfile {
   /// Las gratis no se guardan: las tiene todo el mundo.
   final Set<int> ownedMouths;
 
+  /// Camisa puesta. En Firestore se guarda su id (campo `shirt`).
+  final ShirtStyle shirt;
+
+  /// Ids de las camisas que compró en la Tienda (campo `ownedShirts`). La
+  /// de inicio no se guarda: la tiene todo el mundo.
+  final Set<int> ownedShirts;
+
+  /// Si puede ponerse [style]: es gratis o ya la compró.
+  bool ownsShirt(ShirtStyle style) =>
+      style.isFree || ownedShirts.contains(style.id);
+
+  /// Accesorio puesto, o null si no lleva ninguno. En Firestore se guarda su
+  /// id, o 0 si no lleva (campo `accessory`).
+  final AccessoryStyle? accessory;
+
+  /// Ids de los accesorios que compró (campo `ownedAccessories`).
+  final Set<int> ownedAccessories;
+
+  /// Si puede ponerse [style]: ya lo compró.
+  bool ownsAccessory(AccessoryStyle style) =>
+      style.isFree || ownedAccessories.contains(style.id);
+
   /// Posición del color de fondo de la foto de perfil en [AvatarColor].
   final int avatarColor;
 
@@ -133,6 +161,16 @@ class UserProfile {
         for (final value in map['ownedMouths'] as List? ?? const [])
           if (value is num) value.toInt(),
       },
+      shirt: ShirtStyle.fromId((map['shirt'] as num?)?.toInt()),
+      ownedShirts: {
+        for (final value in map['ownedShirts'] as List? ?? const [])
+          if (value is num) value.toInt(),
+      },
+      accessory: AccessoryStyle.fromId((map['accessory'] as num?)?.toInt()),
+      ownedAccessories: {
+        for (final value in map['ownedAccessories'] as List? ?? const [])
+          if (value is num) value.toInt(),
+      },
       avatarColor: AvatarColor.clamp(
         (map['avatarColor'] as num?)?.toInt() ?? AvatarColor.defaultIndex,
       ),
@@ -160,6 +198,10 @@ class UserProfile {
       'mouth': mouth.number,
       'mouthColor': mouthColor,
       'ownedMouths': ownedMouths.toList()..sort(),
+      'shirt': shirt.id,
+      'ownedShirts': ownedShirts.toList()..sort(),
+      'accessory': accessory?.id ?? 0,
+      'ownedAccessories': ownedAccessories.toList()..sort(),
       'avatarColor': avatarColor,
       if (facePhoto != null) 'facePhoto': facePhoto!.base64,
       'useFacePhoto': useFacePhoto,
@@ -183,6 +225,11 @@ class UserProfile {
     MouthStyle? mouth,
     int? mouthColor,
     Set<int>? ownedMouths,
+    ShirtStyle? shirt,
+    Set<int>? ownedShirts,
+    AccessoryStyle? accessory,
+    bool clearAccessory = false,
+    Set<int>? ownedAccessories,
     int? avatarColor,
     FacePhoto? facePhoto,
     bool clearFacePhoto = false,
@@ -205,6 +252,10 @@ class UserProfile {
       mouth: mouth ?? this.mouth,
       mouthColor: mouthColor ?? this.mouthColor,
       ownedMouths: ownedMouths ?? this.ownedMouths,
+      shirt: shirt ?? this.shirt,
+      ownedShirts: ownedShirts ?? this.ownedShirts,
+      accessory: clearAccessory ? null : accessory ?? this.accessory,
+      ownedAccessories: ownedAccessories ?? this.ownedAccessories,
       avatarColor: avatarColor ?? this.avatarColor,
       facePhoto: clearFacePhoto ? null : facePhoto ?? this.facePhoto,
       useFacePhoto: useFacePhoto ?? this.useFacePhoto,

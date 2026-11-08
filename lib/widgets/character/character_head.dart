@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/models/mouth_style.dart';
@@ -9,7 +11,7 @@ import 'package:party_tricks/widgets/character/face_photo_layer.dart';
 import 'package:party_tricks/widgets/character/mouth_layer.dart';
 
 /// La cabeza del personaje en el lienzo, de abajo hacia arriba:
-/// relleno (con la piel), boca, línea de la cabeza y ojos.
+/// relleno (con la piel), boca, línea de la cabeza, accesorio y ojos.
 ///
 /// La boca va entre el relleno y la línea porque el recorte del arte no es
 /// perfecto y así el contorno tapa los bordes. La excepción es la boca con
@@ -25,6 +27,8 @@ class CharacterHead extends StatelessWidget {
     required this.mouth,
     required this.mouthColor,
     this.photo,
+    this.accessory,
+    this.view = CharacterView.frente,
   });
 
   final Color skinTone;
@@ -36,19 +40,26 @@ class CharacterHead extends StatelessWidget {
   final Color mouthColor;
   final FacePhoto? photo;
 
+  /// Accesorio de la cabeza (orejas, gorguera...), si lleva.
+  final AccessoryStyle? accessory;
+
+  /// De lado no se usa la foto: es de frente.
+  final CharacterView view;
+
   @override
   Widget build(BuildContext context) {
-    final photo = this.photo;
-    final mouthLayer = MouthLayer(style: mouth, color: mouthColor);
+    final photo = view == CharacterView.frente ? this.photo : null;
+    final mouthLayer = MouthLayer(style: mouth, color: mouthColor, view: view);
     return Stack(
       children: [
         CharacterLayer(BodyPart.cabeza.fillAsset, tint: skinTone),
         if (photo == null && !mouth.overOutline) mouthLayer,
         CharacterLayer(BodyPart.cabeza.outlineAsset),
+        if (accessory != null) CharacterLayer(accessory!.assetFor(view)),
         if (photo != null)
           FacePhotoLayer(photo: photo)
         else ...[
-          EyesLayer(style: eyes, color: eyeColor),
+          EyesLayer(style: eyes, color: eyeColor, view: view),
           if (mouth.overOutline) mouthLayer,
         ],
       ],

@@ -1,9 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/character_look.dart';
 import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/character/character_head.dart';
 import 'package:party_tricks/widgets/character/character_layer.dart';
@@ -105,16 +109,44 @@ class AnimatedCharacter extends StatefulWidget {
     super.key,
     required this.skinTone,
     this.animation = const IdleAnimation(),
+    this.phase,
     this.eyes = EyeStyle.defaultStyle,
     this.eyeColor = AppColors.white,
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor,
+    this.shirt = ShirtStyle.defaultStyle,
+    this.accessory,
     this.facePhoto,
     this.clothing = const [],
   });
 
+  /// El personaje con el aspecto [look]. La foto de la cara es la de [look].
+  AnimatedCharacter.fromLook(
+    CharacterLook look, {
+    Key? key,
+    CharacterAnimation animation = const IdleAnimation(),
+    Animation<double>? phase,
+  }) : this(
+         key: key,
+         skinTone: look.skinTone,
+         animation: animation,
+         phase: phase,
+         eyes: look.eyes,
+         eyeColor: look.eyeColor,
+         mouth: look.mouth,
+         mouthColor: look.mouthColor,
+         shirt: look.shirt,
+         accessory: look.accessory,
+         facePhoto: look.facePhoto,
+       );
+
   final Color skinTone;
   final CharacterAnimation animation;
+
+  /// Fase (0 a 1) de la animación, si quien lo usa la lleva él (la vista
+  /// previa de administración). Si es null, el personaje se mueve solo en
+  /// bucle. No se puede cambiar después de crearlo.
+  final Animation<double>? phase;
 
   /// Ojos equipados. Van pegados a la cabeza: se mueven con ella.
   final EyeStyle eyes;
@@ -130,6 +162,12 @@ class AnimatedCharacter extends StatefulWidget {
   /// tono de piel.
   final Color? mouthColor;
 
+  /// Camisa puesta: el cuerpo la lleva y las mangas giran con los brazos.
+  final ShirtStyle shirt;
+
+  /// Accesorio de la cabeza, si lleva. Se mueve con ella.
+  final AccessoryStyle? accessory;
+
   /// Foto de la cara del jugador. Si hay, se dibuja en lugar de los ojos y
   /// la boca.
   final FacePhoto? facePhoto;
@@ -143,14 +181,16 @@ class AnimatedCharacter extends StatefulWidget {
 
 class _AnimatedCharacterState extends State<AnimatedCharacter>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: widget.animation.period,
-  )..repeat();
+  late final AnimationController? _own = widget.phase == null
+      ? (AnimationController(vsync: this, duration: widget.animation.period)
+          ..repeat())
+      : null;
+
+  Animation<double> get _phase => widget.phase ?? _own!;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _own?.dispose();
     super.dispose();
   }
 
@@ -179,8 +219,13 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
                   mouth: widget.mouth,
                   mouthColor: widget.mouthColor ?? widget.skinTone,
                   photo: widget.facePhoto,
+                  accessory: widget.accessory,
                 )
-              : _PartLayers(part: part, skinTone: widget.skinTone),
+              : _PartLayers(
+                  part: part,
+                  skinTone: widget.skinTone,
+                  shirt: widget.shirt,
+                ),
         ),
     ];
     final clothing = [
@@ -193,9 +238,9 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
         child: SizedBox.fromSize(
           size: kCharacterCanvas,
           child: AnimatedBuilder(
-            animation: _controller,
+            animation: _phase,
             builder: (context, _) {
-              final t = _controller.value;
+              final t = _phase.value;
               return Stack(
                 children: [
                   for (final p in parts)
@@ -219,10 +264,24 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
 
 /// Las capas de una parte del cuerpo (menos la cabeza), sin mover.
 class _PartLayers extends StatelessWidget {
-  const _PartLayers({required this.part, required this.skinTone});
+  const _PartLayers({
+    required this.part,
+    required this.skinTone,
+    required this.shirt,
+  });
 
   final BodyPart part;
   final Color skinTone;
+  final ShirtStyle shirt;
+
+  /// Lo de la camisa que va con esta parte: la camisa en el cuerpo y cada
+  /// manga en su brazo (gira con él y queda debajo de la mano).
+  String? get _shirtAsset => switch (part) {
+    BodyPart.cuerpo => shirt.bodyAsset(CharacterView.frente),
+    BodyPart.brazoIzquierdo => shirt.frontSleeve(left: true),
+    BodyPart.brazoDerecho => shirt.frontSleeve(left: false),
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +289,8 @@ class _PartLayers extends StatelessWidget {
       children: [
         CharacterLayer(part.fillAsset, tint: skinTone),
         CharacterLayer(part.outlineAsset),
+        if (_shirtAsset case final asset?)
+          CharacterLayer(asset, tint: shirt.tint),
       ],
     );
   }

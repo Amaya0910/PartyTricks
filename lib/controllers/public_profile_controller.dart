@@ -24,6 +24,8 @@ class PublicProfileController {
       eyeColor: profile.eyeColor,
       mouth: profile.mouth,
       mouthColor: profile.mouthColor,
+      shirt: profile.shirt,
+      accessory: profile.accessory,
       avatarColor: profile.avatarColor,
       facePhoto: profile.shownFacePhoto,
     );

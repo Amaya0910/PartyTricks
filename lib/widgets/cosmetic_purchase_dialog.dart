@@ -1,28 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:party_tricks/controllers/eyes_controller.dart';
-import 'package:party_tricks/controllers/mouth_controller.dart';
+import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/controllers/shop_controller.dart';
-import 'package:party_tricks/controllers/skin_tone_controller.dart';
-import 'package:party_tricks/models/eye_color.dart';
+import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/character_look.dart';
 import 'package:party_tricks/models/eye_style.dart';
-import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/models/rarity.dart';
-import 'package:party_tricks/models/skin_tone.dart';
+import 'package:party_tricks/models/shirt_style.dart';
+import 'package:party_tricks/models/shop_cosmetic.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/shop/shop_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
-import 'package:party_tricks/widgets/eyes_picker.dart';
-import 'package:party_tricks/widgets/mouth_picker.dart';
+import 'package:party_tricks/widgets/cosmetic_preview.dart';
 import 'package:party_tricks/widgets/rarity_badge.dart';
 
 /// Ventana para comprar un cosmético: tu personaje probándoselo, la
 /// descripción y el botón Comprar. Devuelve true si se compró.
 ///
-/// Se abre con [showEyes] o [showMouth].
+/// Se abre con [show].
 class CosmeticPurchaseDialog extends ConsumerStatefulWidget {
   const CosmeticPurchaseDialog._({
     required this.title,
@@ -43,59 +41,49 @@ class CosmeticPurchaseDialog extends ConsumerStatefulWidget {
   final Widget Function(WidgetRef ref) thumbnail;
 
   /// El personaje del jugador con el cosmético puesto.
-  final Widget Function(WidgetRef ref, Color skin) character;
+  final Widget Function(WidgetRef ref) character;
 
   /// Hace la compra en la Tienda.
   final Future<void> Function(WidgetRef ref) buy;
 
-  static Future<bool> showEyes(BuildContext context, EyeStyle eyes) {
+  /// Abre la ventana de compra de [cosmetic] (ojos, boca, camisa o
+  /// accesorio). Devuelve true si se compró.
+  static Future<bool> show(BuildContext context, ShopCosmetic cosmetic) {
     return _show(
       context,
       CosmeticPurchaseDialog._(
-        title: eyes.title,
-        description: eyes.description,
-        price: eyes.price,
-        rarity: eyes.rarity,
-        thumbnail: (ref) => EyesThumbnail(
-          style: eyes,
-          color: EyeColor.colorOf(ref.watch(eyeColorProvider)),
+        title: cosmetic.title,
+        description: cosmetic.description,
+        price: cosmetic.price,
+        rarity: cosmetic.rarity,
+        thumbnail: (ref) => CosmeticPreview(cosmetic),
+        character: (ref) => AnimatedCharacter.fromLook(
+          _wearing(ref.watch(characterLookProvider), cosmetic),
         ),
-        character: (ref, skin) => AnimatedCharacter(
-          skinTone: skin,
-          eyes: eyes,
-          eyeColor: EyeColor.colorOf(ref.watch(eyeColorProvider)),
-          mouth: ref.watch(mouthStyleProvider),
-          mouthColor: MouthColor.colorOf(ref.watch(mouthColorProvider)),
-        ),
-        buy: (ref) => ref.read(shopControllerProvider.notifier).buyEyes(eyes),
+        buy: (ref) => _buy(ref.read(shopControllerProvider.notifier), cosmetic),
       ),
     );
   }
 
-  static Future<bool> showMouth(BuildContext context, MouthStyle mouth) {
-    return _show(
-      context,
-      CosmeticPurchaseDialog._(
-        title: mouth.title,
-        description: mouth.description,
-        price: mouth.price,
-        rarity: mouth.rarity,
-        thumbnail: (ref) => MouthThumbnail(
-          style: mouth,
-          color:
-              MouthColor.colorOf(ref.watch(mouthColorProvider)) ??
-              SkinTone.colorOf(ref.watch(skinToneProvider)),
-        ),
-        character: (ref, skin) => AnimatedCharacter(
-          skinTone: skin,
-          eyes: ref.watch(eyeStyleProvider),
-          eyeColor: EyeColor.colorOf(ref.watch(eyeColorProvider)),
-          mouth: mouth,
-          mouthColor: MouthColor.colorOf(ref.watch(mouthColorProvider)),
-        ),
-        buy: (ref) => ref.read(shopControllerProvider.notifier).buyMouth(mouth),
-      ),
-    );
+  /// El aspecto [look] con [cosmetic] puesto.
+  static CharacterLook _wearing(CharacterLook look, ShopCosmetic cosmetic) {
+    return switch (cosmetic) {
+      EyeStyle eyes => look.copyWith(eyes: eyes),
+      MouthStyle mouth => look.copyWith(mouth: mouth),
+      ShirtStyle shirt => look.copyWith(shirt: shirt),
+      AccessoryStyle accessory => look.copyWith(accessory: accessory),
+      _ => look,
+    };
+  }
+
+  static Future<void> _buy(ShopController shop, ShopCosmetic cosmetic) {
+    return switch (cosmetic) {
+      EyeStyle eyes => shop.buyEyes(eyes),
+      MouthStyle mouth => shop.buyMouth(mouth),
+      ShirtStyle shirt => shop.buyShirt(shirt),
+      AccessoryStyle accessory => shop.buyAccessory(accessory),
+      _ => throw ArgumentError('Cosmético desconocido: $cosmetic'),
+    };
   }
 
   static Future<bool> _show(
@@ -135,7 +123,6 @@ class _CosmeticPurchaseDialogState
     final coins = ref.watch(userProfileProvider).value?.coins ?? 0;
     final loading = ref.watch(shopControllerProvider);
     final missing = widget.price - coins;
-    final skin = SkinTone.colorOf(ref.watch(skinToneProvider));
 
     return DialogCard(
       title: widget.title,
@@ -149,7 +136,7 @@ class _CosmeticPurchaseDialogState
           children: [
             Row(
               children: [
-                _TryOn(character: widget.character(ref, skin)),
+                _TryOn(character: widget.character(ref)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

@@ -1,4 +1,7 @@
+import 'package:party_tricks/models/character_view.dart';
+import 'package:party_tricks/models/cosmetic_category.dart';
 import 'package:party_tricks/models/rarity.dart';
+import 'package:party_tricks/models/shop_cosmetic.dart';
 
 /// Una capa del PNG de una boca: su archivo y si toma el color elegido.
 class MouthLayerSpec {
@@ -26,13 +29,8 @@ class MouthLayerSpec {
 /// con monedas en la Tienda. Los precios también están en
 /// `firestore.rules` (`mouthPrice`, D-30): si cambian aquí, hay que
 /// cambiarlos allá o las compras se rechazarán.
-enum MouthStyle {
-  boca1(
-    1,
-    'Boca Carcajada',
-    'Una risa a todo pulmón',
-    tintable: false,
-  ),
+enum MouthStyle implements ShopCosmetic {
+  boca1(1, 'Boca Carcajada', 'Una risa a todo pulmón', tintable: false),
   boca2(
     2,
     'Boca Traviesa',
@@ -109,7 +107,9 @@ enum MouthStyle {
   final int number;
 
   /// Nombre y descripción para la Tienda.
+  @override
   final String title;
+  @override
   final String description;
 
   /// Si viene en dos capas (relleno + línea).
@@ -126,27 +126,41 @@ enum MouthStyle {
   final bool tintable;
 
   /// Precio en monedas. 0 si viene gratis con la cuenta.
+  @override
   final int price;
 
   /// Qué tan rara es: define con qué frecuencia sale en los cofres.
+  @override
   final Rarity rarity;
 
+  @override
+  CosmeticCategory get category => CosmeticCategory.mouth;
+
+  @override
+  int get id => number;
+
   /// Si lo tienen todos desde el inicio.
+  @override
   bool get isFree => price == 0;
 
   /// Boca de quien todavía no ha elegido una.
   static const MouthStyle defaultStyle = boca1;
 
-  static const String _folder = 'assets/images/personaje/frente/bocas';
+  static String _folder(CharacterView view) =>
+      'assets/images/personaje/${view.folder}/bocas';
 
   /// Capas de abajo hacia arriba.
-  List<MouthLayerSpec> get layers {
+  List<MouthLayerSpec> get layers => layersIn(CharacterView.frente);
+
+  /// Lo mismo, vista desde [view] (de frente o de lado).
+  List<MouthLayerSpec> layersIn(CharacterView view) {
+    final folder = _folder(view);
     if (!layered) {
-      return [MouthLayerSpec('$_folder/boca_$number.png', tinted: tintable)];
+      return [MouthLayerSpec('$folder/boca_$number.png', tinted: tintable)];
     }
     return [
-      MouthLayerSpec('$_folder/boca_${number}_relleno.png', tinted: false),
-      MouthLayerSpec('$_folder/boca_${number}_linea.png', tinted: tintable),
+      MouthLayerSpec('$folder/boca_${number}_relleno.png', tinted: false),
+      MouthLayerSpec('$folder/boca_${number}_linea.png', tinted: tintable),
     ];
   }
 

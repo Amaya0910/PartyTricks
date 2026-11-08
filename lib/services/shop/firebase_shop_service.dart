@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:party_tricks/models/accessory_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
+import 'package:party_tricks/models/shop_cosmetic.dart';
 import 'package:party_tricks/services/game_engine/random_source.dart';
 import 'package:party_tricks/services/shop/chest_roller.dart';
 import 'package:party_tricks/services/shop/cosmetic_picker.dart';
@@ -46,6 +49,8 @@ class FirebaseShopService implements ShopService {
         var prize = ChestPrize(_roller.roll(chest.odds, _random));
         final ownedEyes = _numbers(data['ownedEyes']);
         final ownedMouths = _numbers(data['ownedMouths']);
+        final ownedShirts = _numbers(data['ownedShirts']);
+        final ownedAccessories = _numbers(data['ownedAccessories']);
         if (prize.outcome == ChestOutcome.cosmetic) {
           // El cosmético es uno que todavía no tiene, según su rareza. Si ya
           // los tiene todos, el premio se cambia por monedas.
@@ -53,6 +58,8 @@ class FirebaseShopService implements ShopService {
               _picker.pick(
                 ownedEyes: ownedEyes.toSet(),
                 ownedMouths: ownedMouths.toSet(),
+                ownedShirts: ownedShirts.toSet(),
+                ownedAccessories: ownedAccessories.toSet(),
                 random: _random,
               ) ??
               const ChestPrize(ChestOutcome.coins);
@@ -68,6 +75,10 @@ class FirebaseShopService implements ShopService {
             'ownedEyes': [...ownedEyes, prize.eyes!.number],
           if (prize.mouth != null)
             'ownedMouths': [...ownedMouths, prize.mouth!.number],
+          if (prize.shirt != null)
+            'ownedShirts': [...ownedShirts, prize.shirt!.id],
+          if (prize.accessory != null)
+            'ownedAccessories': [...ownedAccessories, prize.accessory!.id],
         });
         transaction.set(
           FirestoreStatsDocument.ref(_firestore, uid),
@@ -82,44 +93,60 @@ class FirebaseShopService implements ShopService {
   }
 
   @override
-  Future<void> buyEyes({required String uid, required EyeStyle eyes}) async {
+  Future<void> buyEyes({required String uid, required EyeStyle eyes}) {
     if (eyes.isFree) throw const ShopException('Estos ojos ya son tuyos.');
-    final ref = _firestore.collection('users').doc(uid);
-    try {
-      // Leer y cobrar en una transacción: no se cobra dos veces ni se
-      // compra con monedas que ya se gastaron.
-      await _firestore.runTransaction((transaction) async {
-        final data = (await transaction.get(ref)).data();
-        if (data == null) {
-          throw const ShopException('No se encontró tu perfil.');
-        }
-        final owned = [
-          for (final value in data['ownedEyes'] as List? ?? const [])
-            if (value is num) value.toInt(),
-        ];
-        if (owned.contains(eyes.number)) {
-          throw const ShopException('Ya tienes estos ojos.');
-        }
-        final coins = _int(data['coins']);
-        if (coins < eyes.price) {
-          throw const ShopException('No tienes suficientes monedas.');
-        }
-        transaction.update(ref, {
-          'coins': coins - eyes.price,
-          'ownedEyes': [...owned, eyes.number],
-        });
-      });
-    } on FirebaseException catch (e) {
-      throw ShopException(_messageFor(e));
-    }
+    return _buyCosmetic(
+      uid: uid,
+      field: 'ownedEyes',
+      cosmetic: eyes,
+      alreadyOwned: 'Ya tienes estos ojos.',
+    );
   }
 
   @override
-  Future<void> buyMouth({
-    required String uid,
-    required MouthStyle mouth,
-  }) async {
+  Future<void> buyMouth({required String uid, required MouthStyle mouth}) {
     if (mouth.isFree) throw const ShopException('Esta boca ya es tuya.');
+    return _buyCosmetic(
+      uid: uid,
+      field: 'ownedMouths',
+      cosmetic: mouth,
+      alreadyOwned: 'Ya tienes esta boca.',
+    );
+  }
+
+  @override
+  Future<void> buyShirt({required String uid, required ShirtStyle shirt}) {
+    if (shirt.isFree) throw const ShopException('Esta camisa ya es tuya.');
+    return _buyCosmetic(
+      uid: uid,
+      field: 'ownedShirts',
+      cosmetic: shirt,
+      alreadyOwned: 'Ya tienes esta camisa.',
+    );
+  }
+
+  @override
+  Future<void> buyAccessory({
+    required String uid,
+    required AccessoryStyle accessory,
+  }) {
+    return _buyCosmetic(
+      uid: uid,
+      field: 'ownedAccessories',
+      cosmetic: accessory,
+      alreadyOwned: 'Ya tienes este accesorio.',
+    );
+  }
+
+  /// Cobra las monedas de [cosmetic] y lo agrega a la lista [field] del
+  /// perfil. Leer y cobrar van en una transacción: no se cobra dos veces ni
+  /// se compra con monedas que ya se gastaron.
+  Future<void> _buyCosmetic({
+    required String uid,
+    required String field,
+    required ShopCosmetic cosmetic,
+    required String alreadyOwned,
+  }) async {
     final ref = _firestore.collection('users').doc(uid);
     try {
       await _firestore.runTransaction((transaction) async {
@@ -127,20 +154,15 @@ class FirebaseShopService implements ShopService {
         if (data == null) {
           throw const ShopException('No se encontró tu perfil.');
         }
-        final owned = [
-          for (final value in data['ownedMouths'] as List? ?? const [])
-            if (value is num) value.toInt(),
-        ];
-        if (owned.contains(mouth.number)) {
-          throw const ShopException('Ya tienes esta boca.');
-        }
+        final owned = _numbers(data[field]);
+        if (owned.contains(cosmetic.id)) throw ShopException(alreadyOwned);
         final coins = _int(data['coins']);
-        if (coins < mouth.price) {
+        if (coins < cosmetic.price) {
           throw const ShopException('No tienes suficientes monedas.');
         }
         transaction.update(ref, {
-          'coins': coins - mouth.price,
-          'ownedMouths': [...owned, mouth.number],
+          'coins': coins - cosmetic.price,
+          field: [...owned, cosmetic.id],
         });
       });
     } on FirebaseException catch (e) {

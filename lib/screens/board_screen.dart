@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/controllers/results_controller.dart';
 import 'package:party_tricks/controllers/room_guard.dart';
 import 'package:party_tricks/controllers/stats_controller.dart';
@@ -363,6 +364,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
       pathTexture: texture,
       state: game,
       myId: myId,
+      // De los demás jugadores todavía no se tiene el aspecto en la partida:
+      // se dibujan con el de quien no ha elegido nada.
+      looks: {myId: ref.watch(characterLookProvider)},
       onChooseBranch: (branch) => _send(ChooseBranch(myId, branch)),
     );
   }
