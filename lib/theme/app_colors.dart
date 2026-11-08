@@ -106,6 +106,9 @@ class AppColors {
   /// Trampa puesta en el tablero de cuadritos.
   static const Color trap = Color(0xFF424242);
 
+  /// Camino del mapa dibujado si su textura no carga.
+  static const Color mapPath = Color(0xFFB8AFA3);
+
   // ---------------------------------------------------------------------------
   // Resultados
   // ---------------------------------------------------------------------------

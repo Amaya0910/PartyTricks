@@ -39,12 +39,12 @@ assets/
 │   │   └── miniaturas/
 │   └── iconos/                    barra de navegación y marcador del jugador
 ├── maps/
-│   └── mapa_01/                   mapa.json, fondo.png y minimapa.png (una carpeta por mapa)
+│   └── mapa_01/                   mapa.tmj, fondo.png, preview.png y minimapa.png (una carpeta por mapa)
 └── icon/                          ícono de la app
 ```
 
 - `assets/images/` guarda lo que **se reutiliza** en todos los mapas (plataformas, puentes, decoraciones).
-- `assets/maps/<mapa>/` guarda lo que es **de un solo mapa** (su fondo, su minimapa y su `mapa.json`). Para agregar un mapa nuevo se copia una carpeta y se cambian esos tres archivos.
+- `assets/maps/<mapa>/` guarda lo que es **de un solo mapa**: su `mapa.tmj` de Tiled, su `fondo.png`, su `preview.png` (la imagen del selector de mapas) y su minimapa. Para agregar un mapa nuevo se copia una carpeta, se cambian esos archivos y se registra en `MapCatalog` (`lib/services/map/map_catalog.dart`). Los nombres de archivo son siempre los mismos: el código arma las rutas a partir de la carpeta.
 
 ## 3. Fondos
 
@@ -53,6 +53,9 @@ assets/
 | [ ] | `Fondo_Principal.png` | `assets/images/` | 1080 × 2346 | PNG | El actual (440 × 956) se ve borroso en celulares de 1080 px. Mejor **redibujarlo**; si no, reescalarlo y repasar los bordes |
 | [ ] | `Fondo_Carga.png` | `assets/images/` | 1440 × 2560 | PNG | Mismo dibujo. Pon el logo y los textos en el **80 % central**, porque en celulares altos se recorta de los lados |
 | [ ] | `fondo.png` | `assets/maps/mapa_01/` | 1440 × 2160 | PNG | El mundo del mapa mide 2880 × 4320 y el código muestra el fondo al doble. Formas planas y suaves. Usa un verde **claramente distinto** al de las plataformas (más claro, más oscuro o más apagado) para que las casillas no se pierdan. Por ahora puede ser verde liso |
+| [x] | `preview.png` | `assets/maps/mapa_01/` | 480 × 720 | PNG | Vista previa del selector de mapas, con la misma forma que el mundo (2:3 en el primer mapa). Se saca de **Archivo → Exportar como imagen** en Tiled con el fondo puesto y se reduce a 480 px de ancho. La de `mapa_01` se armó con las piezas reales del mapa. Las pruebas exigen que cada mapa tenga la suya |
+
+**Mapas grandes: el fondo en trozos.** Ninguna imagen puede pasar de **4096 px** de lado, porque muchos celulares no la pueden mostrar (las pruebas lo revisan). Si el fondo de un mapa grande no cabe, se parte en trozos de hasta 4096 px (por ejemplo, franjas horizontales) y se colocan en Tiled en una capa de objetos llamada **`fondo`**, estirando cada trozo al tamaño que ocupa en el mundo (igual que ahora el fondo se muestra al doble). Si la capa `fondo` existe, el código usa los trozos y no `fondo.png`.
 
 **Cómo pintar el fondo del mapa** (cuando el mapa ya esté armado en Tiled):
 
@@ -67,6 +70,8 @@ Todo lo que se ve en Tiled está al doble: una casilla en (1000, 3200) en Tiled 
 ## 4. Mapa: piezas reutilizables
 
 Carpeta: `assets/images/mapa/piezas/`
+
+**Temas.** La textura del camino, la flecha de bifurcación y las marcas de casilla son el **tema clásico** (`MapThemeCatalog.classic`, en esta misma carpeta). Un mapa con otra temática (dulces, nieve) usa su propio tema en `assets/themes/<tema>/`, con **los mismos nombres de archivo** y solo los dibujos que cambian; lo que falte se toma del clásico y la app lo avisa en el log. Además de los de esta tabla, un tema puede traer dibujos que el clásico no tiene: `marca_positiva.png`, `marca_tienda.png`, `marca_bifurcacion.png` (va debajo de la marca de la casilla en las bifurcaciones, un 30 % más grande), `diamante.png` y `trampa.png` (sin ellos se usan íconos). Las plataformas, la tienda y las decoraciones de cada mapa no son parte del tema: se colocan en Tiled.
 
 - **Vista ¾**, como en los Zelda y Pokémon clásicos: se ve la cara de arriba de cada pieza y un poco de su frente.
 - Las piezas de más abajo en la pantalla tapan a las de arriba.

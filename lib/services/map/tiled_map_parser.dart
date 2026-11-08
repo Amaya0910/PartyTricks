@@ -19,6 +19,9 @@ class TiledMapException implements Exception {
 /// - Conjuntos de patrones **incrustados** de tipo "colección de imágenes".
 /// - Una capa de objetos llamada [tilesLayer] con una plataforma por casilla,
 ///   cada una con la propiedad entera [tileProperty] (su id).
+/// - Opcional: una capa de objetos llamada [backgroundLayer] con el fondo en
+///   trozos (para mapas grandes). Si no está, se usa el fondo que da quien
+///   llama, estirado a todo el mapa.
 /// - Cualquier otra capa de objetos (tiendas, puentes, decoraciones).
 ///
 /// Las rutas de las imágenes se toman relativas a la carpeta del mapa, como
@@ -27,6 +30,7 @@ class TiledMapParser {
   const TiledMapParser();
 
   static const tilesLayer = 'casillas';
+  static const backgroundLayer = 'fondo';
   static const tileProperty = 'casilla';
 
   // Banderas que Tiled guarda en los bits altos del gid.
@@ -46,8 +50,10 @@ class TiledMapParser {
 
     final tiles = <int, MapTile>{};
     final objects = <MapSprite>[];
+    final backgroundTiles = <MapSprite>[];
     for (final layer in _objectLayers(json['layers'] as List? ?? const [])) {
       final isTiles = layer['name'] == tilesLayer;
+      final isBackground = layer['name'] == backgroundLayer;
       for (final raw in layer['objects'] as List? ?? const []) {
         final object = raw as Map<String, dynamic>;
         final gid = (object['gid'] as num?)?.toInt();
@@ -63,6 +69,10 @@ class TiledMapParser {
           object,
           flipX: gid & _flipHorizontal != 0,
         );
+        if (isBackground) {
+          backgroundTiles.add(sprite);
+          continue;
+        }
         if (!isTiles) {
           objects.add(sprite);
           continue;
@@ -86,6 +96,7 @@ class TiledMapParser {
       tiles: tiles,
       objects: objects,
       background: background,
+      backgroundTiles: backgroundTiles,
     );
   }
 

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/map/board_map.dart';
+import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/map/board_validator.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
@@ -18,6 +19,20 @@ BoardMap _load(MapDefinition definition) {
     background: definition.background,
   );
 }
+
+/// Ancho y alto de un PNG, leídos de su cabecera.
+(int, int) _pngSize(String path) {
+  final bytes = File(path).readAsBytesSync();
+  int read(int at) =>
+      bytes[at] << 24 |
+      bytes[at + 1] << 16 |
+      bytes[at + 2] << 8 |
+      bytes[at + 3];
+  return (read(16), read(20));
+}
+
+/// Muchos celulares no pueden mostrar imágenes más grandes que esto.
+const _maxTexture = 4096;
 
 void main() {
   test('mapa_01 es el mapa por defecto y se encuentra por su id', () {
@@ -34,6 +49,33 @@ void main() {
     const map = MapCatalog.mapa01;
     expect(map.tiledMap, 'assets/maps/mapa_01/mapa.tmj');
     expect(map.background, 'assets/maps/mapa_01/fondo.png');
+    expect(map.previewImage, 'assets/maps/mapa_01/preview.png');
+  });
+
+  test('la duración estimada crece con las rondas y los jugadores', () {
+    const map = MapCatalog.mapa01;
+    // 10 × (3 × 20 + 40) s = 1000 s → 17 min.
+    expect(map.estimatedMinutes(rounds: 10, players: 3), 17);
+    expect(
+      map.estimatedMinutes(rounds: 25, players: 6),
+      greaterThan(map.estimatedMinutes(rounds: 5, players: 2)),
+    );
+  });
+
+  test('sin descripción larga se usa la corta', () {
+    const map = MapDefinition(
+      id: 'x',
+      name: 'X',
+      shortDescription: 'Corta',
+      assetDirectory: 'assets/maps/x',
+      buildBoard: buildDefaultBoard,
+      minProtocol: ProtocolLevel.base,
+    );
+    expect(map.description, 'Corta');
+    expect(map.recommendedPlayers, (
+      min: Room.minPlayers,
+      max: Room.maxAllowedPlayers,
+    ));
   });
 
   test('el tablero de mapa_01 es el de siempre', () {
@@ -75,16 +117,38 @@ void main() {
         );
       });
 
-      test('existen todas las imágenes que usa', () {
+      test('existen todas las imágenes que usa, sin pasar de 4096 px', () {
         final map = _load(definition);
         final assets = {
-          map.background,
+          definition.previewImage,
+          if (map.backgroundTiles.isEmpty) map.background,
+          for (final piece in map.backgroundTiles) piece.asset,
           for (final tile in map.tiles.values) tile.sprite.asset,
           for (final object in map.objects) object.asset,
         };
         for (final asset in assets) {
           expect(File(asset).existsSync(), isTrue, reason: 'Falta $asset');
+          final (width, height) = _pngSize(asset);
+          expect(
+            width <= _maxTexture && height <= _maxTexture,
+            isTrue,
+            reason:
+                '$asset mide $width × $height. Pártela en trozos (capa '
+                '"fondo" en Tiled) o redúcela.',
+          );
         }
+      });
+
+      test('tiene nombre, descripción y jugadores dentro de lo que acepta '
+          'la sala', () {
+        expect(definition.name, isNotEmpty);
+        expect(definition.shortDescription, isNotEmpty);
+        expect(definition.id, matches(RegExp(r'^[a-z0-9_]{1,32}$')));
+        final players = definition.recommendedPlayers;
+        expect(players.min, greaterThanOrEqualTo(Room.minPlayers));
+        expect(players.max, lessThanOrEqualTo(Room.maxAllowedPlayers));
+        expect(players.min, lessThanOrEqualTo(players.max));
+        expect(definition.secondsPerTurn, greaterThan(0));
       });
 
       test('su carpeta está en los assets de pubspec.yaml', () {

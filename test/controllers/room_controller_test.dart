@@ -24,6 +24,7 @@ class FakeRoomService implements RoomService {
       hostUid: uid,
       maxPlayers: settings.maxPlayers,
       rounds: settings.rounds,
+      mapId: settings.mapId,
       status: RoomStatus.waiting,
       lobbyEndsAt: now.add(Room.lobbyDuration),
       players: {uid: RoomPlayer(uid: uid, username: username, joinedAt: now)},
@@ -101,6 +102,22 @@ void main() {
     expect(room.players['u1']!.username, 'Brayan');
     expect(container.read(roomControllerProvider), isFalse);
   });
+
+  test(
+    'la sala queda con el mapa elegido, o con mapa_01 si no se elige',
+    () async {
+      final container = containerWith(FakeRoomService());
+      final controller = container.read(roomControllerProvider.notifier);
+
+      final chosen = await controller.create(
+        RoomSettings(isPublic: false, mapId: 'mapa_02'),
+      );
+      final byDefault = await controller.create(RoomSettings(isPublic: false));
+
+      expect(chosen.mapId, 'mapa_02');
+      expect(byDefault.mapId, 'mapa_01');
+    },
+  );
 
   test('si el código no existe avisa con un mensaje', () async {
     final container = containerWith(FakeRoomService());

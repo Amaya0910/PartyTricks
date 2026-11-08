@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/screens/map_selector_screen.dart';
+import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/animated_mode_switch.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
+import 'package:party_tricks/widgets/map/map_preview_image.dart';
 import 'package:party_tricks/widgets/step_dot_slider.dart';
 
 /// "Alista tu party": opciones para crear una sala.
 /// Devuelve la configuración o null si se cierra.
 class CreateRoomDialog extends StatefulWidget {
-  const CreateRoomDialog({super.key});
+  const CreateRoomDialog({super.key, this.maps = MapCatalog.all});
+
+  /// Los mapas para elegir. Empieza en [MapCatalog.defaultMap].
+  final List<MapDefinition> maps;
 
   static Future<RoomSettings?> show(BuildContext context) {
     return showBlurredDialog<RoomSettings>(
@@ -31,13 +37,30 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
   bool _isPrivate = true;
   int _maxPlayers = _defaultPlayers;
   int _rounds = _defaultRounds;
+  late MapDefinition _map = widget.maps.firstWhere(
+    (map) => map.id == MapCatalog.defaultMap.id,
+    orElse: () => widget.maps.first,
+  );
 
   RoomSettings _buildSettings() {
     return RoomSettings(
       isPublic: !_isPrivate,
       maxPlayers: _maxPlayers,
       rounds: _rounds,
+      mapId: _map.id,
     );
+  }
+
+  Future<void> _chooseMap() async {
+    final id = await MapSelectorScreen.show(
+      context,
+      selectedId: _map.id,
+      rounds: _rounds,
+      players: _maxPlayers,
+      maps: widget.maps,
+    );
+    if (id == null || !mounted) return;
+    setState(() => _map = widget.maps.firstWhere((map) => map.id == id));
   }
 
   void _submit() => Navigator.of(context).pop(_buildSettings());
@@ -52,6 +75,8 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            _MapRow(map: _map, onTap: _chooseMap),
+            const SizedBox(height: 20),
             _SettingLabel('Jugadores: $_maxPlayers'),
             const SizedBox(height: 8),
             StepDotSlider(
@@ -81,6 +106,69 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
             const SizedBox(height: 24),
             _CreateButton(onPressed: _submit),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// El mapa elegido; al tocarlo se abre el selector.
+class _MapRow extends StatelessWidget {
+  const _MapRow({required this.map, required this.onTap});
+
+  final MapDefinition map;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.authField,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        key: const Key('choose-map'),
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: MapPreviewImage(map: map, decodeWidth: 120),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Mapa',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.authHint,
+                      ),
+                    ),
+                    Text(
+                      map.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.authAccent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.authAccent),
+            ],
+          ),
         ),
       ),
     );

@@ -9,6 +9,7 @@ import 'package:party_tricks/controllers/room_guard.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/screens/board_screen.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
+import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/social/social_exception.dart';
 import 'package:party_tricks/theme/app_colors.dart';
@@ -274,7 +275,8 @@ class _Waiting extends StatelessWidget {
                                 _Pill(
                                   label:
                                       'Jugadores (${players.length}/${room.maxPlayers})'
-                                      ' · ${room.rounds} rondas',
+                                      ' · ${room.rounds} rondas'
+                                      ' · ${_mapName(room.mapId)}',
                                 ),
                                 const SizedBox(height: 12),
                                 // Un espacio por cada jugador posible. La
@@ -522,3 +524,6 @@ class _Message extends StatelessWidget {
     );
   }
 }
+
+/// El nombre del mapa de la sala, o su id si esta versión no lo conoce.
+String _mapName(String mapId) => MapCatalog.byId(mapId)?.name ?? mapId;
