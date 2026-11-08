@@ -8,6 +8,7 @@ import 'package:party_tricks/services/map/board_walk.dart';
 import 'package:party_tricks/services/map/map_theme.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/map/map_scenery.dart';
+import 'package:party_tricks/widgets/map/offscreen_marker.dart';
 import 'package:party_tricks/widgets/party_character.dart';
 
 /// El mapa dibujado de la partida.
@@ -22,6 +23,9 @@ import 'package:party_tricks/widgets/party_character.dart';
 /// - Las trampas se ven en su casilla con el color de quien las puso.
 /// - El camino, las marcas, el diamante, las trampas y las flechas salen del
 ///   [theme] del mapa.
+/// - Si el diamante queda fuera de la pantalla, un indicador en el borde
+///   apunta hacia él y dice a cuántas casillas está; al tocarlo, la cámara
+///   va hasta el diamante.
 class BoardMapView extends StatefulWidget {
   const BoardMapView({
     super.key,
@@ -73,6 +77,13 @@ class _BoardMapViewState extends State<BoardMapView>
   /// Espacio entre las flechas y el borde de la pantalla.
   static const _arrowMargin = 8.0;
 
+  /// Tamaño del indicador del diamante en la pantalla: una parte del lado
+  /// más corto, entre un mínimo que se vea y un máximo que no estorbe.
+  static const _indicatorShare = 0.11;
+  static const _indicatorMinSize = 40.0;
+  static const _indicatorMaxSize = 52.0;
+  static const _indicatorMargin = 12.0;
+
   final _camera = TransformationController();
 
   /// Un caminante por jugador, en el orden de turnos.
@@ -82,6 +93,11 @@ class _BoardMapViewState extends State<BoardMapView>
   bool _placedCamera = false;
 
   bool get _anyWalking => _walkers.values.any((walker) => walker.walking);
+
+  /// El zoom de la cámara. Se lee del eje x: `getMaxScaleOnAxis` también
+  /// mira el eje z, que vale 1 en las matrices de la cámara, y con zoom
+  /// menor a 1 devolvía 1 (por eso la cámara volvía a acercarse sola).
+  double get _cameraScale => _camera.value.entry(0, 0);
 
   Offset _anchorOf(int tileId) =>
       widget.map.tiles[tileId]?.anchor ?? widget.map.size.center(Offset.zero);
@@ -152,7 +168,7 @@ class _BoardMapViewState extends State<BoardMapView>
   /// Centra la cámara en [world] sin cambiar el zoom ni salirse del mapa.
   void _follow(Offset world) {
     if (_viewport.isEmpty) return;
-    final scale = _camera.value.getMaxScaleOnAxis();
+    final scale = _cameraScale;
     final mapSize = widget.map.size * scale;
     double clamp(double value, double view, double content) => content <= view
         ? (view - content) / 2
@@ -196,6 +212,8 @@ class _BoardMapViewState extends State<BoardMapView>
         final viewport = constraints.biggest;
         _placeCamera(viewport);
         final arrows = _arrowTargets();
+        final diamond = _diamondCenter();
+        final diamondSteps = _diamondSteps();
         return ClipRect(
           child: Stack(
             children: [
@@ -231,6 +249,16 @@ class _BoardMapViewState extends State<BoardMapView>
                   ),
                 ),
               ),
+              if (diamond != null)
+                // Debajo de las flechas, para no tapar la elección de camino.
+                AnimatedBuilder(
+                  animation: _camera,
+                  builder: (context, _) => Stack(
+                    children: [
+                      ?_diamondIndicator(viewport, diamond, diamondSteps),
+                    ],
+                  ),
+                ),
               if (arrows.isNotEmpty)
                 // Siguen a la cámara cuando mueves o acercas el mapa.
                 AnimatedBuilder(
@@ -248,6 +276,56 @@ class _BoardMapViewState extends State<BoardMapView>
   Offset? _diamondAnchor() {
     final id = widget.state.diamondTileId;
     return widget.map.tiles[id]?.anchor;
+  }
+
+  /// El centro del dibujo del diamante, que flota sobre su casilla.
+  Offset? _diamondCenter() =>
+      _diamondAnchor()?.translate(0, -10 - _diamondSize / 2);
+
+  /// A cuántas casillas está el diamante de tu personaje, por el camino más
+  /// corto; null si no juegas o si estás encima.
+  int? _diamondSteps() {
+    final me = widget.state.players[widget.myId];
+    final target = widget.state.diamondTileId;
+    if (me == null || me.position == target) return null;
+    if (target < 0 || target >= widget.board.tiles.length) return null;
+    return BoardWalk(widget.board).between(me.position, target).length;
+  }
+
+  /// El indicador del diamante si está fuera de la pantalla; null si se ve.
+  Widget? _diamondIndicator(Size viewport, Offset diamond, int? steps) {
+    final size = (viewport.shortestSide * _indicatorShare)
+        .clamp(_indicatorMinSize, _indicatorMaxSize)
+        .toDouble();
+    final marker = placeOffscreenMarker(
+      target: MatrixUtils.transformPoint(_camera.value, diamond),
+      viewport: viewport,
+      size: size,
+      margin: _indicatorMargin,
+    );
+    if (marker == null) return null;
+    return Positioned(
+      key: const Key('diamond-indicator'),
+      left: marker.center.dx - size / 2,
+      top: marker.center.dy - size / 2,
+      width: size,
+      height: size,
+      child: Semantics(
+        button: true,
+        label: steps == null
+            ? 'Ver el diamante'
+            : 'Ver el diamante, a $steps casillas',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _follow(diamond),
+          child: _DiamondIndicator(
+            angle: marker.angle,
+            steps: steps,
+            theme: widget.theme,
+          ),
+        ),
+      ),
+    );
   }
 
   /// Las trampas puestas, con el color de quien las puso.
@@ -339,7 +417,7 @@ class _BoardMapViewState extends State<BoardMapView>
   List<Widget> _arrows(Size viewport, List<(Offset, Offset)> targets) {
     if (viewport.isEmpty) return const [];
     final matrix = _camera.value;
-    final scale = matrix.getMaxScaleOnAxis();
+    final scale = _cameraScale;
     final size = min(
       (viewport.shortestSide * _arrowScreenShare)
           .clamp(_arrowMinSize, _arrowMaxSize)
@@ -430,6 +508,109 @@ class _BoardMapViewState extends State<BoardMapView>
       ),
     );
   }
+}
+
+/// Círculo con el diamante y una punta que apunta hacia él, con el mismo
+/// estilo que las flechas de las bifurcaciones. Abajo, a cuántas casillas
+/// está.
+class _DiamondIndicator extends StatelessWidget {
+  const _DiamondIndicator({
+    required this.angle,
+    required this.steps,
+    required this.theme,
+  });
+
+  final double angle;
+  final int? steps;
+  final LoadedMapTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = this.steps;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest.shortestSide;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _PointerPainter(
+                  angle: angle,
+                  color: theme.colors.arrowBackground,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.all(size * 0.24),
+                child: _ThemedIcon(
+                  asset: theme.resolved[ThemeAsset.diamond],
+                  icon: Icons.diamond,
+                  color: theme.colors.diamond,
+                ),
+              ),
+            ),
+            if (steps != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: -size * 0.28,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colors.diamond,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$steps',
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// El fondo del indicador: un círculo con una punta hacia [angle].
+class _PointerPainter extends CustomPainter {
+  const _PointerPainter({required this.angle, required this.color});
+
+  final double angle;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final outer = size.shortestSide / 2;
+    final radius = outer * 0.8;
+    Offset at(double a, double r) => center + Offset(cos(a), sin(a)) * r;
+    final path = Path()
+      ..addOval(Rect.fromCircle(center: center, radius: radius))
+      ..addPolygon([
+        at(angle - 0.55, radius * 0.9),
+        at(angle, outer),
+        at(angle + 0.55, radius * 0.9),
+      ], true);
+    canvas.drawShadow(path, AppColors.characterShadow, 4, false);
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_PointerPainter oldDelegate) =>
+      oldDelegate.angle != angle || oldDelegate.color != color;
 }
 
 /// El dibujo del tema, o [icon] si el tema no lo tiene (o no carga).
