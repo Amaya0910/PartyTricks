@@ -95,7 +95,7 @@ class _BoardMapViewState extends State<BoardMapView>
   @override
   void didUpdateWidget(BoardMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _syncWalkers();
+    _syncWalkers(previous: oldWidget.state);
   }
 
   @override
@@ -107,8 +107,10 @@ class _BoardMapViewState extends State<BoardMapView>
     super.dispose();
   }
 
-  /// Crea los caminantes que faltan y les da su nueva casilla.
-  void _syncWalkers() {
+  /// Crea los caminantes que faltan y les da su nueva casilla. Con el
+  /// estado [previous], el que salía de una bifurcación camina por el
+  /// camino que eligió y no por el más corto.
+  void _syncWalkers({GameState? previous}) {
     final walk = BoardWalk(widget.board);
     for (final id in widget.state.turnOrder) {
       final position = widget.state.players[id]?.position ?? 0;
@@ -122,7 +124,13 @@ class _BoardMapViewState extends State<BoardMapView>
           onIdle: () => setState(() {}), // Para mostrar las flechas.
         ),
       );
-      walker.walkTo(position, walk);
+      walker.walkTo(
+        position,
+        walk,
+        fork: previous == null
+            ? null
+            : forkWalkBetween(previous, widget.state, id),
+      );
     }
   }
 
@@ -504,10 +512,11 @@ class _Walker {
   bool get walking => controller.isAnimating || _pending.isNotEmpty;
 
   /// Agrega las casillas hasta [target] y empieza a caminar si estaba quieto.
-  void walkTo(int target, BoardWalk walk) {
+  /// Si viene de una bifurcación, [fork] dice por dónde siguió.
+  void walkTo(int target, BoardWalk walk, {ForkWalk? fork}) {
     final last = _pending.isNotEmpty ? _pending.last : tile;
     if (target == last) return;
-    _pending.addAll(walk.between(last, target));
+    _pending.addAll(walk.between(last, target, fork: fork));
     if (!controller.isAnimating) _nextHop();
   }
 
