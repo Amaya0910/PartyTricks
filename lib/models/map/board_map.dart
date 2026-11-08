@@ -44,6 +44,7 @@ class BoardMap {
     required this.tiles,
     required this.objects,
     required this.background,
+    this.backgroundTiles = const [],
   });
 
   /// Tamaño del mundo en píxeles (2880 × 4320 en el primer mapa).
@@ -55,8 +56,14 @@ class BoardMap {
   /// Tiendas, puentes y decoraciones.
   final List<MapSprite> objects;
 
-  /// Imagen de fondo; se estira a [size].
+  /// Imagen de fondo; se estira a [size]. Solo se usa si no hay
+  /// [backgroundTiles].
   final String background;
+
+  /// El fondo en trozos, colocados en la capa `fondo` de Tiled. Hace falta
+  /// en los mapas grandes: una sola imagen de más de 4096 px no se puede
+  /// mostrar en muchos celulares.
+  final List<MapSprite> backgroundTiles;
 
   /// Ids del tablero que el mapa no tiene dibujados.
   List<int> missingTiles(Iterable<int> boardIds) => [

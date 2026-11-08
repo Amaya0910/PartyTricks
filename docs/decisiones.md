@@ -396,3 +396,42 @@
   - La 1.0.0 muestra un error genérico al intentar entrar por código a una sala nueva: no se puede cambiar su mensaje.
   - Las reglas no se probaron con el emulador (en esta computadora falta Java 21).
   - Un minijuego o ítem nuevo que toda partida pueda sortear sube el protocolo de todas las salas (ver `docs/protocolo.md`).
+
+## D-30. Selector de mapas y preparación para mapas grandes (fase 3)
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - `MapDefinition` lleva lo que muestra el selector. **Obligatorios:** `id`, `name`, `shortDescription`, `assetDirectory`, `buildBoard` y `minProtocol`. **Opcionales con valor por defecto:** `longDescription` (si no hay, se usa la corta), `secondsPerTurn` (20) y `recommendedPlayers` (2–6, lo que acepta la sala).
+  - **Lo que sale de otra parte no se escribe a mano:**
+    - El tamaño del tablero (`summary`: casillas, atajos, tiendas y `BoardSize` pequeño/mediano/grande/enorme) se calcula del tablero, así nunca queda desactualizado.
+    - La duración no es fija por mapa: depende de las rondas y los jugadores de la sala (`estimatedMinutes`: rondas × (jugadores × `secondsPerTurn` + 40 s del minijuego)). Lo que el mapa sí puede cambiar es `secondsPerTurn`.
+    - Las rutas (`mapa.tmj`, `fondo.png`, `preview.png`) salen de `assetDirectory` por convención: no hay rutas escritas a mano.
+  - **Vista previa:** `assets/maps/<id>/preview.png`, en la carpeta del mapa junto a lo demás que es solo suyo (la carpeta ya está en `pubspec.yaml`). Las pruebas exigen que exista. Si falta en tiempo de ejecución, `MapPreviewImage` muestra un recuadro con el nombre. Las miniaturas se decodifican a 240 px de ancho para no gastar memoria.
+  - **Selector:** `MapSelectorScreen`, una pantalla completa (el diálogo mide como mucho 340 px de ancho, poco para una vista previa grande y para la tablet). En el celular, el detalle arriba y los mapas en una fila que se desliza; desde 720 px de ancho, el detalle a la izquierda y la lista a la derecha. Muestra la vista previa, el nombre, la descripción, las casillas y el tamaño, los atajos, las tiendas, la duración estimada, los jugadores recomendados y si lo juegan todas las versiones o pide la app actualizada (protocolo).
+  - `CreateRoomDialog` tiene una fila "Mapa" que abre el selector y pasa `mapId` a `RoomSettings` (antes nunca se pasaba). La sala de espera muestra el nombre del mapa. Un mapa que no existe al crear la sala da `RoomException` ("Ese mapa no está disponible").
+  - **Fondo en trozos:** una capa de objetos `fondo` en Tiled reemplaza a `fondo.png` (`BoardMap.backgroundTiles`). Hace falta para los mapas de más de unas 100 casillas, porque un fondo de una sola pieza pasaría de 4096 px, el máximo que muestran muchos celulares. Las pruebas revisan que ninguna imagen de un mapa pase de ese tamaño.
+- **Escala visual (diseño, no implementado):** las constantes del mapa (personaje, camino, marcas, trampas, diamante, salto, flechas, cámara inicial) están en píxeles del mundo y van en proporción a las piezas (plataforma de 384 × 320), no al tamaño del mundo. Por eso un mapa de 150 casillas con las mismas piezas se ve igual de bien. Solo si un mapa usara piezas de otra escala haría falta `MapDefinition.pieceScale`, que multiplicaría esas constantes en un objeto `MapMetrics`.
+- **Pendientes:**
+  - Tema por mapa: la textura del camino, las marcas y la flecha son las mismas para todos los mapas. Un mapa con otra temática (dulces, nieve) necesita las suyas.
+  - El tablero de respaldo de cuadritos queda muy chico con 150 casillas (unas 13 px por celda en un celular).
+  - El nombre y la descripción de `mapa_01` son provisionales.
+
+## D-31. Temas visuales por mapa (fase 3F)
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - `MapTheme` (`lib/services/map/map_theme.dart`) es independiente del mapa: un mapa lo referencia (`MapDefinition.theme`, por defecto `MapThemeCatalog.classic`) y varios mapas pueden compartirlo. Un tema define:
+    - su carpeta,
+    - sus colores (`MapThemeColors`: suelo, camino, fondo y dibujo de las flechas, diamante y acento del selector),
+    - el ancho del camino.
+  - Cada dibujo que pone el código es un `ThemeAsset`: textura del camino, flecha, marcas de inicio, positiva, negativa, especial, tienda y bifurcación, diamante y trampa. **Todos los temas usan los mismos nombres de archivo** (los de siempre, como `textura_camino.png`), así que las rutas se arman con la carpeta del tema. Agregar un tema no toca el render; agregar un tipo de dibujo nuevo es un valor más en `ThemeAsset` y el lugar donde se dibuja.
+  - **Carpetas:** el clásico se queda en `assets/images/mapa/piezas/`, para no mover ni renombrar los archivos de la artista. Los nuevos van en `assets/themes/<id>/`, aparte de los mapas, porque un tema se puede reutilizar. Cada carpeta va en `pubspec.yaml`.
+  - **Respaldos:** `mapThemeProvider(mapId)` busca los dibujos del tema **una sola vez**, contra el `AssetManifest` (`resolveTheme`).
+    - Lo que falta se toma del clásico. Si tampoco está, el código usa su respaldo: íconos para el diamante, la trampa y la flecha, y el color del tema para el camino.
+    - Se avisa en **una sola línea** de log por tema, no una por casilla.
+    - Si la textura no se puede decodificar, el camino se pinta del color del tema.
+  - Ya no hay dependencias visuales globales en el mapa: se quitaron `MapAssets` y `pathTextureProvider`. `MapScenery`, `MapPathsPainter` y `BoardMapView` reciben el tema cargado (`LoadedMapTheme`), y el selector usa el color de acento del mapa elegido.
+- **Validación:** `validateTheme` detecta archivos con nombre de dibujo del tema pero mal escritos (por ejemplo `marca_especal.png`, que la app nunca usaría). Las pruebas revisan, para cada tema registrado: su carpeta en `pubspec.yaml`, los nombres de sus archivos, que ningún dibujo pase de 4096 px y que el clásico tenga lo básico.
+- **Fuera de alcance:** el tablero de respaldo de cuadritos y los colores de los jugadores no cambian con el tema (los jugadores tienen que reconocerse igual en todos los mapas).

@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/room.dart';
+import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/rooms/disconnection_policy.dart';
 import 'package:party_tricks/services/rooms/room_code_generator.dart';
 import 'package:party_tricks/services/rooms/room_protocol.dart';
@@ -30,7 +31,12 @@ class FirebaseRoomService implements RoomService {
     required String username,
     required RoomSettings settings,
   }) async {
-    final required = requiredProtocolFor(settings);
+    final int required;
+    try {
+      required = requiredProtocolFor(settings);
+    } on UnknownMapException {
+      throw const RoomException('Ese mapa no está disponible');
+    }
     if (!AppProtocol.supports(required)) {
       // El catálogo pide más de lo que esta versión entiende: no debería
       // pasar (lo revisa map_catalog_test).

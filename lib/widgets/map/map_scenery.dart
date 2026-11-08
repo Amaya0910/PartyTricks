@@ -1,29 +1,32 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/map/board_map.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
-import 'package:party_tricks/services/map/map_assets.dart';
-import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/services/map/map_theme.dart';
 import 'package:party_tricks/widgets/map/map_paths_painter.dart';
 
 /// La parte fija del mapa: fondo, caminitos, plataformas con su marca,
 /// tiendas y decoraciones. No cambia durante la partida, así que se dibuja
 /// una sola vez (`RepaintBoundary`) y al mover la cámara solo se desplaza.
+///
+/// El camino, las marcas y sus colores salen del [theme] del mapa.
 class MapScenery extends StatelessWidget {
   const MapScenery({
     super.key,
     required this.map,
     required this.board,
-    required this.pathTexture,
+    required this.theme,
   });
 
   final BoardMap map;
   final BoardLayout board;
-  final ui.Image pathTexture;
+  final LoadedMapTheme theme;
 
   /// Tamaño de las marcas pintadas sobre el pasto.
   static const markSize = 192.0;
+
+  /// La marca de bifurcación va debajo de la de la casilla, más grande,
+  /// para que se vean las dos.
+  static const forkMarkSize = markSize * 1.3;
 
   @override
   Widget build(BuildContext context) {
@@ -32,21 +35,22 @@ class MapScenery extends StatelessWidget {
         size: map.size,
         child: Stack(
           children: [
-            Positioned.fill(
-              child: Image.asset(
-                map.background,
-                fit: BoxFit.fill,
-                errorBuilder: (_, _, _) =>
-                    const ColoredBox(color: AppColors.tilePositive),
-              ),
-            ),
+            if (map.backgroundTiles.isEmpty)
+              Positioned.fill(
+                child: Image.asset(
+                  map.background,
+                  fit: BoxFit.fill,
+                  errorBuilder: (_, _, _) =>
+                      ColoredBox(color: theme.colors.ground),
+                ),
+              )
+            else ...[
+              Positioned.fill(child: ColoredBox(color: theme.colors.ground)),
+              for (final piece in map.backgroundTiles) _Sprite(sprite: piece),
+            ],
             Positioned.fill(
               child: CustomPaint(
-                painter: MapPathsPainter(
-                  map: map,
-                  board: board,
-                  texture: pathTexture,
-                ),
+                painter: MapPathsPainter(map: map, board: board, theme: theme),
               ),
             ),
             for (final layer in _layersByDepth()) layer.widget,
@@ -64,31 +68,39 @@ class MapScenery extends StatelessWidget {
         _Layer(object.depth, _Sprite(sprite: object)),
       for (final tile in map.tiles.values) ...[
         _Layer(tile.sprite.depth, _Sprite(sprite: tile.sprite)),
+        // Justo encima de su plataforma.
+        if (_forkMarkOf(tile) case final mark?)
+          _Layer(tile.sprite.depth + 0.05, _mark(tile, mark, forkMarkSize)),
         if (_markOf(tile) case final mark?)
-          // Justo encima de su plataforma.
-          _Layer(
-            tile.sprite.depth + 0.1,
-            Positioned(
-              left: tile.anchor.dx - markSize / 2,
-              top: tile.anchor.dy - markSize / 2,
-              width: markSize,
-              height: markSize,
-              child: Image.asset(
-                mark,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-              ),
-            ),
-          ),
+          _Layer(tile.sprite.depth + 0.1, _mark(tile, mark, markSize)),
       ],
     ];
     layers.sort((a, b) => a.depth.compareTo(b.depth));
     return layers;
   }
 
-  String? _markOf(MapTile tile) {
-    if (tile.id >= board.tiles.length) return null;
-    return MapAssets.markFor(board.tile(tile.id).type);
-  }
+  Widget _mark(MapTile tile, String asset, double size) => Positioned(
+    left: tile.anchor.dx - size / 2,
+    top: tile.anchor.dy - size / 2,
+    width: size,
+    height: size,
+    child: Image.asset(
+      asset,
+      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+    ),
+  );
+
+  BoardTile? _boardTile(MapTile tile) =>
+      tile.id < board.tiles.length ? board.tile(tile.id) : null;
+
+  String? _markOf(MapTile tile) => switch (_boardTile(tile)) {
+    final boardTile? => theme.resolved.markFor(boardTile.type),
+    null => null,
+  };
+
+  String? _forkMarkOf(MapTile tile) => _boardTile(tile)?.isFork ?? false
+      ? theme.resolved[ThemeAsset.forkMark]
+      : null;
 }
 
 class _Layer {
@@ -114,9 +126,7 @@ class _Sprite extends StatelessWidget {
     );
     return Positioned.fromRect(
       rect: sprite.rect,
-      child: sprite.flipX
-          ? Transform.flip(flipX: true, child: image)
-          : image,
+      child: sprite.flipX ? Transform.flip(flipX: true, child: image) : image,
     );
   }
 }

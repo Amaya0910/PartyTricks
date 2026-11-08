@@ -339,11 +339,13 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   /// pueda jugar.
   Widget? _mapView(GameState game, String myId) {
     final map = ref.watch(boardMapProvider(game.mapId));
-    final texture = ref.watch(pathTextureProvider).value;
+    final themeAsync = ref.watch(mapThemeProvider(game.mapId));
+    if (themeAsync.hasError) debugPrint('Tema: ${themeAsync.error}');
+    final theme = themeAsync.value;
     final board = ref.watch(boardProvider(game.mapId));
     if (map.hasError) debugPrint('Mapa: ${map.error}');
     final loaded = map.value;
-    if (loaded == null || texture == null) return null;
+    if (loaded == null || theme == null) return null;
     final problems = validateBoard(board, map: loaded);
     if (problems.isNotEmpty) {
       debugPrint('Mapa: ${problems.join(' ')}');
@@ -352,7 +354,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     return BoardMapView(
       map: loaded,
       board: board,
-      pathTexture: texture,
+      theme: theme,
       state: game,
       myId: myId,
       onChooseBranch: (branch) => _send(ChooseBranch(myId, branch)),

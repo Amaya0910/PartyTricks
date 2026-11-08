@@ -131,6 +131,38 @@ void main() {
     expect(shop.depth, 2900);
   });
 
+  test('la capa fondo es el fondo en trozos, no objetos', () {
+    final json = _tiledMap(
+      objetos: [
+        {'id': 50, 'gid': 2, 'x': 1000, 'y': 2900},
+      ],
+    );
+    (json['layers'] as List).insert(0, {
+      'type': 'objectgroup',
+      'name': 'fondo',
+      'objects': [
+        {'id': 60, 'gid': 2, 'x': 0, 'y': 2000, 'width': 2880, 'height': 2000},
+        {'id': 61, 'gid': 2, 'x': 0, 'y': 4000, 'width': 2880, 'height': 2000},
+      ],
+    });
+
+    final map = parser.parse(json, mapDir: dir, background: background);
+
+    expect(map.backgroundTiles, hasLength(2));
+    expect(
+      map.backgroundTiles.first.rect,
+      const Rect.fromLTWH(-1440, 0, 2880, 2000),
+    );
+    expect(map.objects, hasLength(1));
+  });
+
+  test('sin capa fondo no hay trozos y se usa el fondo completo', () {
+    final map = parser.parse(_tiledMap(), mapDir: dir, background: background);
+
+    expect(map.backgroundTiles, isEmpty);
+    expect(map.background, background);
+  });
+
   test('missingTiles dice qué casillas faltan', () {
     final map = parser.parse(_tiledMap(), mapDir: dir, background: background);
 

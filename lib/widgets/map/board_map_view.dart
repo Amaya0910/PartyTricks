@@ -1,12 +1,11 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/map/board_map.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/map/board_walk.dart';
-import 'package:party_tricks/services/map/map_assets.dart';
+import 'package:party_tricks/services/map/map_theme.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/map/map_scenery.dart';
 import 'package:party_tricks/widgets/party_character.dart';
@@ -21,12 +20,14 @@ import 'package:party_tricks/widgets/party_character.dart';
 ///   Se dibujan sobre la pantalla y no sobre el mapa, así que siempre se
 ///   ven completas y del mismo tamaño, sin importar el zoom.
 /// - Las trampas se ven en su casilla con el color de quien las puso.
+/// - El camino, las marcas, el diamante, las trampas y las flechas salen del
+///   [theme] del mapa.
 class BoardMapView extends StatefulWidget {
   const BoardMapView({
     super.key,
     required this.map,
     required this.board,
-    required this.pathTexture,
+    required this.theme,
     required this.state,
     required this.myId,
     required this.onChooseBranch,
@@ -34,7 +35,7 @@ class BoardMapView extends StatefulWidget {
 
   final BoardMap map;
   final BoardLayout board;
-  final ui.Image pathTexture;
+  final LoadedMapTheme theme;
   final GameState state;
   final String myId;
 
@@ -58,6 +59,7 @@ class _BoardMapViewState extends State<BoardMapView>
   /// Separación entre jugadores que están en la misma casilla.
   static const _sideBySide = 120.0;
   static const _trapSize = 90.0;
+  static const _diamondSize = 120.0;
 
   /// Distancia en el mapa del centro de la bifurcación a cada flecha.
   static const _arrowDistance = 230.0;
@@ -201,16 +203,18 @@ class _BoardMapViewState extends State<BoardMapView>
                       MapScenery(
                         map: widget.map,
                         board: widget.board,
-                        pathTexture: widget.pathTexture,
+                        theme: widget.theme,
                       ),
                       if (_diamondAnchor() case final diamond?)
                         Positioned(
-                          left: diamond.dx - 60,
-                          top: diamond.dy - 130,
-                          child: const Icon(
-                            Icons.diamond,
-                            size: 120,
-                            color: AppColors.diamond,
+                          left: diamond.dx - _diamondSize / 2,
+                          top: diamond.dy - _diamondSize - 10,
+                          width: _diamondSize,
+                          height: _diamondSize,
+                          child: _ThemedIcon(
+                            asset: widget.theme.resolved[ThemeAsset.diamond],
+                            icon: Icons.diamond,
+                            color: widget.theme.colors.diamond,
                           ),
                         ),
                       ..._traps(),
@@ -247,10 +251,14 @@ class _BoardMapViewState extends State<BoardMapView>
           Positioned(
             left: anchor.dx - _trapSize / 2,
             top: anchor.dy - _trapSize / 2,
-            child: Icon(
-              Icons.dangerous,
-              size: _trapSize,
+            width: _trapSize,
+            height: _trapSize,
+            child: _ThemedIcon(
+              asset: widget.theme.resolved[ThemeAsset.trap],
+              icon: Icons.dangerous,
               color: _colorOf(ownerId),
+              // El dibujo del tema lleva un aro con el color del dueño.
+              ring: true,
             ),
           ),
     ];
@@ -391,10 +399,10 @@ class _BoardMapViewState extends State<BoardMapView>
           builder: (context, grow, child) =>
               Transform.scale(scale: grow, child: child),
           child: DecoratedBox(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.boardPanel,
-              boxShadow: [
+              color: widget.theme.colors.arrowBackground,
+              boxShadow: const [
                 BoxShadow(color: AppColors.characterShadow, blurRadius: 6),
               ],
             ),
@@ -402,19 +410,62 @@ class _BoardMapViewState extends State<BoardMapView>
               padding: EdgeInsets.all(size * 0.1),
               child: Transform.rotate(
                 angle: atan2(unit.dy, unit.dx),
-                child: Image.asset(
-                  MapAssets.branchArrow,
-                  errorBuilder: (_, _, _) => Icon(
-                    Icons.arrow_forward,
-                    size: size * 0.8,
-                    color: AppColors.settingsAccent,
-                  ),
+                child: _ThemedIcon(
+                  asset: widget.theme.resolved[ThemeAsset.branchArrow],
+                  icon: Icons.arrow_forward,
+                  color: widget.theme.colors.arrowIcon,
                 ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// El dibujo del tema, o [icon] si el tema no lo tiene (o no carga).
+/// Ocupa todo el espacio que le dan.
+class _ThemedIcon extends StatelessWidget {
+  const _ThemedIcon({
+    required this.asset,
+    required this.icon,
+    required this.color,
+    this.ring = false,
+  });
+
+  final String? asset;
+  final IconData icon;
+  final Color color;
+
+  /// Si se rodea el dibujo con un aro de [color].
+  final bool ring;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = this.asset;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fallback = Icon(
+          icon,
+          size: constraints.biggest.shortestSide,
+          color: color,
+        );
+        if (asset == null) return fallback;
+        final image = Image.asset(
+          asset,
+          fit: BoxFit.contain,
+          errorBuilder: (_, _, _) => fallback,
+        );
+        if (!ring) return image;
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: 8),
+          ),
+          child: Padding(padding: const EdgeInsets.all(8), child: image),
+        );
+      },
     );
   }
 }
