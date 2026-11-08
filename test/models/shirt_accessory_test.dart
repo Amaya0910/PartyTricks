@@ -146,6 +146,13 @@ void main() {
     });
   });
 
+  group('el color de los accesorios', () {
+    test('solo las orejas de ogro toman el tono de piel', () {
+      expect(AccessoryStyle.ogre.skinTinted, isTrue);
+      expect(AccessoryStyle.jester.skinTinted, isFalse);
+    });
+  });
+
   group('los precios coinciden con firestore.rules', () {
     final rules = File('firestore.rules').readAsStringSync();
 

@@ -94,7 +94,10 @@ class AccessoryThumbnail extends StatelessWidget {
                   children: [
                     CharacterLayer(BodyPart.cabeza.fillAsset, tint: skin),
                     CharacterLayer(BodyPart.cabeza.outlineAsset),
-                    CharacterLayer(style.assetFor(CharacterView.frente)),
+                    CharacterLayer(
+                      style.assetFor(CharacterView.frente),
+                      tint: style.skinTinted ? skin : null,
+                    ),
                   ],
                 ),
               ),

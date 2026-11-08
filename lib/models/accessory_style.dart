@@ -21,6 +21,7 @@ enum AccessoryStyle implements ShopCosmetic {
     'Las orejas más famosas del pantano',
     'shrek.png',
     sideFile: 'shrek_lado.png',
+    skinTinted: true,
     price: 75,
     rarity: Rarity.epic,
   ),
@@ -39,6 +40,7 @@ enum AccessoryStyle implements ShopCosmetic {
     this.description,
     this.file, {
     this.sideFile,
+    this.skinTinted = false,
     required this.price,
     required this.rarity,
   });
@@ -57,6 +59,10 @@ enum AccessoryStyle implements ShopCosmetic {
 
   /// Archivo del dibujo de lado, si es distinto.
   final String? sideFile;
+
+  /// Si el relleno del dibujo (blanco) toma el tono de piel del personaje,
+  /// como el relleno de la cabeza.
+  final bool skinTinted;
 
   @override
   final int price;

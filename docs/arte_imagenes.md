@@ -300,4 +300,5 @@ Todo en el lienzo de 512 × 768. **Cada carpeta nueva hay que declararla en `pub
 
 - Las camisas se dibujan sobre el cuerpo; cada manga gira con su brazo y queda **debajo** de la mano.
 - Los accesorios van con la cabeza, **encima** de la línea de la cabeza.
+- Las orejas de ogro toman el **tono de piel** del personaje: su relleno es blanco y el código lo tiñe como el relleno de la cabeza (`AccessoryStyle.skinTinted`). La gorguera conserva sus colores.
 - La boca va **entre** el relleno y la línea de la cabeza (el recorte no es perfecto y así el contorno lo tapa); la boca con la lengua afuera (`boca_9`) va encima de la línea.

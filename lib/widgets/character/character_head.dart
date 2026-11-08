@@ -55,7 +55,11 @@ class CharacterHead extends StatelessWidget {
         CharacterLayer(BodyPart.cabeza.fillAsset, tint: skinTone),
         if (photo == null && !mouth.overOutline) mouthLayer,
         CharacterLayer(BodyPart.cabeza.outlineAsset),
-        if (accessory != null) CharacterLayer(accessory!.assetFor(view)),
+        if (accessory != null)
+          CharacterLayer(
+            accessory!.assetFor(view),
+            tint: accessory!.skinTinted ? skinTone : null,
+          ),
         if (photo != null)
           FacePhotoLayer(photo: photo)
         else ...[
