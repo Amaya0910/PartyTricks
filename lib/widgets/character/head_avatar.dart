@@ -8,7 +8,7 @@ import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
-import 'package:party_tricks/widgets/character/character_face.dart';
+import 'package:party_tricks/widgets/character/character_head.dart';
 import 'package:party_tricks/widgets/character/character_layer.dart';
 
 /// Foto de perfil: la cabeza del personaje (con su piel, ojos y boca) sobre
@@ -67,9 +67,8 @@ class HeadAvatar extends StatelessWidget {
                     height: kCharacterCanvas.height,
                     child: Stack(
                       children: [
-                        CharacterLayer(BodyPart.cabeza.fillAsset, tint: skin),
-                        CharacterLayer(BodyPart.cabeza.outlineAsset),
-                        CharacterFace(
+                        CharacterHead(
+                          skinTone: skin,
                           eyes: eyes,
                           eyeColor: EyeColor.colorOf(eyeColor),
                           mouth: mouth,

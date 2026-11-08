@@ -3,7 +3,7 @@ import 'package:party_tricks/models/rarity.dart';
 /// Ojos del personaje. En el perfil se guarda solo el [number].
 ///
 /// Cada ojo es un PNG del mismo lienzo que el personaje (512x768) en
-/// assets/images/personaje/ojos/. Algunos vienen en dos capas:
+/// assets/images/personaje/frente/ojos/. Algunos vienen en dos capas:
 /// - `ojo_<n>_relleno.png`: fondo del ojo, no se tiñe.
 /// - `ojo_<n>_linea.png`: contorno; sus partes blancas toman el color.
 ///
@@ -34,7 +34,6 @@ enum EyeStyle {
     4,
     'Ojos Somnolientos',
     'Listos para una siesta',
-    layered: true,
     price: 45,
     rarity: Rarity.uncommon,
   ),
@@ -109,7 +108,7 @@ enum EyeStyle {
   /// Ojos de quien todavía no ha elegido unos.
   static const EyeStyle defaultStyle = ojo7;
 
-  static const String _folder = 'assets/images/personaje/ojos';
+  static const String _folder = 'assets/images/personaje/frente/ojos';
 
   /// Capa que se tiñe con el color de ojos.
   String get tintedAsset =>

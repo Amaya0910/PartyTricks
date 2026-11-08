@@ -13,7 +13,7 @@ class MouthLayerSpec {
 /// Bocas del personaje. En el perfil se guarda solo el [number].
 ///
 /// Cada boca es un PNG del mismo lienzo que el personaje (512x768) en
-/// assets/images/personaje/bocas/. Algunas vienen en dos capas
+/// assets/images/personaje/frente/bocas/. Algunas vienen en dos capas
 /// (`boca_<n>_relleno.png` y `boca_<n>_linea.png`) y otras en un solo PNG
 /// (`boca_<n>.png`).
 ///
@@ -31,7 +31,6 @@ enum MouthStyle {
     1,
     'Boca Carcajada',
     'Una risa a todo pulmón',
-    layered: true,
     tintable: false,
   ),
   boca2(
@@ -116,6 +115,12 @@ enum MouthStyle {
   /// Si viene en dos capas (relleno + línea).
   final bool layered;
 
+  /// Si se dibuja por encima de la línea de la cabeza. Casi todas van
+  /// debajo (entre el relleno y la línea) porque el recorte del arte no es
+  /// perfecto y así el contorno tapa los bordes; la de la lengua afuera
+  /// sobresale de la cabeza y va encima.
+  bool get overOutline => this == boca9;
+
   /// Si su parte blanca puede tomar color. Las que no (1, 9 y 10) se ven
   /// siempre igual.
   final bool tintable;
@@ -132,7 +137,7 @@ enum MouthStyle {
   /// Boca de quien todavía no ha elegido una.
   static const MouthStyle defaultStyle = boca1;
 
-  static const String _folder = 'assets/images/personaje/bocas';
+  static const String _folder = 'assets/images/personaje/frente/bocas';
 
   /// Capas de abajo hacia arriba.
   List<MouthLayerSpec> get layers {
