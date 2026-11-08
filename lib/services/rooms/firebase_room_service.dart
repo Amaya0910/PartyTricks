@@ -1,15 +1,19 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/services/rooms/disconnection_policy.dart';
 import 'package:party_tricks/services/rooms/room_code_generator.dart';
+import 'package:party_tricks/services/rooms/room_protocol.dart';
 import 'package:party_tricks/services/rooms/room_service.dart';
 
 /// Salas en Realtime Database.
 ///
 /// - `rooms/{id}/meta` y `rooms/{id}/players/{uid}`: la sala.
 /// - `roomCodes/{code}`: id de la sala con ese código.
-/// - `publicLobby/{id}`: salas públicas que esperan jugadores.
+/// - `publicLobby/{id}`: salas públicas que esperan jugadores y que la
+///   1.0.0 puede jugar. Las que piden un protocolo mayor van en
+///   `publicLobbyByProtocol/{n}/{id}` (ver [publicLobbyFor]).
 /// - `activeGames/{uid}`: la partida en curso de cada jugador.
 class FirebaseRoomService implements RoomService {
   FirebaseRoomService(this._db, [RoomCodeGenerator? codes])
@@ -26,6 +30,12 @@ class FirebaseRoomService implements RoomService {
     required String username,
     required RoomSettings settings,
   }) async {
+    final required = requiredProtocolFor(settings);
+    if (!AppProtocol.supports(required)) {
+      // El catálogo pide más de lo que esta versión entiende: no debería
+      // pasar (lo revisa map_catalog_test).
+      throw const RoomException('No se pudo crear la sala con ese mapa');
+    }
     final id = _db.ref('rooms').push().key!;
     final code = await _reserveCode(id);
     final now = DateTime.now();
@@ -37,6 +47,7 @@ class FirebaseRoomService implements RoomService {
       maxPlayers: settings.maxPlayers,
       rounds: settings.rounds,
       mapId: settings.mapId,
+      requiredProtocol: required,
       status: RoomStatus.waiting,
       lobbyEndsAt: now.add(Room.lobbyDuration),
       players: {uid: RoomPlayer(uid: uid, username: username, joinedAt: now)},
@@ -44,7 +55,7 @@ class FirebaseRoomService implements RoomService {
     await _db.ref().update({
       'rooms/$id/meta': room.metaToMap(),
       'rooms/$id/players/$uid': room.players[uid]!.toMap(),
-      if (settings.isPublic) 'publicLobby/$id': true,
+      if (settings.isPublic) '${publicLobbyFor(required)}/$id': true,
     });
     return room;
   }
@@ -73,12 +84,14 @@ class FirebaseRoomService implements RoomService {
     required String username,
   }) async {
     await cleanAbandoned(const DisconnectionPolicy(), DateTime.now());
-    final snapshot = await _db.ref('publicLobby').limitToFirst(20).get();
-    for (final child in snapshot.children) {
-      try {
-        return await _join(child.key!, uid, username);
-      } on RoomException {
-        // Esa sala se llenó o arrancó; se prueba con la siguiente.
+    for (final lobby in playablePublicLobbies()) {
+      final snapshot = await _db.ref(lobby).limitToFirst(20).get();
+      for (final child in snapshot.children) {
+        try {
+          return await _join(child.key!, uid, username);
+        } on RoomException {
+          // Esa sala se llenó o arrancó; se prueba con la siguiente.
+        }
       }
     }
     return null;
@@ -119,25 +132,27 @@ class FirebaseRoomService implements RoomService {
 
   @override
   Future<int> cleanAbandoned(DisconnectionPolicy policy, DateTime now) async {
-    final snapshot = await _db.ref('publicLobby').limitToFirst(20).get();
     var removed = 0;
-    for (final child in snapshot.children) {
-      final id = child.key!;
-      try {
-        final room = await _room(id).get();
-        if (room.value == null) {
-          await _db.ref('publicLobby/$id').remove();
-          removed++;
-          continue;
+    for (final lobby in playablePublicLobbies()) {
+      final snapshot = await _db.ref(lobby).limitToFirst(20).get();
+      for (final child in snapshot.children) {
+        final id = child.key!;
+        try {
+          final room = await _room(id).get();
+          if (room.value == null) {
+            await _db.ref('$lobby/$id').remove();
+            removed++;
+            continue;
+          }
+          final parsed = Room.fromMap(id, room.value as Map<Object?, Object?>);
+          if (policy.isAbandoned(parsed, now)) {
+            await _delete(parsed);
+            removed++;
+          }
+        } on FirebaseException {
+          // Otro la borró antes o el reloj no coincide con el del servidor:
+          // se intenta la próxima vez.
         }
-        final parsed = Room.fromMap(id, room.value as Map<Object?, Object?>);
-        if (policy.isAbandoned(parsed, now)) {
-          await _delete(parsed);
-          removed++;
-        }
-      } on FirebaseException {
-        // Otro la borró antes o el reloj no coincide con el del servidor:
-        // se intenta la próxima vez.
       }
     }
     return removed;
@@ -161,7 +176,7 @@ class FirebaseRoomService implements RoomService {
     return _db.ref().update({
       'rooms/${room.id}': null,
       'roomCodes/${room.code}': null,
-      'publicLobby/${room.id}': null,
+      '${publicLobbyFor(room.requiredProtocol)}/${room.id}': null,
     });
   }
 
@@ -169,7 +184,8 @@ class FirebaseRoomService implements RoomService {
   Future<void> setStatus(Room room, RoomStatus status) {
     return _db.ref().update({
       'rooms/${room.id}/meta/status': status.name,
-      if (status != RoomStatus.waiting) 'publicLobby/${room.id}': null,
+      if (status != RoomStatus.waiting)
+        '${publicLobbyFor(room.requiredProtocol)}/${room.id}': null,
       if (status == RoomStatus.closed) 'roomCodes/${room.code}': null,
     });
   }
@@ -207,6 +223,13 @@ class FirebaseRoomService implements RoomService {
       throw const RoomException('La sala ya no existe');
     }
     final room = Room.fromMap(id, snapshot.value as Map<Object?, Object?>);
+    // Las reglas tampoco la dejarían entrar; así el mensaje es claro.
+    if (!AppProtocol.supports(room.requiredProtocol)) {
+      throw const RoomException(
+        'Esta sala necesita una versión más nueva de la app. Actualízala '
+        'para entrar.',
+      );
+    }
     if (room.players.containsKey(uid)) return room;
     if (room.status != RoomStatus.waiting) {
       throw const RoomException('La partida ya empezó');

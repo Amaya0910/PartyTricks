@@ -372,3 +372,27 @@
 - **Pendientes:**
   - Antes de agregar un segundo mapa, las versiones viejas de la app (que no conocen `mapId`) jugarían cualquier partida con `mapa_01`. Hace falta una versión mínima o que el anfitrión revise la versión de los jugadores.
   - Selector o sorteo del mapa (hoy siempre `mapa_01`).
+
+## D-29. Protocolo de juego para que las versiones viejas no entren a partidas que no entienden (fase 2.5)
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - Un **protocolo entero**, no la versión de la app. Las reglas de Realtime Database solo comparan números, y la versión de `pubspec` cambia por cosas que no afectan la compatibilidad. Todo está en `lib/models/app_protocol.dart`: los niveles con nombre (`ProtocolLevel.base = 1` para la 1.0.0 y `roomProtocol = 2` para esta versión), `AppProtocol.current` y la interfaz `ProtocolFeature`. Cuándo y cómo subirlo está en `docs/protocolo.md`.
+  - El protocolo es una **capacidad general**, no solo del mapa: cada cosa que lo necesite (hoy `MapDefinition`; más adelante minijuegos, ítems, acciones) implementa `ProtocolFeature` con su `minProtocol`, y `requiredProtocolFor` (`room_protocol.dart`) toma el mayor de lo que usa la sala. `mapa_01` es `base`, así que **todas las salas de hoy piden 1** y la 1.0.0 las sigue jugando.
+  - La sala guarda `meta/requiredProtocol` y cada jugador publica `players/{uid}/protocol` al entrar. Lo que no tiene los campos cuenta como 1.
+  - Se conserva la defensa de la fase 2 (mapa que no está en el catálogo) además del chequeo de protocolo.
+- **Lista pública por protocolo (`publicLobbyByProtocol/{n}`):** se analizaron alternativas para no tener dos listas:
+  - *Una sola lista y que las reglas no dejen entrar a la 1.0.0:* no sirve. El `joinRandomPublic` de la 1.0.0 solo atrapa `RoomException`; el "permission denied" de las reglas llega como `FirebaseException` y **corta la búsqueda**, así que la 1.0.0 no podría unirse a ninguna sala pública mientras la primera de la lista fuera nueva.
+  - *Que las reglas oculten las salas nuevas al leer la lista:* las reglas de lectura no filtran hijos; o se lee toda la lista o nada.
+  - *Claves con prefijo en la misma lista (`v3_{id}`):* la 1.0.0 las saltaría ("La sala ya no existe"), pero su `cleanAbandoned` también las borraría (para las reglas la sala `v3_{id}` no existe), y depende de detalles internos de la versión vieja.
+  - *Hacer que la sala le parezca llena a la 1.0.0:* cambia el significado de `maxPlayers` y rompe las reglas de cupo.
+  - **Elegida:** separar por protocolo. No es una lista duplicada: **cada sala está en una sola lista** (`publicLobbyFor`). La 1.0.0 solo lee `publicLobby`, que las reglas reservan para salas de protocolo 1; las versiones nuevas leen todas las que pueden jugar (`playablePublicLobbies`). Un nivel nuevo no necesita cambiar las reglas ni el código: usa su propia lista sola.
+- **Reglas (`database.rules.json`):**
+  - `players/$uid`: si la sala pide más de 1, hay que publicar un `protocol` igual o mayor. Nadie puede cambiar el `protocol` de otro jugador.
+  - `meta/requiredProtocol`: número de 1 a 999; no cambia. Puede desaparecer solo si era 1 (cuando una 1.0.0 toma el lugar del anfitrión y reescribe `meta`).
+  - `publicLobby/$roomId`: solo salas de protocolo 1. `publicLobbyByProtocol/$n/$roomId`: solo salas de protocolo mayor a 1, con las mismas reglas de anfitrión que `publicLobby`.
+- **Riesgos que quedan:**
+  - La 1.0.0 muestra un error genérico al intentar entrar por código a una sala nueva: no se puede cambiar su mensaje.
+  - Las reglas no se probaron con el emulador (en esta computadora falta Java 21).
+  - Un minijuego o ítem nuevo que toda partida pueda sortear sube el protocolo de todas las salas (ver `docs/protocolo.md`).

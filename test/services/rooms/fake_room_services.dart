@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/services/rooms/disconnection_policy.dart';
 import 'package:party_tricks/services/rooms/presence_service.dart';
@@ -15,6 +16,7 @@ Room testRoom({
   bool betoConnected = true,
   DateTime? lastActiveAt,
   RoomStatus status = RoomStatus.playing,
+  int requiredProtocol = AppProtocol.legacy,
 }) {
   final start = DateTime(2026, 10, 28, 19);
   return Room(
@@ -26,6 +28,7 @@ Room testRoom({
     rounds: 5,
     status: status,
     lobbyEndsAt: start,
+    requiredProtocol: requiredProtocol,
     lastActiveAt: lastActiveAt,
     players: {
       if (hostPresent)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/results_controller.dart';
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/controllers/room_guard.dart';
 import 'package:party_tricks/controllers/stats_controller.dart';
 import 'package:party_tricks/screens/results_screen.dart';
@@ -240,15 +241,18 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     });
     // Se escucha la sala para tenerla cargada al terminar (si es pública y
     // quién es el anfitrión); si no, Riverpod la pausa y llega vacía.
-    ref.watch(roomProvider(widget.roomId));
+    final room = ref.watch(roomProvider(widget.roomId)).value;
     final game = ref.watch(gameProvider(widget.roomId)).value;
     final me = ref.watch(roomIdentityProvider).value;
     if (game != null) _diceCounts ??= _diceCountsOf(game);
     if (game != null && me != null && game.phase == GamePhase.finished) {
       return ResultsScreen(game: game, myId: me.uid, onExit: _leave);
     }
-    if (game != null && MapCatalog.byId(game.mapId) == null) {
-      return _UnknownMap(onLeave: _confirmLeave);
+    // Dos defensas: el protocolo de la sala y, por si el catálogo no tiene
+    // el mapa aunque el protocolo diga que sí, el mapa de la partida.
+    final tooNew = room != null && !AppProtocol.supports(room.requiredProtocol);
+    if (tooNew || (game != null && MapCatalog.byId(game.mapId) == null)) {
+      return _UpdateRequired(onLeave: _confirmLeave);
     }
     final mapView = game == null || me == null ? null : _mapView(game, me.uid);
     final players = game == null ? null : _minigamePlayers(game);
@@ -580,10 +584,11 @@ class _Button extends StatelessWidget {
   }
 }
 
-/// La partida es de un mapa que esta versión de la app no tiene (la creó
-/// alguien con una versión más nueva). No se puede mostrar ni jugar.
-class _UnknownMap extends StatelessWidget {
-  const _UnknownMap({required this.onLeave});
+/// La partida usa algo que esta versión de la app no tiene: pide un
+/// protocolo mayor o un mapa que no está en el catálogo (la creó alguien con
+/// una versión más nueva). No se puede mostrar ni jugar.
+class _UpdateRequired extends StatelessWidget {
+  const _UpdateRequired({required this.onLeave});
 
   final VoidCallback onLeave;
 
@@ -598,7 +603,7 @@ class _UnknownMap extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'Esta partida usa un mapa que tu versión de la app no tiene. '
+                'Esta partida necesita una versión más nueva de la app. '
                 'Actualízala para jugarla.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),

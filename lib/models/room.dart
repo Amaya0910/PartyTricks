@@ -1,3 +1,4 @@
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/map/map_id.dart';
 
 /// En qué momento está la sala.
@@ -39,6 +40,7 @@ class RoomPlayer {
     this.connected = true,
     this.lastSeen,
     this.photoUrl,
+    this.protocol = AppProtocol.current,
   });
 
   factory RoomPlayer.fromMap(String uid, Map<Object?, Object?> data) {
@@ -49,6 +51,8 @@ class RoomPlayer {
       connected: data['connected'] as bool? ?? true,
       lastSeen: _time(data['lastSeen']),
       photoUrl: data['photoUrl'] as String?,
+      // Los que entraron con la 1.0.0 no lo publican.
+      protocol: (data['protocol'] as num?)?.toInt() ?? AppProtocol.legacy,
     );
   }
 
@@ -64,12 +68,17 @@ class RoomPlayer {
   /// Foto de perfil (opcional). Si es null se muestra un ícono.
   final String? photoUrl;
 
+  /// El protocolo de la app con la que entró ([AppProtocol]). Las reglas no
+  /// lo dejan entrar si es menor que el `requiredProtocol` de la sala.
+  final int protocol;
+
   Map<String, Object?> toMap() => {
     'username': username,
     'joinedAt': joinedAt.millisecondsSinceEpoch,
     'connected': connected,
     if (lastSeen != null) 'lastSeen': lastSeen!.millisecondsSinceEpoch,
     if (photoUrl != null) 'photoUrl': photoUrl,
+    'protocol': protocol,
   };
 }
 
@@ -88,6 +97,7 @@ class Room {
     required this.status,
     required this.lobbyEndsAt,
     this.mapId = defaultMapId,
+    this.requiredProtocol = AppProtocol.legacy,
     this.lastActiveAt,
     this.players = const {},
   });
@@ -109,6 +119,8 @@ class Room {
       ),
       // Las salas de antes de los varios mapas no lo tienen.
       mapId: meta['mapId'] as String? ?? defaultMapId,
+      requiredProtocol:
+          (meta['requiredProtocol'] as num?)?.toInt() ?? AppProtocol.legacy,
       lastActiveAt: _time(meta['lastActiveAt']),
       players: {
         for (final entry in players.entries)
@@ -141,6 +153,11 @@ class Room {
   /// (`GameState.mapId`), que es la que manda desde ahí.
   final String mapId;
 
+  /// El protocolo mínimo para entrar: el mayor de lo que usa la partida
+  /// (mapa y, más adelante, minijuegos, ítems...). Lo calcula quien crea la
+  /// sala y no cambia. Ver `AppProtocol` y `docs/protocolo.md`.
+  final int requiredProtocol;
+
   /// Última vez que el anfitrión dio señales (lo renueva mientras juega).
   /// Sirve para saber si la sala quedó abandonada.
   final DateTime? lastActiveAt;
@@ -170,6 +187,7 @@ class Room {
     'status': status.name,
     'lobbyEndsAt': lobbyEndsAt.millisecondsSinceEpoch,
     'mapId': mapId,
+    'requiredProtocol': requiredProtocol,
     if (lastActiveAt != null)
       'lastActiveAt': lastActiveAt!.millisecondsSinceEpoch,
   };
