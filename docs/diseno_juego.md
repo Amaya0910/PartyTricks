@@ -48,7 +48,7 @@ Datos adicionales que se deducen del diseño **(propuesto)**:
 ### 3.2 Personaje y foto de perfil
 
 - La **foto de perfil es la cabeza del personaje** sobre un **color de fondo** que el jugador elige en Ajustes. La ven también los demás jugadores.
-- El jugador puede personalizar el rostro y el cuerpo con **cosméticos** (Piel, Camisa, Pantalón, Zapatos, Cabello, Ojos, Nariz, Boca). Hoy están hechos la piel (40 tonos, 20 de ellos fantasiosos), los ojos (11) y las bocas (10), cada uno con 20 colores.
+- El jugador puede personalizar el rostro y el cuerpo con **cosméticos** (Piel, Camisa, Pantalón, Zapatos, Cabello, Ojos, Nariz, Boca). Hoy están hechos la piel (40 tonos, 20 de ellos fantasiosos), los ojos (11) y las bocas (10), cada uno con 20 colores, las camisas (la azul de inicio, 8 colores más y 11 diseños) y 2 accesorios. Más adelante se agruparán en **colecciones** (por ejemplo, camisas de fútbol o el primer drop de Shift's).
 - Cada cosmético tiene una **rareza** (común, poco común, raro, épico o legendario) que decide qué tan seguido sale en los cofres y se ve en la Tienda.
 - **Foto de la cara (opcional):** el jugador se toma una foto o elige una de la galería, la acomoda dentro de la silueta de la cabeza y cubre toda la cara del personaje, en lugar de los ojos y la boca. Se puede apagar o quitar cuando quiera.
 
@@ -178,7 +178,7 @@ Hay **dos tiendas** en el mapa. Se compra con las **monedas de partida**. Todos 
 ### 8.1 Tienda del juego (fuera de partida)
 
 - Se compra con las **monedas y diamantes de la cuenta**.
-- Vende cosméticos, cosméticos "mejores" y mejoras consumibles. Hoy vende **ojos y bocas** por monedas (de 30 a 100), con filtro por categoría y orden por precio o rareza.
+- Vende cosméticos, cosméticos "mejores" y mejoras consumibles. Hoy vende **ojos, bocas, camisas y accesorios** por monedas (de 30 a 100), con filtro por categoría y orden por precio o rareza.
 - Los **cofres** (con diamantes) pueden dar un cosmético aleatorio que el jugador todavía no tiene, 100 monedas, un dado extra o nada. Se puede ver la probabilidad de cada cosmético antes de comprar el cofre.
 - Incluye la **caja secreta de dados**: da dados extra **consumibles** que se pueden usar en próximas partidas.
 
@@ -342,7 +342,7 @@ Barra de navegación con 5 secciones:
 |---|---|
 | Inicio | Crear sala / unirse (código o aleatoria) |
 | Tienda | Compra con monedas y diamantes de la cuenta |
-| Vestuario | Personalización del personaje: Piel, Camisa, Pantalón, Zapatos, Cabello, Ojos, Nariz, Boca |
+| Vestuario | Personalización del personaje: Piel, Camisa, Pantalón, Zapatos, Cabello, Ojos, Nariz, Boca, Accesorios |
 | Stats | Estadísticas del jugador |
 | Amigos | Lista de amigos, código de amistad, invitaciones y chat |
 

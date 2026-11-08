@@ -462,3 +462,24 @@
   - Decidir si se quita de Android el permiso `RECORD_AUDIO`, que declara el paquete `camera` aunque la app no graba audio.
   - El lobby y el tablero siguen con el personaje provisional, sin foto.
   - Las reglas no se probaron con el emulador.
+
+## D-33. Camisas, accesorios y caminata de lado
+
+- **Fecha:** 2026-11-07
+- **Estado:** Propuesta
+- **Decisión:**
+  - **Camisas** (`ShirtStyle`, 19) y **accesorios** (`AccessoryStyle`, 2) se compran en la Tienda con monedas y salen en los cofres, igual que los ojos y las bocas (D-29 a D-31). Cada uno tiene su pestaña en el Vestuario (**Camisa** y **Accesorios**, esta nueva) y su filtro en la Tienda.
+  - **Camisa de inicio:** la camisa 1, **azul** (id 1, gratis). La camisa 1 es blanca y se tiñe: tiene **8 colores más** en la Tienda (ids 101 a 108, 30 monedas cada uno). Las demás camisas traen su color y no se tiñen. La camisa 2 se queda como está, sin mangas.
+  - **Precios y rarezas** (los puse yo; se pueden cambiar): camisa 1 de colores, 30 (común); camisa 2, 45 (poco común); camisas 3 y 4 (fútbol), 60 (rara); camisa 5 (payaso), 75 (épica); camisas 6 y 7, 45; 8 y 9, 60; 10 y 11, 75; 12, 100 (legendaria). Accesorios: orejas de ogro, 75 (épico); gorguera de bufón, 100 (legendario). Ninguno es gratis salvo la camisa azul.
+  - **Se guardan** en el perfil: `shirt` (id; si falta, la 1), `ownedShirts`, `accessory` (id; **0 = ninguno**) y `ownedAccessories`. El perfil público también guarda `shirt` y `accessory` (el accesorio se ve en la foto de perfil).
+  - **Dibujo.** De frente, la camisa va con el cuerpo y cada manga con su brazo (gira con él, debajo de la mano). Los accesorios van con la cabeza. De lado, la camisa va con el torso y la manga (una sola para los dos brazos) con cada brazo. `camisa_5` se ve distinta yendo a la derecha o a la izquierda, así que de lado trae un dibujo para cada una; las demás se voltean junto con el cuerpo. Las carpetas nuevas están declaradas en `pubspec.yaml` (una prueba lo revisa: si falta una, el personaje se dibuja sin la camisa, en silencio).
+  - **Caminata de lado** (`WalkingCharacter`): dos piernas y dos brazos que se mueven en sentidos contrarios. Los personajes del mapa caminan así de casilla en casilla y quietos se ven de frente. Las animaciones están en `CharacterClip`; **Administración → Galería → Animaciones** las muestra todas, con el personaje del administrador tal como lo tiene puesto.
+  - Para tratar los cuatro cosméticos igual en la Tienda y los cofres existe `ShopCosmetic` (lo implementan `EyeStyle`, `MouthStyle`, `ShirtStyle` y `AccessoryStyle`). `ChestPrize` y `CosmeticPicker` ahora también reparten camisas y accesorios; las probabilidades de los cofres cambian porque hay más cosméticos que sortear.
+- **Reglas (`firestore.rules`):** `shirtPrice`, `accessoryPrice`, `isShirtPurchase`, `isAccessoryPurchase`, `addsOneShirt` y `addsOneAccessory`; el cofre puede dar uno de los cuatro, y la camisa y el accesorio puestos tienen que ser el de inicio o comprados. Los precios están también en `shirt_style.dart` y `accessory_style.dart`: **una prueba compara las dos listas**. **Hay que publicar las reglas.**
+- **Pendientes:**
+  - **Colecciones** (por ejemplo, camisas 3 y 4 de fútbol; camisas 6 a 12, primer drop de Shift's): todavía no existen. Los nombres de las camisas del drop ya dicen "Shift's".
+  - Un cofre especial solo de cosméticos.
+  - Los demás jugadores se dibujan en el mapa con el aspecto de inicio: la partida todavía no trae el aspecto de cada uno (el del perfil público ya está disponible).
+  - `camisa_5_derecha` se usa cuando el personaje mira a la derecha: si está al revés, se intercambian en `ShirtStyle.bodyAsset`.
+  - Pantalón, zapatos, cabello y nariz siguen sin arte.
+  - Las reglas no se probaron con el emulador.

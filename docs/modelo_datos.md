@@ -42,7 +42,11 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | `colorBoca` | `mouthColor` | Posición del color de boca (0 a 19; el 0 es "sin color" y toma el tono de piel) |
 | `bocasCompradas` | `ownedMouths` | Lista con los números de las bocas compradas o ganadas. Las gratis (1 y 3) no se guardan. Solo cambia al comprar o abrir un cofre (D-30 y D-31) |
 | `colorFondoFoto` | `avatarColor` | Posición del color de fondo de la foto de perfil (0 a 15), que se elige en Ajustes |
-| _(ropa, cabello y nariz)_ | _(por construir)_ | Cuando existan esos cosméticos |
+| `camisa` | `shirt` | Id de la camisa puesta (1 = la azul de inicio; 101 a 108, sus otros colores; 2 a 12, las demás). Si falta, la 1. Tiene que ser la de inicio o comprada |
+| `camisasCompradas` | `ownedShirts` | Lista con los ids de las camisas compradas o ganadas. La 1 no se guarda. Solo cambia al comprar o abrir un cofre (D-33) |
+| `accesorio` | `accessory` | Id del accesorio puesto, o 0 si no lleva ninguno. Si falta, ninguno. Tiene que ser comprado |
+| `accesoriosComprados` | `ownedAccessories` | Lista con los ids de los accesorios comprados o ganados. Solo cambia al comprar o abrir un cofre (D-33) |
+| _(pantalón, zapatos, cabello y nariz)_ | _(por construir)_ | Cuando existan esos cosméticos |
 | `fotoCara` | `facePhoto` | Opcional. La foto de la cara: un JPEG de 256 × 256 en base64, de hasta 60 000 caracteres. Reemplaza a los ojos y la boca y cubre toda la cabeza (D-32) |
 | `usarFotoCara` | `useFacePhoto` | Si la foto se está usando o se prefieren los ojos y la boca. Si falta, `true` |
 
@@ -60,13 +64,13 @@ Las preferencias de Ajustes (notificaciones, sonido, efectos e idioma) **no** va
 
 ### 2.2 Cosmético
 
-Hoy existen **ojos** (11) y **bocas** (10), definidos en código, en `lib/models/eye_style.dart` (`EyeStyle`) y `lib/models/mouth_style.dart` (`MouthStyle`). La categoría de cada cosmético del Vestuario está en `lib/models/cosmetic_category.dart` (`CosmeticCategory`). Camisa, pantalón, zapatos, cabello y nariz todavía no tienen catálogo.
+Hoy existen **ojos** (11), **bocas** (10), **camisas** (19) y **accesorios** (2), definidos en código, en `lib/models/eye_style.dart` (`EyeStyle`), `mouth_style.dart`, `shirt_style.dart` y `accessory_style.dart`. Los cuatro implementan `ShopCosmetic` (`shop_cosmetic.dart`). La categoría de cada cosmético del Vestuario está en `lib/models/cosmetic_category.dart` (`CosmeticCategory`). Pantalón, zapatos, cabello y nariz todavía no tienen catálogo.
 
 | Campo | Descripción |
 |---|---|
-| `number` | Número del archivo de arte y lo que se guarda en el perfil |
+| `number` (ojos y bocas) / `id` (camisas y accesorios) | Lo que se guarda en el perfil. En las camisas, el arte (`art`) puede repetirse: la camisa 1 tiene 9 colores con ids distintos |
 | `title` y `description` | Texto que se muestra en la Tienda |
-| `price` | En monedas; 0 si viene gratis con la cuenta. Los precios también están en `firestore.rules` (`eyesPrice` y `mouthPrice`) y hay que cambiarlos en los dos sitios |
+| `price` | En monedas; 0 si viene gratis con la cuenta. Los precios también están en `firestore.rules` (`eyesPrice`, `mouthPrice`, `shirtPrice` y `accessoryPrice`) y hay que cambiarlos en los dos sitios (una prueba los compara) |
 | `rarity` | Rareza (`lib/models/rarity.dart`): decide qué tan seguido sale en los cofres |
 | `layered` y `tintable` | Si viene en dos capas de arte y si su parte blanca puede tomar color |
 

@@ -52,8 +52,8 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 | Sección | Archivo | Estado | Contenido según el mockup |
 |---|---|---|---|
 | Inicio | `home_screen.dart` | En desarrollo | Cabecera del jugador, personaje y botón **Jugar** |
-| Tienda | `shop_screen.dart` | En desarrollo | Tienda de Tricks: cofres (50, 100, 150) y cosméticos (ojos y bocas) con precio, rareza, filtro y orden |
-| Vestuario | `wardrobe_screen.dart` | En desarrollo | Tu personaje y categorías: Piel, Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos y Boca (Piel, Ojos y Boca ya funcionan) |
+| Tienda | `shop_screen.dart` | En desarrollo | Tienda de Tricks: cofres (50, 100, 150) y cosméticos (ojos, bocas, camisas y accesorios) con precio, rareza, filtro y orden |
+| Vestuario | `wardrobe_screen.dart` | En desarrollo | Tu personaje y categorías: Piel, Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos, Boca y Accesorios (Piel, Camisa, Ojos, Boca y Accesorios ya funcionan) |
 | Stats | `stats_screen.dart` | En desarrollo | Estadísticas de partidas, minijuegos y tiempo |
 | Amigos | `friends_screen.dart` | En desarrollo | Solicitudes, lista de amigos, chat e invitaciones |
 
@@ -64,7 +64,7 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 ## 3. Inicio
 
 - **Cabecera del jugador:** foto de perfil, nombre de usuario, monedas y diamantes. La foto es la **cabeza de tu personaje** (con tu foto de la cara, si pusiste una) sobre el color de fondo que eliges en Ajustes. Los datos salen del perfil del jugador con la sesión iniciada.
-- **Personaje:** tu personaje animado en reposo (respira y mueve un poco la cabeza), con la piel, los ojos y la boca que tienes puestos, o con tu foto en toda la cara. La ropa, el cabello y la nariz llegan después.
+- **Personaje:** tu personaje animado en reposo (respira y mueve un poco la cabeza), con la piel, los ojos, la boca, la camisa y el accesorio que tienes puestos, o con tu foto en toda la cara. El pantalón, los zapatos, el cabello y la nariz llegan después.
 - **Botón Jugar:** abre un menú emergente con tres opciones.
 
 ### Menú de Jugar
@@ -116,11 +116,11 @@ Archivo: `shop_screen.dart`.
 - Tres cofres con su precio en **diamantes**: Cofre Básico (50), Cofre Party (100) y Cofre Diamante (150, nombre provisional; el mockup lo repite como "Cofre Party").
 - Al tocar un cofre se abre una ventana con sus **probabilidades** de premio (cosmético aleatorio, nada, 100 monedas o dado extra) y el botón **Comprar**. La fila **Cosmético aleatorio** (con un ícono de información) se puede tocar: abre una ventana con la **probabilidad de cada cosmético** que todavía no tienes, agrupados por rareza (`cosmetic_odds_dialog.dart`). Los que ya tienes no salen, y los porcentajes se recalculan solos.
 - Si no alcanzan los diamantes, la ventana muestra el mensaje de error. Si se compra, se abre la **ventana de premio** (`chest_reward_dialog.dart`), con los colores del cofre: el **cosmético** ganado con su rareza (ya queda guardado y aparece en el Vestuario), las **100 monedas**, el **dado extra** o el aviso de **cofre vacío**, y el total que tienes ahora.
-- Debajo de los cofres están los **chips de filtro** (Todos, Ojos y Bocas) y un botón para **ordenar** (recomendado, precio o rareza, de mayor a menor o al revés).
+- Debajo de los cofres están los **chips de filtro** (Todos, Ojos, Bocas, Camisas y Accesorios) y un botón para **ordenar** (recomendado, precio o rareza, de mayor a menor o al revés).
 - La lista muestra los cosméticos que todavía no tienes: el dibujo en un cuadro punteado y, al lado, el nombre, la descripción, el precio en **monedas** y la **rareza**. Los precios van de 30 a 100 monedas (ver D-29 y D-30).
 - Al tocar un cosmético se abre la **ventana de compra** (`cosmetic_purchase_dialog.dart`): tu personaje probándoselo, con tu piel y tus colores, su rareza, la descripción, cuántas monedas tienes y el botón **Comprar**. Si no alcanzan, dice cuántas faltan. Lo comprado sale de la Tienda y aparece en el Vestuario.
 - Si ya tienes todos los de una categoría, la lista dice "¡Ya tienes todos los ojos!" (o las bocas, o los cosméticos).
-- Las reglas de la compra están en `decisiones.md`: D-18 (cofres), D-29 y D-30 (ojos y bocas) y D-31 (rareza y cosméticos en los cofres).
+- Las reglas de la compra están en `decisiones.md`: D-18 (cofres), D-29 y D-30 (ojos y bocas), D-31 (rareza y cosméticos en los cofres) y D-33 (camisas y accesorios).
 
 ---
 
@@ -129,13 +129,14 @@ Archivo: `shop_screen.dart`.
 Archivo: `wardrobe_screen.dart`.
 
 - Arriba, tu **personaje animado** con lo que tienes puesto y el botón **Foto**, que abre la pantalla de la foto de la cara (ver 5.1).
-- En el medio, la barra de **categorías**: Piel, Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos y Boca. Se desplaza si no caben.
+- En el medio, la barra de **categorías**: Piel, Camisa, Pantalón, Zapatos, Cabello, Nariz, Ojos, Boca y Accesorios. Se desplaza si no caben.
 - **Piel:** una cuadrícula con **40 tonos**: 20 realistas, de claro a oscuro, y 20 fantasiosos (negro, blanco, azul...).
 - **Ojos** y **Boca:** arriba una línea de **20 colores** que se desplaza y, debajo, una cuadrícula con los que ya tienes (los gratis y los que compraste o ganaste en un cofre). El elegido lleva el borde azul. Los dibujos no llevan nombre.
   - En los ojos, el primer color deja el dibujo como está.
   - En la boca, el primer color es **sin color**: lo blanco de la boca toma el tono de piel (en la línea se ve con ese tono). Las bocas 1, 9 y 10 no cambian de color.
-- Las demás categorías (camisa, pantalón, zapatos, cabello y nariz) muestran su mensaje "Aún no tienes..." mientras no existan esos cosméticos.
-- Provisional: en las categorías sin arte, el cosmético es un mapa fijo en el código (solo "Camisa 1"), sin nombre visible. Ver `decisiones.md`, D-19.
+- **Camisa:** una cuadrícula con las camisas que tienes. La azul (camisa 1) es la de inicio; las demás se compran o salen en cofres (ver `decisiones.md`, D-33).
+- **Accesorios:** una cuadrícula con una casilla **Ninguno** y los accesorios que tienes (orejas de ogro y gorguera de bufón).
+- Las categorías sin arte (pantalón, zapatos, cabello y nariz) muestran su mensaje "Aún no tienes...".
 
 ### 5.1 Foto de la cara
 
@@ -254,6 +255,10 @@ Pantallas que se deducen del diseño del juego y que **aún no aparecen en el mo
 - [x] Minijuegos (Para el Tiempo, Reacción y Globo Bomba; ver `decisiones.md`, D-26).
 - [x] Resultados de la partida (`results_screen.dart`).
 - [ ] Mensaje "Lo sentimos, no quedan jugadores :(" con el botón **[Regresar a menú]**.
-- [x] Tienda de ítems: ojos y bocas a la venta (ver sección 4). Faltan los demás cosméticos.
+- [x] Tienda de ítems: ojos, bocas, camisas y accesorios a la venta (ver sección 4). Faltan los demás cosméticos.
 - [x] Foto de la cara: cámara con silueta, editor y resumen (ver 5.1).
 - [x] Ajustes: cuenta, preferencias, cambio de contraseña, textos legales y bloqueados (ver sección 8).
+
+## Administración: animaciones
+
+Archivo: `screens/admin/animation_preview_screen.dart` (Administración → Galería → **Animaciones**). Muestra todas las animaciones del personaje (`CharacterClip`: reposo y caminar de lado) con el personaje del administrador tal como lo tiene puesto, o con el aspecto de inicio y otro tono de piel. Se puede pausar, recorrer por fases, cambiar la velocidad y voltear. Nada se guarda. Ver `decisiones.md`, D-33.
