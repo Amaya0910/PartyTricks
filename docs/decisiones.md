@@ -483,3 +483,74 @@
   - `camisa_5_derecha` se usa cuando el personaje mira a la derecha: si está al revés, se intercambian en `ShirtStyle.bodyAsset`.
   - Pantalón, zapatos, cabello y nariz siguen sin arte.
   - Las reglas no se probaron con el emulador.
+
+## D-34. Margen de 200 px arriba del lienzo del personaje
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:** el lienzo del personaje pasa de 512 × 768 a **512 × 968**: se agregaron 200 px transparentes **arriba** de todas las capas (157 PNG de `personaje/`), para tener espacio para el cabello y los sombreros. El dibujo no cambió, solo bajó 200 px.
+- **En el código:** `kCharacterTopMargin` y `kCharacterCanvas` (`character_layer.dart`). Todo lo medido en píxeles del lienzo (pivotes de `BodyPart`, articulaciones de `WalkingCharacter`, recortes de los selectores y de `HeadAvatar`, `HeadShape.zone`, línea de los pies del mapa) suma ese margen. En el mapa el cuerpo mide lo mismo que antes.
+- **Reposo de lado** (`CharacterClip.idleSide`, `SideIdle`): solo se ve en el Vestuario, con un botón para ver el personaje de lado. En las partidas, al dejar de caminar, el personaje se pone de frente con el reposo normal.
+- **Para el arte nuevo:** exportar a 512 × 968. En Krita: Imagen → Cambiar tamaño del lienzo, alto 968 y desplazamiento Y = 200 (el dibujo existente baja).
+
+## D-35. Cabellos
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - Hay **10 cabellos** (`HairStyle`). Se compran en la Tienda con monedas y salen en los cofres, igual que las camisas y los accesorios (D-33). Ninguno es gratis. Tienen pestaña propia en el Vestuario (**Cabello**) y filtro en la Tienda (**Cabellos**).
+  - **Sin cabello:** el primer espacio de la pestaña es "Ninguno", con una **X roja**. Es el estado de inicio: el campo `hair` vale 0.
+  - **Color:** los cabellos blancos (2, 6, 7 y 9) toman el color que elija el jugador (`HairColor`, los mismos 20 colores de los ojos; el primero es blanco = el dibujo original). **Todos los colores están desbloqueados**: no se compran. Los otros seis (1, 3, 4, 5, 8 y 10) traen su color y no se tiñen. Si más adelante se venden colores, habrá que guardar cuáles tiene cada jugador.
+  - **Precios y rarezas** (los puse yo; se pueden cambiar): 1, 5 y 9, 45 (poco común); 2, 3, 6 y 10, 60 (raro); 4, 7 y 8, 75 (épico).
+  - **Se guardan** en el perfil: `hair` (id; 0 = ninguno), `ownedHairs` y `hairColor` (posición del color). El perfil público también guarda `hair` y `hairColor`: el cabello se ve en la foto de perfil.
+  - **Dibujo.** `cabello_<id>.png` va **encima de la cara** (ojos y boca) y **debajo de los accesorios**, de frente y de lado. Los cabellos 1, 3 y 6 traen además `cabello_<id>_atras.png` (solo de frente), que va **detrás de la cabeza**.
+  - **Reglas (`firestore.rules`):** `hairPrice`, `isHairPurchase`, `addsOneHair`, `onlyHairsChange` y `ownedHairs` en la cartera; el cabello puesto tiene que ser 0 o comprado; el cofre puede dar uno. Una prueba compara los precios de las reglas con los del código. **Hay que publicar las reglas.**
+- **Además:** el icono de la pestaña **Accesorios** del Vestuario (`Icons.auto_awesome`; antes no tenía ninguno).
+- **Pendientes:**
+  - La foto de perfil recorta alrededor de la cabeza (`HeadAvatar._crop`): los cabellos muy altos (el 7) se ven cortados arriba.
+  - Los demás jugadores siguen dibujándose en el mapa con el aspecto de inicio.
+  - Las reglas no se probaron con el emulador.
+
+## D-36. Pantalones y la X de "ninguno"
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - Hay **1 pantalón** (`PantsStyle`, "Pantalón Dorado", 45 monedas, poco común). Se compra en la Tienda y sale en los cofres, igual que los demás cosméticos (D-33, D-35). Pestaña **Pantalón** en el Vestuario con "Ninguno" (X roja) y filtro **Pantalones** en la Tienda.
+  - Se guardan en el perfil `pants` (id; 0 = ninguno) y `ownedPants`. El pantalón no va en el perfil público: no se ve en la foto de perfil.
+  - **Dibujo.** `frente/pantalones/pantalon_<id>.png`. Va **sobre las dos piernas** y debajo de los brazos, sin moverse (en el reposo las piernas están quietas). **Todavía no tiene dibujo de lado**: al caminar por el mapa (y en el reposo de lado) el personaje se ve sin pantalón.
+  - Reglas: `pantsPrice`, `isPantsPurchase`, `addsOnePants`, `onlyPantsChange` y `ownedPants` en la cartera; el pantalón puesto tiene que ser 0 o comprado. Una prueba compara el precio de las reglas con el del código. **Hay que publicar las reglas.**
+  - **La X de "ninguno":** el espacio "Ninguno" de Accesorios, Cabello y Pantalón se muestra como una **X roja** (`NoneMark`). El primer color de las líneas de color de Ojos, Boca y Cabello (el "sin color": el dibujo original) también lleva una X roja (`ColorStrip.firstIsNone`).
+- **Pendientes:**
+  - Dibujo de lado del pantalón (muslo y rodilla, como las piernas de `lado/cuerpo/`).
+  - Las camisas 13 a 16 se agregaron en D-37.
+
+## D-37. Camisas 13 a 16, cabello atrás y vistas previas
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - **Camisas 13 a 16** (de fútbol) agregadas a `ShirtStyle` (ahora 23): 13 y 14, 60 monedas (rara); 15 y 16, 75 (épica). Los nombres ("Camiseta de Fútbol 13"...) son provisionales; se cambian en `shirt_style.dart` (el `id` no cambia). `firestore.rules`: `shirtPrice` con los cuatro precios nuevos.
+  - **Parte de atrás del cabello:** en el personaje completo es la **capa más atrás** de todas (debajo del cuerpo, para que no se vea delante del cuello) y se mueve con la cabeza. En la foto de perfil y las vistas previas, que no tienen cuerpo, sigue detrás de la cabeza.
+  - **Vistas previas** de la Tienda, los cofres y el Vestuario: la de las camisas recorta solo la camisa (sin brazos ni manos), así se ve más grande y con su detalle; la del pantalón se acercó a la cadera.
+  - Los archivos `Camisa_13.png` y `Camisa_14.png` pasaron a minúsculas (en Android los nombres distinguen mayúsculas).
+- **Pendiente:** las camisas 6 a 12 del .kra usan capas recortadas ("heredar alfa") que mi lector no replica; por eso no se volvieron a exportar y se conservan los PNG anteriores.
+
+## D-38. Peluca de Payaso (cabello multicolor)
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:** el cabello 11, **Peluca de Payaso** (`HairStyle.clownWig`), es la versión multicolor de la Nube de Rizos (cabello 2): la misma forma, de frente y de lado, con parches de 8 colores. Es **legendaria** (la mayor rareza), cuesta **300 monedas** (el resto, de 45 a 75) y no se tiñe: trae sus colores. Se compra en la Tienda y sale en los cofres como los demás; `firestore.rules`: `hairPrice` con el 11.
+- **Arte:** `frente/cabellos/cabello_11.png` y `lado/cabellos/cabello_11.png` se generaron con un programa a partir del cabello 2 (parches de color con bordes ondulados y sombra suave en el borde), no se dibujaron en Krita. Si luego se dibuja a mano, se reemplazan los dos PNG sin tocar el código.
+
+## D-39. Ícono, pantalla de arranque y nombre de la app
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - El ícono de la app sale del logo dibujado en Krita (`Logo.kra`, PT con gorro de fiesta). En iOS es el logo entero (sin transparencia); en Android el ícono adaptativo lleva el color liso del logo de fondo y el logo reducido al frente, para que el círculo no corte el gorro.
+  - La pantalla de arranque de Android es el color del logo (`#8DDDFF`) con el logo al centro; en Android 12 o más se configura aparte (`values-v31`).
+  - El nombre que se ve bajo el ícono es **Party Tricks** (`android:label` en Android y `CFBundleDisplayName` en iOS; también el título y el manifiesto web). El nombre del paquete de Dart sigue siendo `party_tricks`.
+- **Motivo:** el ícono genérico de Flutter y el nombre `party_tricks` no se veían como un producto terminado.
+- **Alternativas:** el paquete `flutter_launcher_icons` (una dependencia más para algo que se hace una vez); cambiar el nombre del paquete (rompería todos los imports sin ganar nada).
+- **Pendiente:** verlo en un celular real; si se cambia el logo hay que volver a generar los archivos (ver `arte_imagenes.md`).

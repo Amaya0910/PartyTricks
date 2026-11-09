@@ -168,7 +168,7 @@ Los caminos alternos miden lo mismo que el principal: dibújalos como ruta paral
 
 Carpeta: `assets/images/personaje/`
 
-- **Lienzo:** todas las capas se dibujan y se exportan a **512 × 768**, el mismo lienzo para el cuerpo, los ojos y las bocas. Así cada capa queda en su lugar sin ajustes; el código la reduce al tamaño que necesite.
+- **Lienzo:** todas las capas se dibujan y se exportan a **512 × 968** (512 × 768 más 200 px vacíos arriba, para el cabello y los sombreros; ver D-34), el mismo lienzo para el cuerpo, los ojos y las bocas. Así cada capa queda en su lugar sin ajustes; el código la reduce al tamaño que necesite.
 - **Capas:** el cuerpo tiene 8 partes (cuerpo, pierna izquierda y derecha, brazo izquierdo y derecho, mano izquierda y derecha, cabeza). Cada parte tiene dos PNG: `relleno_<parte>.png` y `linea_<parte>.png`.
   - **Relleno:** va en **blanco**. El código lo tiñe con el tono de piel elegido (el negro del dibujo no se ve afectado).
   - **Línea:** el contorno negro, que no se tiñe. Va encima del relleno.
@@ -186,7 +186,7 @@ Carpeta: `assets/images/personaje/`
 
 ### 8.1 Ojos y bocas (hechos)
 
-Carpetas: `assets/images/personaje/frente/{ojos,bocas}/` y `assets/images/personaje/lado/{ojos,bocas}/` (la misma lista de archivos en las dos vistas). Son capas del mismo lienzo de 512 × 768 y se dibujan encima de la cabeza (se mueven con ella).
+Carpetas: `assets/images/personaje/frente/{ojos,bocas}/` y `assets/images/personaje/lado/{ojos,bocas}/` (la misma lista de archivos en las dos vistas). Son capas del mismo lienzo de 512 × 968 y se dibujan encima de la cabeza (se mueven con ella).
 
 | Hecho | Cosmético | Archivos |
 |---|---|---|
@@ -205,7 +205,7 @@ La **rareza** de cada ojo y boca (que decide qué tan seguido salen en los cofre
 
 | Hecho | Archivo | Carpeta | Tamaño (px) |
 |---|---|---|---|
-| [ ] | `camisa_01`, `camisa_02` | `assets/images/cosmeticos/camisa/` | Lienzo de 512 × 768, igual que el personaje |
+| [ ] | `camisa_01`, `camisa_02` | `assets/images/cosmeticos/camisa/` | Lienzo de 512 × 968, igual que el personaje |
 | [ ] | `pantalon_01`, `pantalon_02` | `assets/images/cosmeticos/pantalon/` | Igual |
 | [ ] | `zapatos_01`, `zapatos_02` | `assets/images/cosmeticos/zapatos/` | Igual |
 | [ ] | `cabello_01`, `cabello_02` | `assets/images/cosmeticos/cabello/` | Igual |
@@ -220,10 +220,10 @@ Las miniaturas ya no se dibujan: el Vestuario y la Tienda las sacan recortando e
 | Hecho | Archivo | Carpeta | Tamaño (px) | Notas |
 |---|---|---|---|---|
 | [ ] | `nav_inicio.png`, `nav_tienda.png`, `nav_vestuario.png`, `nav_stats.png`, `nav_amigos.png` | `assets/images/iconos/` | 96 × 96 | Barra de navegación. Si el activo cambia de dibujo, agrega `_activo` |
-| [ ] | `icono_app.png` | `assets/icon/` | 1024 × 1024 | **Sin transparencia** (lo exige iOS) y sin esquinas redondeadas |
-| [ ] | `icono_android_fondo.png` | `assets/icon/` | 1024 × 1024 | Capa de fondo del ícono de Android |
-| [ ] | `icono_android_frente.png` | `assets/icon/` | 1024 × 1024 | Transparente. El dibujo va dentro del **círculo central de 660 px** |
-| [ ] | `logo_arranque.png` | `assets/images/` | 1152 × 1152 | Transparente. Lo importante va dentro de un círculo de 768 px (regla de Android 12) |
+| [x] | `icono_app.png` | `assets/icon/` | 1024 × 1024 | **Sin transparencia** (lo exige iOS) y sin esquinas redondeadas |
+| [x] | `icono_android_fondo.png` | `assets/icon/` | 1024 × 1024 | Capa de fondo del ícono de Android |
+| [x] | `icono_android_frente.png` | `assets/icon/` | 1024 × 1024 | Transparente. El dibujo va dentro del **círculo central de 660 px** |
+| [x] | `logo_arranque.png` | `assets/images/` | 1152 × 1152 | Transparente. Lo importante va dentro de un círculo de 768 px (regla de Android 12) |
 
 Los botones y los marcos se siguen haciendo con Flutter, porque ya respetan `AppColors`. Dibuja a mano solo lo que quieras que se vea muy propio. Los tamaños del ícono se generan con el paquete `flutter_launcher_icons`.
 
@@ -276,7 +276,7 @@ Los botones y los marcos se siguen haciendo con Flutter, porque ya respetan `App
 - La luz viene de arriba a la izquierda. Las plataformas y la tienda **no se voltean**.
 - Las marcas de casilla van **planas sobre el pasto**; la **tienda** es un edificio **detrás** de su casilla.
 - El mundo mide 2880 × 4320. Cada jugador ve solo su propio personaje; los demás aparecen en el minimapa.
-- El personaje se arma con capas PNG por parte del cuerpo (línea y relleno) en un lienzo de 512 × 768 y se anima por código; no hay hojas de animación.
+- El personaje se arma con capas PNG por parte del cuerpo (línea y relleno) en un lienzo de 512 × 968 y se anima por código; no hay hojas de animación.
 - Los ojos y las bocas son capas del mismo lienzo. Su color se aplica por código sobre lo que está en blanco puro; el tono de piel y los colores fantasiosos también son solo código.
 - La foto de perfil es la cabeza del personaje sobre un color de fondo elegido en Ajustes (D-31). Si el jugador pone la foto de su cara, cubre toda la cabeza (D-32).
 - El fondo del mapa se pinta **después** de armar el mapa en Tiled, usando la imagen exportada como guía.
@@ -290,7 +290,7 @@ Los botones y los marcos se siguen haciendo con Flutter, porque ya respetan `App
 
 ### 8.2 Camisas y accesorios (hechos)
 
-Todo en el lienzo de 512 × 768. **Cada carpeta nueva hay que declararla en `pubspec.yaml`** (si falta, no falla: el personaje se ve sin esa pieza).
+Todo en el lienzo de 512 × 968. **Cada carpeta nueva hay que declararla en `pubspec.yaml`** (si falta, no falla: el personaje se ve sin esa pieza).
 
 | Hecho | Cosmético | Archivos |
 |---|---|---|
@@ -302,3 +302,40 @@ Todo en el lienzo de 512 × 768. **Cada carpeta nueva hay que declararla en `pub
 - Los accesorios van con la cabeza, **encima** de la línea de la cabeza.
 - Las orejas de ogro toman el **tono de piel** del personaje: su relleno es blanco y el código lo tiñe como el relleno de la cabeza (`AccessoryStyle.skinTinted`). La gorguera conserva sus colores.
 - La boca va **entre** el relleno y la línea de la cabeza (el recorte no es perfecto y así el contorno lo tapa); la boca con la lengua afuera (`boca_9`) va encima de la línea.
+
+### 8.3 Cabellos (hechos)
+
+Todo en el lienzo de 512 × 968. Carpetas: `assets/images/personaje/frente/cabellos/` y `lado/cabellos/` (declaradas en `pubspec.yaml`).
+
+| Hecho | Cosmético | Archivos |
+|---|---|---|
+| [x] | 10 cabellos de frente y de lado | `cabello_<n>.png` (n de 1 a 10), en las dos carpetas |
+| [x] | Partes de atrás (solo de frente) | `cabello_1_atras.png`, `cabello_3_atras.png` y `cabello_6_atras.png`: van **detrás** de la cabeza |
+
+- Los cabellos **blancos** (2, 6, 7 y 9) se tiñen con el color que elija el jugador: lo blanco toma el color y las sombras se conservan. Los demás traen su color.
+- El cabello va **encima** de los ojos y la boca, y **debajo** de los accesorios.
+- Se exportaron desde `Animaciones.kra` (grupo `cabellos`) leyendo sus capas directamente. El cabello 3 de frente se partió: coletas detrás, flequillo y lazos delante.
+
+### 8.4 Pantalones (hechos)
+
+Carpeta `assets/images/personaje/frente/pantalones/` (declarada en `pubspec.yaml`), lienzo de 512 × 968.
+
+| Hecho | Cosmético | Archivos |
+|---|---|---|
+| [x] | Pantalón 1 de frente | `pantalon_1.png` (exportado del grupo `Pantalon_1` de `Animaciones.kra`) |
+| [ ] | Pantalón 1 de lado | Falta: `lado/pantalones/` con muslo y rodilla, para que siga las piernas al caminar |
+
+- El pantalón de frente va **sobre las dos piernas** y debajo de los brazos.
+
+- **Camisas 13 a 16:** de frente y de lado en las mismas carpetas (`camisa_<n>.png`, mangas). Nombres en minúsculas.
+- La parte de atrás del cabello se dibuja detrás de todo el cuerpo (D-37).
+
+- **Cabello 11 (Peluca de Payaso):** generado a partir del cabello 2 con parches de colores (ver D-38); fijo, no se tiñe.
+
+### Ícono y logo (hechos)
+
+- El logo se dibujó en Krita (`Logo.kra`, 2048 × 2048): las letras PT con el gorro de fiesta, el diamante, las monedas y el confeti.
+- `assets/icon/icono_app.png` (1024, sin transparencia) es el logo entero y sirve para iOS. Los iconos de iOS (`AppIcon.appiconset`) y los de Android (`mipmap-*`, ícono adaptativo en `mipmap-anydpi-v26`) se generaron a partir de él con un programa, sin el paquete `flutter_launcher_icons`.
+- Ícono adaptativo de Android: el fondo es el color liso del logo (`#8DDDFF`) y el frente es el logo reducido, para que el gorro y la P no se corten con el círculo.
+- Arranque: `logo_arranque.png` (1152) con esquinas redondeadas; en Android se usa como `drawable/logo_arranque.png` con `splash_background` (`values/colors.xml`), y en Android 12 o más (`values-v31`) como ícono del arranque.
+- Si se cambia el logo, hay que volver a generar todos esos archivos.

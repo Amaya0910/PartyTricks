@@ -55,7 +55,7 @@ Los principios SOLID se aplican separando responsabilidades: las pantallas no ha
 - Código de amistad (único).
 - Experiencia acumulada; el nivel se calcula a partir de ella.
 - Monedas y diamantes de la cuenta.
-- Cómo se ve su personaje: tono de piel, ojos y boca con sus colores, la camisa y el accesorio puestos, los ojos, bocas, camisas y accesorios comprados, el color de fondo de la foto de perfil y, si quiere, la foto de su cara. La **foto de perfil es la cabeza del personaje**; los demás la ven gracias a `publicProfiles`.
+- Cómo se ve su personaje: tono de piel, ojos y boca con sus colores, la camisa, el cabello (y su color) y el accesorio puestos, los ojos, bocas, camisas, cabellos y accesorios comprados, el color de fondo de la foto de perfil y, si quiere, la foto de su cara. La **foto de perfil es la cabeza del personaje**; los demás la ven gracias a `publicProfiles`.
 - Lista de amigos y chats.
 
 ---
