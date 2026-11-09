@@ -68,11 +68,12 @@ class _BoardMapViewState extends State<BoardMapView>
   static const _stepDuration = Duration(milliseconds: 700);
 
   /// Alto del personaje en el mapa (arte_imagenes.md, sección 7).
-  static const _characterHeight = 210.0;
-  static const _characterAspect = 2 / 3;
+  // El lienzo tiene un margen arriba para el cabello: el cuerpo mide lo mismo.
+  static const _characterHeight = 210.0 * 968 / 768;
+  static const _characterAspect = 512 / 968;
 
   /// Dónde están los pies en el lienzo del personaje, de 0 (arriba) a 1.
-  static const _feetLine = 697 / 768;
+  static const _feetLine = (697 + 200) / 968;
 
   /// Separación entre jugadores que están en la misma casilla.
   static const _sideBySide = 120.0;

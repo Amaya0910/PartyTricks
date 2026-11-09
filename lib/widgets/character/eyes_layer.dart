@@ -3,7 +3,7 @@ import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/widgets/character/character_layer.dart';
 
-/// Dibuja unos ojos en el lienzo del personaje (512x768).
+/// Dibuja unos ojos en el lienzo del personaje (512x968).
 ///
 /// Misma técnica que el tono de piel: [BlendMode.modulate] multiplica el
 /// dibujo por [color], así que lo blanco toma el color y lo negro sigue

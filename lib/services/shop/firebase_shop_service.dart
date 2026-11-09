@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
@@ -51,6 +53,8 @@ class FirebaseShopService implements ShopService {
         final ownedMouths = _numbers(data['ownedMouths']);
         final ownedShirts = _numbers(data['ownedShirts']);
         final ownedAccessories = _numbers(data['ownedAccessories']);
+        final ownedPants = _numbers(data['ownedPants']);
+        final ownedHairs = _numbers(data['ownedHairs']);
         if (prize.outcome == ChestOutcome.cosmetic) {
           // El cosmético es uno que todavía no tiene, según su rareza. Si ya
           // los tiene todos, el premio se cambia por monedas.
@@ -60,6 +64,8 @@ class FirebaseShopService implements ShopService {
                 ownedMouths: ownedMouths.toSet(),
                 ownedShirts: ownedShirts.toSet(),
                 ownedAccessories: ownedAccessories.toSet(),
+                ownedPants: ownedPants.toSet(),
+                ownedHairs: ownedHairs.toSet(),
                 random: _random,
               ) ??
               const ChestPrize(ChestOutcome.coins);
@@ -79,6 +85,9 @@ class FirebaseShopService implements ShopService {
             'ownedShirts': [...ownedShirts, prize.shirt!.id],
           if (prize.accessory != null)
             'ownedAccessories': [...ownedAccessories, prize.accessory!.id],
+          if (prize.pants != null)
+            'ownedPants': [...ownedPants, prize.pants!.id],
+          if (prize.hair != null) 'ownedHairs': [...ownedHairs, prize.hair!.id],
         });
         transaction.set(
           FirestoreStatsDocument.ref(_firestore, uid),
@@ -135,6 +144,26 @@ class FirebaseShopService implements ShopService {
       field: 'ownedAccessories',
       cosmetic: accessory,
       alreadyOwned: 'Ya tienes este accesorio.',
+    );
+  }
+
+  @override
+  Future<void> buyPants({required String uid, required PantsStyle pants}) {
+    return _buyCosmetic(
+      uid: uid,
+      field: 'ownedPants',
+      cosmetic: pants,
+      alreadyOwned: 'Ya tienes este pantalón.',
+    );
+  }
+
+  @override
+  Future<void> buyHair({required String uid, required HairStyle hair}) {
+    return _buyCosmetic(
+      uid: uid,
+      field: 'ownedHairs',
+      cosmetic: hair,
+      alreadyOwned: 'Ya tienes este cabello.',
     );
   }
 

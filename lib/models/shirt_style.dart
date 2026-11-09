@@ -6,7 +6,7 @@ import 'package:party_tricks/models/shop_cosmetic.dart';
 
 /// Camisas del personaje. En el perfil se guarda solo el [id].
 ///
-/// Cada camisa es un PNG del mismo lienzo que el personaje (512x768) más sus
+/// Cada camisa es un PNG del mismo lienzo que el personaje (512x968) más sus
 /// mangas, que giran con los brazos:
 /// - de frente (`frente/camisas/`): `camisa_<n>.png` y
 ///   `manga_<n>_izquierda.png` / `manga_<n>_derecha.png`;
@@ -186,6 +186,40 @@ enum ShirtStyle implements ShopCosmetic {
     "Primer drop de Shift's",
     price: 100,
     rarity: Rarity.legendary,
+  ),
+
+  // --- Camisetas de fútbol (los nombres son provisionales). ---
+  soccer13(
+    13,
+    13,
+    'Camiseta de Fútbol 13',
+    'De partido de fútbol',
+    price: 60,
+    rarity: Rarity.rare,
+  ),
+  soccer14(
+    14,
+    14,
+    'Camiseta de Fútbol 14',
+    'De partido de fútbol',
+    price: 60,
+    rarity: Rarity.rare,
+  ),
+  soccer15(
+    15,
+    15,
+    'Camiseta de Fútbol 15',
+    'De partido de fútbol',
+    price: 75,
+    rarity: Rarity.epic,
+  ),
+  soccer16(
+    16,
+    16,
+    'Camiseta de Fútbol 16',
+    'De partido de fútbol',
+    price: 75,
+    rarity: Rarity.epic,
   );
 
   const ShirtStyle(

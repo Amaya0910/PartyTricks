@@ -5,7 +5,7 @@ import 'package:party_tricks/models/shop_cosmetic.dart';
 
 /// Ojos del personaje. En el perfil se guarda solo el [number].
 ///
-/// Cada ojo es un PNG del mismo lienzo que el personaje (512x768) en
+/// Cada ojo es un PNG del mismo lienzo que el personaje (512x968) en
 /// assets/images/personaje/frente/ojos/. Algunos vienen en dos capas:
 /// - `ojo_<n>_relleno.png`: fondo del ojo, no se tiñe.
 /// - `ojo_<n>_linea.png`: contorno; sus partes blancas toman el color.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
 import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/face_photo.dart';
@@ -28,6 +29,9 @@ class CharacterHead extends StatelessWidget {
     required this.mouthColor,
     this.photo,
     this.accessory,
+    this.hair,
+    this.hairTint,
+    this.includeBackHair = true,
     this.view = CharacterView.frente,
   });
 
@@ -43,6 +47,15 @@ class CharacterHead extends StatelessWidget {
   /// Accesorio de la cabeza (orejas, gorguera...), si lleva.
   final AccessoryStyle? accessory;
 
+  /// Cabello, si lleva, y su color (null si trae el suyo). La parte de atrás
+  /// va detrás de la cabeza y el resto encima de la cara.
+  final HairStyle? hair;
+  final Color? hairTint;
+
+  /// Si dibuja la parte de atrás del cabello. El personaje completo la dibuja
+  /// aparte, detrás del cuerpo (que no se vea delante del cuello).
+  final bool includeBackHair;
+
   /// De lado no se usa la foto: es de frente.
   final CharacterView view;
 
@@ -50,22 +63,27 @@ class CharacterHead extends StatelessWidget {
   Widget build(BuildContext context) {
     final photo = view == CharacterView.frente ? this.photo : null;
     final mouthLayer = MouthLayer(style: mouth, color: mouthColor, view: view);
+    final backHair = includeBackHair ? hair?.backAssetFor(view) : null;
     return Stack(
       children: [
+        // La parte de atrás del cabello va detrás de la cabeza.
+        if (backHair != null) CharacterLayer(backHair, tint: hairTint),
         CharacterLayer(BodyPart.cabeza.fillAsset, tint: skinTone),
         if (photo == null && !mouth.overOutline) mouthLayer,
         CharacterLayer(BodyPart.cabeza.outlineAsset),
-        if (accessory != null)
-          CharacterLayer(
-            accessory!.assetFor(view),
-            tint: accessory!.skinTinted ? skinTone : null,
-          ),
         if (photo != null)
           FacePhotoLayer(photo: photo)
         else ...[
           EyesLayer(style: eyes, color: eyeColor, view: view),
           if (mouth.overOutline) mouthLayer,
         ],
+        // El cabello va sobre la cara y los accesorios sobre el cabello.
+        if (hair != null) CharacterLayer(hair!.assetFor(view), tint: hairTint),
+        if (accessory != null)
+          CharacterLayer(
+            accessory!.assetFor(view),
+            tint: accessory!.skinTinted ? skinTone : null,
+          ),
       ],
     );
   }

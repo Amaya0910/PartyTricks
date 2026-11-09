@@ -70,6 +70,18 @@ class CosmeticSlot extends StatelessWidget {
   }
 }
 
+/// La X roja de "Ninguno": el espacio que deja el cosmético sin poner.
+class NoneMark extends StatelessWidget {
+  const NoneMark({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      child: Icon(Icons.close_rounded, color: Colors.red.shade600),
+    );
+  }
+}
+
 /// Borde punteado redondeado (Vestuario y Tienda).
 class DashedBorderPainter extends CustomPainter {
   DashedBorderPainter({

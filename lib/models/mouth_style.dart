@@ -15,7 +15,7 @@ class MouthLayerSpec {
 
 /// Bocas del personaje. En el perfil se guarda solo el [number].
 ///
-/// Cada boca es un PNG del mismo lienzo que el personaje (512x768) en
+/// Cada boca es un PNG del mismo lienzo que el personaje (512x968) en
 /// assets/images/personaje/frente/bocas/. Algunas vienen en dos capas
 /// (`boca_<n>_relleno.png` y `boca_<n>_linea.png`) y otras en un solo PNG
 /// (`boca_<n>.png`).

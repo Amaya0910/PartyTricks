@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/accessory_controller.dart';
+import 'package:party_tricks/controllers/hair_controller.dart';
+import 'package:party_tricks/controllers/pants_controller.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
 import 'package:party_tricks/controllers/shirt_controller.dart';
@@ -24,6 +26,8 @@ enum ShopFilter {
   eyes('Ojos'),
   mouth('Bocas'),
   shirt('Camisas'),
+  pants('Pantalones'),
+  hair('Cabellos'),
   accessory('Accesorios');
 
   const ShopFilter(this.label);
@@ -122,6 +126,10 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
         _entry(ShopFilter.mouth, mouth),
       for (final shirt in ref.watch(shirtsForSaleProvider))
         _entry(ShopFilter.shirt, shirt),
+      for (final pants in ref.watch(pantsForSaleProvider))
+        _entry(ShopFilter.pants, pants),
+      for (final hair in ref.watch(hairsForSaleProvider))
+        _entry(ShopFilter.hair, hair),
       for (final accessory in ref.watch(accessoriesForSaleProvider))
         _entry(ShopFilter.accessory, accessory),
     ];
@@ -412,6 +420,8 @@ class _EmptyItems extends StatelessWidget {
     ShopFilter.eyes => '¡Ya tienes todos los ojos!',
     ShopFilter.mouth => '¡Ya tienes todas las bocas!',
     ShopFilter.shirt => '¡Ya tienes todas las camisas!',
+    ShopFilter.pants => '¡Ya tienes todos los pantalones!',
+    ShopFilter.hair => '¡Ya tienes todos los cabellos!',
     ShopFilter.accessory => '¡Ya tienes todos los accesorios!',
   };
 

@@ -182,4 +182,45 @@ void main() {
       }
     });
   });
+
+  group('el reposo de lado', () {
+    const idle = SideIdle();
+
+    test('se repite sin saltos y las piernas no se mueven', () {
+      final start = idle.poseAt(0);
+      final end = idle.poseAt(1);
+      expect(end.headDy, closeTo(start.headDy, 1e-9));
+      expect(end.nearArm, closeTo(start.nearArm, 1e-9));
+      for (var i = 0; i <= 20; i++) {
+        final pose = idle.poseAt(i / 20);
+        expect(pose.nearThigh, 0);
+        expect(pose.farThigh, 0);
+        expect(pose.nearKnee, 0);
+        expect(pose.bodyDy, 0);
+      }
+    });
+
+    test('respira: la cabeza sube y el torso se estira', () {
+      final up = idle.poseAt(0.5);
+      expect(up.headDy, lessThan(0));
+      expect(up.torsoScale, greaterThan(1));
+      expect(idle.poseAt(0).torsoScale, closeTo(1, 1e-9));
+    });
+
+    testWidgets('se dibuja con el personaje de lado', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SizedBox(
+            height: 300,
+            child: WalkingCharacter(
+              phase: const AlwaysStoppedAnimation(0.5),
+              look: CharacterLook.standard,
+              cycle: idle,
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

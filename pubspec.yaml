@@ -41,10 +41,13 @@ flutter:
     - assets/images/personaje/accesorios/
     - assets/images/personaje/frente/bocas/
     - assets/images/personaje/frente/camisas/
+    - assets/images/personaje/frente/cabellos/
     - assets/images/personaje/frente/cuerpo/
     - assets/images/personaje/frente/ojos/
+    - assets/images/personaje/frente/pantalones/
     - assets/images/personaje/lado/bocas/
     - assets/images/personaje/lado/camisas/
+    - assets/images/personaje/lado/cabellos/
     - assets/images/personaje/lado/cuerpo/
     - assets/images/personaje/lado/ojos/
     - assets/maps/mapa_01/

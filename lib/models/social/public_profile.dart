@@ -1,4 +1,6 @@
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_color.dart';
+import 'package:party_tricks/models/hair_style.dart';
 import 'package:party_tricks/models/avatar_color.dart';
 import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/eye_style.dart';
@@ -28,6 +30,8 @@ class PublicProfile {
     this.mouthColor = MouthColor.defaultIndex,
     this.shirt = ShirtStyle.defaultStyle,
     this.accessory,
+    this.hair,
+    this.hairColor = HairColor.defaultIndex,
     this.avatarColor = AvatarColor.defaultIndex,
     this.facePhoto,
   });
@@ -53,6 +57,10 @@ class PublicProfile {
   /// Camisa y accesorio puestos (el accesorio se ve en la foto de perfil).
   final ShirtStyle shirt;
   final AccessoryStyle? accessory;
+
+  /// Cabello puesto (null = ninguno) y la posición de su color en HairColor.
+  final HairStyle? hair;
+  final int hairColor;
   final int avatarColor;
 
   /// La foto de la cara del jugador, solo si la está usando: con ella se
@@ -79,6 +87,10 @@ class PublicProfile {
       ),
       shirt: ShirtStyle.fromId((map['shirt'] as num?)?.toInt()),
       accessory: AccessoryStyle.fromId((map['accessory'] as num?)?.toInt()),
+      hair: HairStyle.fromId((map['hair'] as num?)?.toInt()),
+      hairColor: HairColor.clamp(
+        (map['hairColor'] as num?)?.toInt() ?? HairColor.defaultIndex,
+      ),
       avatarColor: AvatarColor.clamp(
         (map['avatarColor'] as num?)?.toInt() ?? AvatarColor.defaultIndex,
       ),
@@ -98,6 +110,8 @@ class PublicProfile {
     'mouthColor': mouthColor,
     'shirt': shirt.id,
     'accessory': accessory?.id ?? 0,
+    'hair': hair?.id ?? 0,
+    'hairColor': hairColor,
     'avatarColor': avatarColor,
     'facePhoto': facePhoto?.base64,
   };
@@ -116,6 +130,8 @@ class PublicProfile {
         mouthColor == other.mouthColor &&
         shirt == other.shirt &&
         accessory == other.accessory &&
+        hair == other.hair &&
+        hairColor == other.hairColor &&
         avatarColor == other.avatarColor &&
         facePhoto == other.facePhoto;
   }

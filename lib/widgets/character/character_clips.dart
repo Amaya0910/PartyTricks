@@ -14,6 +14,13 @@ enum CharacterClip {
     CharacterView.frente,
     Duration(milliseconds: 2500),
   ),
+  idleSide(
+    'Reposo de lado',
+    'De lado: parado, respira y mueve un poco los brazos. Solo se ve en el '
+        'Vestuario.',
+    CharacterView.lado,
+    Duration(milliseconds: 2500),
+  ),
   walk(
     'Caminar',
     'De lado: dos piernas y dos brazos, mirando hacia donde va. Es la del '
@@ -46,6 +53,14 @@ enum CharacterClip {
     switch (this) {
       case CharacterClip.idle:
         return AnimatedCharacter.fromLook(look, key: key, phase: phase);
+      case CharacterClip.idleSide:
+        return WalkingCharacter(
+          key: key,
+          phase: phase,
+          look: look,
+          faceRight: faceRight,
+          cycle: const SideIdle(),
+        );
       case CharacterClip.walk:
         return WalkingCharacter(
           key: key,

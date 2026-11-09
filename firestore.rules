@@ -57,11 +57,12 @@ service cloud.firestore {
     // ---------------------------------------------------------------------
 
     // También ownedEyes (D-29), ownedMouths (D-30), ownedShirts y
-    // ownedAccessories (D-33): los cosméticos comprados solo cambian al
+    // ownedPants, ownedHairs y ownedAccessories (D-33, D-35, D-36): los cosméticos comprados solo cambian al
     // comprar o al abrir un cofre.
     function walletKeys() {
       return ['coins', 'diamonds', 'extraDice', 'experience', 'ownedEyes',
-              'ownedMouths', 'ownedShirts', 'ownedAccessories'];
+              'ownedMouths', 'ownedShirts', 'ownedPants', 'ownedHairs',
+              'ownedAccessories'];
     }
 
     function ownedEyesBefore() {
@@ -112,31 +113,72 @@ service cloud.firestore {
       return ownedAccessoriesAfter() == ownedAccessoriesBefore();
     }
 
+    function ownedPantsBefore() {
+      return resource.data.get('ownedPants', []);
+    }
+
+    function ownedPantsAfter() {
+      return request.resource.data.get('ownedPants', []);
+    }
+
+    function ownedPantsUnchanged() {
+      return ownedPantsAfter() == ownedPantsBefore();
+    }
+
+    function ownedHairsBefore() {
+      return resource.data.get('ownedHairs', []);
+    }
+
+    function ownedHairsAfter() {
+      return request.resource.data.get('ownedHairs', []);
+    }
+
+    function ownedHairsUnchanged() {
+      return ownedHairsAfter() == ownedHairsBefore();
+    }
+
     // Ninguna de las listas de cosméticos cambia.
     function noCosmeticChange() {
       return ownedEyesUnchanged() && ownedMouthsUnchanged()
-        && ownedShirtsUnchanged() && ownedAccessoriesUnchanged();
+        && ownedShirtsUnchanged() && ownedPantsUnchanged()
+        && ownedHairsUnchanged() && ownedAccessoriesUnchanged();
     }
 
-    // Solo cambia una de las listas: las otras tres quedan igual.
+    // Solo cambia una de las listas: las otras quedan igual.
     function onlyEyesChange() {
       return ownedMouthsUnchanged() && ownedShirtsUnchanged()
+        && ownedPantsUnchanged() && ownedHairsUnchanged()
         && ownedAccessoriesUnchanged();
     }
 
     function onlyMouthsChange() {
       return ownedEyesUnchanged() && ownedShirtsUnchanged()
+        && ownedPantsUnchanged() && ownedHairsUnchanged()
         && ownedAccessoriesUnchanged();
     }
 
     function onlyShirtsChange() {
       return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedPantsUnchanged() && ownedHairsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyPantsChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedShirtsUnchanged() && ownedHairsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyHairsChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedShirtsUnchanged() && ownedPantsUnchanged()
         && ownedAccessoriesUnchanged();
     }
 
     function onlyAccessoriesChange() {
       return ownedEyesUnchanged() && ownedMouthsUnchanged()
-        && ownedShirtsUnchanged();
+        && ownedShirtsUnchanged() && ownedPantsUnchanged()
+        && ownedHairsUnchanged();
     }
 
     // Cuánto cambia [key] con esta escritura (lo que falta cuenta como 0).
@@ -157,6 +199,8 @@ service cloud.firestore {
         && request.resource.data.get('ownedEyes', []).size() == 0
         && request.resource.data.get('ownedMouths', []).size() == 0
         && request.resource.data.get('ownedShirts', []).size() == 0
+        && request.resource.data.get('ownedPants', []).size() == 0
+        && request.resource.data.get('ownedHairs', []).size() == 0
         && request.resource.data.get('ownedAccessories', []).size() == 0;
     }
 
@@ -177,6 +221,8 @@ service cloud.firestore {
             && ((addsOneEyes() && onlyEyesChange())
               || (addsOneMouth() && onlyMouthsChange())
               || (addsOneShirt() && onlyShirtsChange())
+              || (addsOnePants() && onlyPantsChange())
+              || (addsOneHair() && onlyHairsChange())
               || (addsOneAccessory() && onlyAccessoriesChange()))));
     }
 
@@ -204,6 +250,22 @@ service cloud.firestore {
         && added.size() == 1
         && ownedShirtsAfter().size() == ownedShirtsBefore().size() + 1
         && shirtPrice(added[0]) > 0;
+    }
+
+    function addsOnePants() {
+      let added = ownedPantsAfter().removeAll(ownedPantsBefore());
+      return ownedPantsAfter().hasAll(ownedPantsBefore())
+        && added.size() == 1
+        && ownedPantsAfter().size() == ownedPantsBefore().size() + 1
+        && pantsPrice(added[0]) > 0;
+    }
+
+    function addsOneHair() {
+      let added = ownedHairsAfter().removeAll(ownedHairsBefore());
+      return ownedHairsAfter().hasAll(ownedHairsBefore())
+        && added.size() == 1
+        && ownedHairsAfter().size() == ownedHairsBefore().size() + 1
+        && hairPrice(added[0]) > 0;
     }
 
     function addsOneAccessory() {
@@ -346,7 +408,8 @@ service cloud.firestore {
       return {'101': 30, '102': 30, '103': 30, '104': 30, '105': 30,
               '106': 30, '107': 30, '108': 30, '2': 45, '3': 60, '4': 60,
               '5': 75, '6': 45, '7': 45, '8': 60, '9': 60, '10': 75,
-              '11': 75, '12': 100}.get(string(id), 0);
+              '11': 75, '12': 100, '13': 60, '14': 60, '15': 75,
+              '16': 75}.get(string(id), 0);
     }
 
     // Compra de una camisa: se agrega exactamente una que no tenía (y que se
@@ -379,6 +442,81 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['shirt'])
         || shirtOwned();
+    }
+
+    // Precio en monedas de cada pantalón de la Tienda (D-36). Son los de
+    // lib/models/pants_style.dart: si cambian allá, hay que cambiarlos aquí.
+    // Ninguno es gratis.
+    function pantsPrice(id) {
+      return {'1': 45}.get(string(id), 0);
+    }
+
+    function isPantsPurchase() {
+      let added = ownedPantsAfter().removeAll(ownedPantsBefore());
+      return ownedPantsAfter().hasAll(ownedPantsBefore())
+        && added.size() == 1
+        && ownedPantsAfter().size() == ownedPantsBefore().size() + 1
+        && pantsPrice(added[0]) > 0
+        && onlyPantsChange()
+        && delta('coins') == -pantsPrice(added[0])
+        && request.resource.data.coins >= 0
+        && delta('diamonds') == 0
+        && delta('extraDice') == 0
+        && delta('experience') == 0;
+    }
+
+    // El pantalón que se pone el jugador es ninguno (0) o uno comprado.
+    function pantsOwned() {
+      return request.resource.data.pants == 0
+        || request.resource.data.pants in ownedPantsAfter();
+    }
+
+    function pantsAllowedOnCreate() {
+      return !request.resource.data.keys().hasAny(['pants']) || pantsOwned();
+    }
+
+    function pantsChangeAllowed() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['pants'])
+        || pantsOwned();
+    }
+
+    // Precio en monedas de cada cabello de la Tienda (D-35). Son los de
+    // lib/models/hair_style.dart: si cambian allá, hay que cambiarlos aquí.
+    // Ninguno es gratis. Los colores del cabello no se compran.
+    function hairPrice(id) {
+      return {'1': 45, '2': 60, '3': 60, '4': 75, '5': 45, '6': 60,
+              '7': 75, '8': 75, '9': 45, '10': 60, '11': 300}.get(string(id), 0);
+    }
+
+    function isHairPurchase() {
+      let added = ownedHairsAfter().removeAll(ownedHairsBefore());
+      return ownedHairsAfter().hasAll(ownedHairsBefore())
+        && added.size() == 1
+        && ownedHairsAfter().size() == ownedHairsBefore().size() + 1
+        && hairPrice(added[0]) > 0
+        && onlyHairsChange()
+        && delta('coins') == -hairPrice(added[0])
+        && request.resource.data.coins >= 0
+        && delta('diamonds') == 0
+        && delta('extraDice') == 0
+        && delta('experience') == 0;
+    }
+
+    // El cabello que se pone el jugador es ninguno (0) o uno comprado.
+    function hairOwned() {
+      return request.resource.data.hair == 0
+        || request.resource.data.hair in ownedHairsAfter();
+    }
+
+    function hairAllowedOnCreate() {
+      return !request.resource.data.keys().hasAny(['hair']) || hairOwned();
+    }
+
+    function hairChangeAllowed() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['hair'])
+        || hairOwned();
     }
 
     // Precio en monedas de cada accesorio de la Tienda (D-33). Son los de
@@ -465,14 +603,17 @@ service cloud.firestore {
       allow read: if isUser(uid) || isAdmin();
       allow create: if isUser(uid) && walletIsEmpty()
         && eyesAllowedOnCreate() && mouthAllowedOnCreate()
-        && shirtAllowedOnCreate() && accessoryAllowedOnCreate()
+        && shirtAllowedOnCreate() && pantsAllowedOnCreate()
+        && hairAllowedOnCreate()
+        && accessoryAllowedOnCreate()
         && facePhotoOk(request.resource.data);
       allow update: if isUser(uid) && eyesChangeAllowed()
         && mouthChangeAllowed() && shirtChangeAllowed()
-        && accessoryChangeAllowed() && facePhotoOk(request.resource.data)
+        && pantsChangeAllowed() && hairChangeAllowed() && accessoryChangeAllowed() && facePhotoOk(request.resource.data)
         && (!touchesWallet() || isAdmin() || isChestPurchase()
             || isMatchReward(uid) || isEyesPurchase() || isMouthPurchase()
-            || isShirtPurchase() || isAccessoryPurchase());
+            || isShirtPurchase() || isPantsPurchase() || isHairPurchase()
+            || isAccessoryPurchase());
       allow delete: if isUser(uid);
     }
 

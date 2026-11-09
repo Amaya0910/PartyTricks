@@ -21,6 +21,8 @@ class WalkPose {
     required this.farArm,
     required this.bodyDy,
     required this.headAngle,
+    this.headDy = 0,
+    this.torsoScale = 1,
   });
 
   final double nearThigh;
@@ -41,13 +43,24 @@ class WalkPose {
 
   /// Cuánto se inclina la cabeza.
   final double headAngle;
+
+  /// Cuánto sube la cabeza, en píxeles del lienzo (negativo = arriba).
+  final double headDy;
+
+  /// Cuánto se estira el torso (con la camisa) hacia arriba desde la cadera.
+  final double torsoScale;
+}
+
+/// Una animación de lado: da la pose del cuerpo en cada fase (0 a 1).
+abstract interface class SideMotion {
+  WalkPose poseAt(double t);
 }
 
 /// El ciclo de caminata: dos pasos (uno con cada pierna) por vuelta.
 ///
 /// [poseAt] recibe la fase de 0 a 1 y devuelve la misma pose en 0 y en 1, así
 /// que se puede repetir sin saltos.
-class WalkCycle {
+class WalkCycle implements SideMotion {
   const WalkCycle({
     this.stride = 0.5,
     this.kneeBend = 0.7,
@@ -67,6 +80,7 @@ class WalkCycle {
   /// De la cadera al pie, en píxeles del lienzo.
   final double legLength;
 
+  @override
   WalkPose poseAt(double t) {
     final phase = 2 * math.pi * t;
     final swing = math.sin(phase);
@@ -83,6 +97,30 @@ class WalkCycle {
       farArm: -armSwing * swing,
       bodyDy: legLength * (1 - math.cos(stride * swing.abs())),
       headAngle: 0.03 * math.sin(phase * 2),
+    );
+  }
+}
+
+/// El reposo de lado: parado, respira y los brazos se mecen un poco. Solo se
+/// usa en el Vestuario; en el mapa, al dejar de caminar, el personaje se pone
+/// de frente.
+class SideIdle implements SideMotion {
+  const SideIdle();
+
+  @override
+  WalkPose poseAt(double t) {
+    final breath = (1 - math.cos(2 * math.pi * t)) / 2; // 0..1
+    return WalkPose(
+      nearThigh: 0,
+      nearKnee: 0,
+      farThigh: 0,
+      farKnee: 0,
+      nearArm: 0.03 + 0.05 * breath,
+      farArm: -0.03 - 0.05 * breath,
+      bodyDy: 0,
+      headAngle: 0.025 * math.sin(2 * math.pi * t),
+      headDy: -5 * breath,
+      torsoScale: 1 + 0.022 * breath,
     );
   }
 }
@@ -111,14 +149,16 @@ class WalkingCharacter extends StatelessWidget {
   final Animation<double> phase;
   final CharacterLook look;
   final bool faceRight;
-  final WalkCycle cycle;
+
+  /// La animación: por defecto, la caminata.
+  final SideMotion cycle;
 
   static const String _folder = 'assets/images/personaje/lado/cuerpo';
 
-  // Articulaciones, en píxeles del lienzo de 512 x 768.
-  static const Offset shoulder = Offset(256, 425);
-  static const Offset hip = Offset(256, 535);
-  static const Offset knee = Offset(256, 612);
+  // Articulaciones, en píxeles del lienzo de 512 x 968 (con el margen de arriba).
+  static const Offset shoulder = Offset(256, 425 + kCharacterTopMargin);
+  static const Offset hip = Offset(256, 535 + kCharacterTopMargin);
+  static const Offset knee = Offset(256, 612 + kCharacterTopMargin);
 
   /// Los pies del dibujo de lado llegan más abajo (714) que los de frente
   /// (697); se sube para que al pasar de uno a otro no se muevan.
@@ -167,6 +207,8 @@ class WalkingCharacter extends StatelessWidget {
       mouth: look.mouth,
       mouthColor: look.mouthColor ?? skin,
       accessory: look.accessory,
+      hair: look.hair,
+      hairTint: look.hairTint,
       view: CharacterView.lado,
     );
     final nearThigh = _piece('muslo', skin);
@@ -210,6 +252,17 @@ class WalkingCharacter extends StatelessWidget {
       );
     }
 
+    // El torso se estira desde la cadera, hacia arriba.
+    Widget stretch(Widget child, double scale) => scale == 1
+        ? child
+        : Transform(
+            transform: Matrix4.identity()
+              ..translateByDouble(0, hip.dy, 0, 1)
+              ..scaleByDouble(1, scale, 1, 1)
+              ..translateByDouble(0, -hip.dy, 0, 1),
+            child: child,
+          );
+
     Widget arm(List<Widget> pieces, double angle) {
       return Transform(
         transform: _around(shoulder, angle),
@@ -231,8 +284,10 @@ class WalkingCharacter extends StatelessWidget {
                   children: [
                     mirror(arm(farArm, pose.farArm)),
                     mirror(leg(farThigh, farShin, pose.farThigh, pose.farKnee)),
-                    mirror(torso),
-                    shirt.sidedInProfile ? shirtLayer : mirror(shirtLayer),
+                    mirror(stretch(torso, pose.torsoScale)),
+                    shirt.sidedInProfile
+                        ? stretch(shirtLayer, pose.torsoScale)
+                        : mirror(stretch(shirtLayer, pose.torsoScale)),
                     mirror(
                       leg(nearThigh, nearShin, pose.nearThigh, pose.nearKnee),
                     ),
@@ -240,8 +295,9 @@ class WalkingCharacter extends StatelessWidget {
                     mirror(
                       Transform(
                         transform: _around(
-                          const Offset(256, 340),
+                          const Offset(256, 340 + kCharacterTopMargin),
                           pose.headAngle,
+                          pose.headDy,
                         ),
                         child: head,
                       ),

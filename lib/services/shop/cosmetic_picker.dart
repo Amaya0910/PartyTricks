@@ -1,4 +1,6 @@
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
@@ -28,6 +30,9 @@ class CosmeticChance {
       cosmetic is MouthStyle ? cosmetic as MouthStyle : null;
   ShirtStyle? get shirt =>
       cosmetic is ShirtStyle ? cosmetic as ShirtStyle : null;
+  PantsStyle? get pants =>
+      cosmetic is PantsStyle ? cosmetic as PantsStyle : null;
+  HairStyle? get hair => cosmetic is HairStyle ? cosmetic as HairStyle : null;
   AccessoryStyle? get accessory =>
       cosmetic is AccessoryStyle ? cosmetic as AccessoryStyle : null;
 
@@ -45,12 +50,14 @@ class CosmeticPicker {
   const CosmeticPicker();
 
   /// Los cosméticos que todavía pueden salir, en el orden del catálogo
-  /// (ojos, bocas, camisas y accesorios), con su probabilidad. Vacío si ya
+  /// (ojos, bocas, camisas, pantalones, cabellos y accesorios), con su probabilidad. Vacío si ya
   /// los tiene todos.
   List<CosmeticChance> chances({
     required Set<int> ownedEyes,
     required Set<int> ownedMouths,
     Set<int> ownedShirts = const {},
+    Set<int> ownedPants = const {},
+    Set<int> ownedHairs = const {},
     Set<int> ownedAccessories = const {},
   }) {
     final candidates = <ShopCosmetic>[
@@ -60,6 +67,10 @@ class CosmeticPicker {
         if (!mouth.isFree && !ownedMouths.contains(mouth.number)) mouth,
       for (final shirt in ShirtStyle.values)
         if (!shirt.isFree && !ownedShirts.contains(shirt.id)) shirt,
+      for (final pants in PantsStyle.values)
+        if (!pants.isFree && !ownedPants.contains(pants.id)) pants,
+      for (final hair in HairStyle.values)
+        if (!hair.isFree && !ownedHairs.contains(hair.id)) hair,
       for (final accessory in AccessoryStyle.values)
         if (!accessory.isFree && !ownedAccessories.contains(accessory.id))
           accessory,
@@ -80,6 +91,8 @@ class CosmeticPicker {
     required Set<int> ownedEyes,
     required Set<int> ownedMouths,
     Set<int> ownedShirts = const {},
+    Set<int> ownedPants = const {},
+    Set<int> ownedHairs = const {},
     Set<int> ownedAccessories = const {},
     required RandomSource random,
   }) {
@@ -87,6 +100,8 @@ class CosmeticPicker {
       ownedEyes: ownedEyes,
       ownedMouths: ownedMouths,
       ownedShirts: ownedShirts,
+      ownedPants: ownedPants,
+      ownedHairs: ownedHairs,
       ownedAccessories: ownedAccessories,
     );
     if (candidates.isEmpty) return null;

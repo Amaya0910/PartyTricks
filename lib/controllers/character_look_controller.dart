@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/accessory_controller.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
 import 'package:party_tricks/controllers/face_photo_controller.dart';
+import 'package:party_tricks/controllers/hair_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
+import 'package:party_tricks/controllers/pants_controller.dart';
 import 'package:party_tricks/controllers/shirt_controller.dart';
 import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/models/character_look.dart';
@@ -20,7 +22,10 @@ final characterLookProvider = Provider<CharacterLook>(
     mouth: ref.watch(mouthStyleProvider),
     mouthColor: MouthColor.colorOf(ref.watch(mouthColorProvider)),
     shirt: ref.watch(shirtProvider),
+    pants: ref.watch(pantsProvider),
     accessory: ref.watch(accessoryProvider),
+    hair: ref.watch(hairProvider),
+    hairColor: ref.watch(hairColorProvider),
     facePhoto: ref.watch(facePhotoProvider),
   ),
 );

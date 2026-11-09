@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/accessory_controller.dart';
 import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
+import 'package:party_tricks/controllers/hair_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
+import 'package:party_tricks/controllers/pants_controller.dart';
 import 'package:party_tricks/controllers/shirt_controller.dart';
 import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/controllers/wardrobe_controller.dart';
+import 'package:party_tricks/models/character_look.dart';
 import 'package:party_tricks/models/cosmetic_category.dart';
+import 'package:party_tricks/models/hair_color.dart';
 import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/screens/face_photo_screen.dart';
@@ -16,9 +20,12 @@ import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/accessory_picker.dart';
 import 'package:party_tricks/widgets/category_tab_bar.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
+import 'package:party_tricks/widgets/character/character_clips.dart';
 import 'package:party_tricks/widgets/cosmetic_slot.dart';
 import 'package:party_tricks/widgets/eyes_picker.dart';
+import 'package:party_tricks/widgets/hair_picker.dart';
 import 'package:party_tricks/widgets/mouth_picker.dart';
+import 'package:party_tricks/widgets/pants_picker.dart';
 import 'package:party_tricks/widgets/shirt_picker.dart';
 import 'package:party_tricks/widgets/skin_tone_picker.dart';
 
@@ -60,6 +67,11 @@ class WardrobeScreen extends ConsumerWidget {
     final skinColor = SkinTone.colorOf(skinTone);
     final shirt = ref.watch(shirtProvider);
     final ownedShirts = ref.watch(ownedShirtsProvider);
+    final pants = ref.watch(pantsProvider);
+    final ownedPants = ref.watch(ownedPantsProvider);
+    final hair = ref.watch(hairProvider);
+    final hairColor = ref.watch(hairColorProvider);
+    final ownedHairs = ref.watch(ownedHairsProvider);
     final accessory = ref.watch(accessoryProvider);
     final ownedAccessories = ref.watch(ownedAccessoriesProvider);
 
@@ -71,14 +83,7 @@ class WardrobeScreen extends ConsumerWidget {
             bottom: false,
             child: Stack(
               children: [
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: AnimatedCharacter.fromLook(
-                      ref.watch(characterLookProvider),
-                    ),
-                  ),
-                ),
+                _CharacterStage(look: ref.watch(characterLookProvider)),
                 Positioned(
                   top: 12,
                   right: 12,
@@ -147,6 +152,33 @@ class WardrobeScreen extends ConsumerWidget {
                     () => ref.read(shirtControllerProvider).select(style),
                   ),
                 ),
+                CosmeticCategory.pants => PantsPicker(
+                  styles: ownedPants,
+                  selectedStyle: pants,
+                  skin: skinColor,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(pantsControllerProvider).select(style),
+                  ),
+                ),
+                CosmeticCategory.hair => HairPicker(
+                  styles: ownedHairs,
+                  selectedStyle: hair,
+                  skin: skinColor,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(hairControllerProvider).select(style),
+                  ),
+                  colors: [
+                    for (var i = 0; i < HairColor.count; i++)
+                      HairColor.colorOf(i),
+                  ],
+                  selectedColor: hairColor,
+                  onColorSelected: (index) => _save(
+                    context,
+                    () => ref.read(hairControllerProvider).selectColor(index),
+                  ),
+                ),
                 CosmeticCategory.accessory => AccessoryPicker(
                   styles: ownedAccessories,
                   selectedStyle: accessory,
@@ -207,6 +239,67 @@ class _OwnedItems extends StatelessWidget {
       ),
       itemBuilder: (context, index) =>
           CosmeticSlot(semanticLabel: items[index]),
+    );
+  }
+}
+
+/// Tu personaje en reposo, con un botón pequeño para verlo de lado (reposo de
+/// lado, solo del Vestuario) o de frente.
+class _CharacterStage extends StatefulWidget {
+  const _CharacterStage({required this.look});
+
+  final CharacterLook look;
+
+  @override
+  State<_CharacterStage> createState() => _CharacterStageState();
+}
+
+class _CharacterStageState extends State<_CharacterStage>
+    with SingleTickerProviderStateMixin {
+  bool _side = false;
+
+  late final AnimationController _phase = AnimationController(
+    vsync: this,
+    duration: CharacterClip.idleSide.period,
+  );
+
+  @override
+  void dispose() {
+    _phase.dispose();
+    super.dispose();
+  }
+
+  void _toggle() {
+    setState(() => _side = !_side);
+    if (_side) {
+      _phase.repeat();
+    } else {
+      _phase.stop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: _side
+                ? CharacterClip.idleSide.build(look: widget.look, phase: _phase)
+                : AnimatedCharacter.fromLook(widget.look),
+          ),
+        ),
+        Positioned(
+          top: 12,
+          left: 12,
+          child: IconButton.filledTonal(
+            tooltip: _side ? 'Ver de frente' : 'Ver de lado',
+            onPressed: _toggle,
+            icon: const Icon(Icons.autorenew),
+          ),
+        ),
+      ],
     );
   }
 }

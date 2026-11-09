@@ -3,7 +3,7 @@ import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/widgets/character/character_layer.dart';
 
-/// Dibuja una boca en el lienzo del personaje (512x768).
+/// Dibuja una boca en el lienzo del personaje (512x968).
 ///
 /// Misma técnica que los ojos: [BlendMode.modulate] multiplica el dibujo
 /// por [color], así que lo blanco toma el color y lo negro sigue negro. Solo
