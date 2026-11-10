@@ -14,11 +14,32 @@ enum CharacterClip {
     CharacterView.frente,
     Duration(milliseconds: 2500),
   ),
+  idleSide(
+    'Reposo de lado',
+    'De lado: parado, respira y mueve un poco los brazos. Solo se ve en el '
+        'Vestuario.',
+    CharacterView.lado,
+    Duration(milliseconds: 2500),
+  ),
   walk(
     'Caminar',
     'De lado: dos piernas y dos brazos, mirando hacia donde va. Es la del '
         'mapa.',
     CharacterView.lado,
+    Duration(milliseconds: 700),
+  ),
+  idleBack(
+    'Reposo de espalda',
+    'De espalda: respira, la cabeza y los brazos suben un poco. Se ve en el '
+        'Vestuario.',
+    CharacterView.espalda,
+    Duration(milliseconds: 2500),
+  ),
+  walkBack(
+    'Caminar de espalda',
+    'De espalda: las piernas se alternan y el cuerpo sube y baja. Es la del '
+        'mapa cuando el personaje sube.',
+    CharacterView.espalda,
     Duration(milliseconds: 700),
   );
 
@@ -46,12 +67,35 @@ enum CharacterClip {
     switch (this) {
       case CharacterClip.idle:
         return AnimatedCharacter.fromLook(look, key: key, phase: phase);
+      case CharacterClip.idleSide:
+        return WalkingCharacter(
+          key: key,
+          phase: phase,
+          look: look,
+          faceRight: faceRight,
+          cycle: const SideIdle(),
+        );
       case CharacterClip.walk:
         return WalkingCharacter(
           key: key,
           phase: phase,
           look: look,
           faceRight: faceRight,
+        );
+      case CharacterClip.idleBack:
+        return AnimatedCharacter.fromLook(
+          look,
+          key: key,
+          phase: phase,
+          view: CharacterView.espalda,
+        );
+      case CharacterClip.walkBack:
+        return AnimatedCharacter.fromLook(
+          look,
+          key: key,
+          phase: phase,
+          view: CharacterView.espalda,
+          animation: const WalkAwayAnimation(),
         );
     }
   }

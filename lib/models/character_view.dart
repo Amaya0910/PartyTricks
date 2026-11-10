@@ -6,7 +6,12 @@ enum CharacterView {
   frente,
 
   /// De lado: caminando por el mapa.
-  lado;
+  lado,
+
+  /// De espalda: caminando hacia arriba en el mapa, y en el Vestuario. No
+  /// tiene cara (ojos y boca no se ven); la ropa y el cabello usan su propio
+  /// dibujo de espalda o, si no lo tienen, el de frente.
+  espalda;
 
   String get folder => name;
 }

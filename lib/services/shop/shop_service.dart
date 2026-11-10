@@ -1,4 +1,6 @@
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
@@ -44,4 +46,14 @@ abstract class ShopService {
     required String uid,
     required AccessoryStyle accessory,
   });
+
+  /// Cobra las monedas de [pants] y lo agrega a los pantalones del jugador.
+  /// Lanza [ShopException] si ya lo tiene, si no alcanzan las monedas o si
+  /// algo falla.
+  Future<void> buyPants({required String uid, required PantsStyle pants});
+
+  /// Cobra las monedas de [hair] y lo agrega a los cabellos del jugador.
+  /// Lanza [ShopException] si ya lo tiene, si no alcanzan las monedas o si
+  /// algo falla.
+  Future<void> buyHair({required String uid, required HairStyle hair});
 }

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
+/// Espacio vacío arriba del lienzo, para el cabello y los sombreros. Todo lo
+/// que está medido en píxeles del lienzo sube de la altura original (768)
+/// con este margen.
+const double kCharacterTopMargin = 200;
+
 /// Tamaño del lienzo en el que están dibujadas todas las capas.
-const Size kCharacterCanvas = Size(512, 768);
+const Size kCharacterCanvas = Size(512, 768 + kCharacterTopMargin);
 
 /// Un PNG del personaje, del tamaño del lienzo.
 ///

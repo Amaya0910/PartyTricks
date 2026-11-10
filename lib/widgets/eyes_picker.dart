@@ -38,6 +38,7 @@ class EyesPicker extends StatelessWidget {
     return Column(
       children: [
         ColorStrip(
+          firstIsNone: true,
           colors: colors,
           selected: selectedColor,
           onSelected: onColorSelected,
@@ -75,8 +76,13 @@ class EyesThumbnail extends StatelessWidget {
   final EyeStyle style;
   final Color color;
 
-  /// Zona de los ojos, en píxeles del lienzo (512x768).
-  static const Rect _crop = Rect.fromLTWH(116, 160, 280, 120);
+  /// Zona de los ojos, en píxeles del lienzo (512x968).
+  static const Rect _crop = Rect.fromLTWH(
+    116,
+    160 + kCharacterTopMargin,
+    280,
+    120,
+  );
 
   @override
   Widget build(BuildContext context) {

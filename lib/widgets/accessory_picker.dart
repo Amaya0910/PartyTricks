@@ -42,7 +42,7 @@ class AccessoryPicker extends StatelessWidget {
         if (index == 0) {
           return CosmeticSlot(
             semanticLabel: 'Sin accesorio',
-            label: 'Ninguno',
+            preview: const NoneMark(),
             isSelected: selectedStyle == null,
             onTap: () => onStyleSelected(null),
           );
@@ -72,8 +72,13 @@ class AccessoryThumbnail extends StatelessWidget {
   final Color skin;
 
   /// Zona de la cabeza con las orejas y la gorguera, en píxeles del lienzo
-  /// (512x768).
-  static const Rect _crop = Rect.fromLTWH(50, 35, 412, 390);
+  /// (512x968).
+  static const Rect _crop = Rect.fromLTWH(
+    50,
+    35 + kCharacterTopMargin,
+    412,
+    390,
+  );
 
   @override
   Widget build(BuildContext context) {

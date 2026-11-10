@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_color.dart';
+import 'package:party_tricks/models/hair_style.dart';
 import 'package:party_tricks/models/avatar_color.dart';
 import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/eye_style.dart';
@@ -23,6 +25,8 @@ class HeadAvatar extends StatelessWidget {
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor = MouthColor.defaultIndex,
     this.accessory,
+    this.hair,
+    this.hairColor = HairColor.defaultIndex,
     this.avatarColor = AvatarColor.defaultIndex,
     this.facePhoto,
     this.size = 48,
@@ -37,16 +41,25 @@ class HeadAvatar extends StatelessWidget {
 
   /// Accesorio de la cabeza, si lleva.
   final AccessoryStyle? accessory;
+
+  /// Cabello, si lleva, y la posición de su color en HairColor.
+  final HairStyle? hair;
+  final int hairColor;
   final int avatarColor;
 
   /// Foto de la cara; si hay, va en lugar de los ojos y la boca.
   final FacePhoto? facePhoto;
   final double size;
 
-  /// Zona de la cabeza en el lienzo (512x768): un cuadrado centrado en ella
+  /// Zona de la cabeza en el lienzo (512x968): un cuadrado centrado en ella
   /// (centro 256, 218). La cabeza mide unos 328 px de ancho, así que con 410
   /// ocupa cerca del 80 % del círculo y deja aire alrededor.
-  static const Rect _crop = Rect.fromLTWH(51, 13, 410, 410);
+  static const Rect _crop = Rect.fromLTWH(
+    51,
+    13 + kCharacterTopMargin,
+    410,
+    410,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +95,10 @@ class HeadAvatar extends StatelessWidget {
                           mouthColor: MouthColor.colorOf(mouthColor) ?? skin,
                           photo: facePhoto,
                           accessory: accessory,
+                          hair: hair,
+                          hairTint: hair != null && hair!.tintable
+                              ? HairColor.colorOf(hairColor)
+                              : null,
                         ),
                       ],
                     ),

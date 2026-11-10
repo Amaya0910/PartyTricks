@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_color.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/face_photo.dart';
@@ -18,7 +21,10 @@ class CharacterLook {
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor,
     this.shirt = ShirtStyle.defaultStyle,
+    this.pants,
     this.accessory,
+    this.hair,
+    this.hairColor = HairColor.defaultIndex,
     this.facePhoto,
   });
 
@@ -38,8 +44,22 @@ class CharacterLook {
   final Color? mouthColor;
   final ShirtStyle shirt;
 
+  /// Null = sin pantalón.
+  final PantsStyle? pants;
+
   /// Null = sin accesorio.
   final AccessoryStyle? accessory;
+
+  /// Null = sin cabello.
+  final HairStyle? hair;
+
+  /// Posición del color del cabello en [HairColor] (solo cuenta si el cabello
+  /// es blanco).
+  final int hairColor;
+
+  /// El color que se le aplica al cabello: null si trae su propio color.
+  Color? get hairTint =>
+      hair != null && hair!.tintable ? HairColor.colorOf(hairColor) : null;
 
   /// La foto de la cara, si el jugador la usa. Solo se dibuja de frente.
   final FacePhoto? facePhoto;
@@ -49,8 +69,13 @@ class CharacterLook {
     EyeStyle? eyes,
     MouthStyle? mouth,
     ShirtStyle? shirt,
+    PantsStyle? pants,
+    bool clearPants = false,
     AccessoryStyle? accessory,
     bool clearAccessory = false,
+    HairStyle? hair,
+    bool clearHair = false,
+    int? hairColor,
     FacePhoto? facePhoto,
     bool clearFacePhoto = false,
   }) {
@@ -61,7 +86,10 @@ class CharacterLook {
       mouth: mouth ?? this.mouth,
       mouthColor: mouthColor,
       shirt: shirt ?? this.shirt,
+      pants: clearPants ? null : pants ?? this.pants,
       accessory: clearAccessory ? null : accessory ?? this.accessory,
+      hair: clearHair ? null : hair ?? this.hair,
+      hairColor: hairColor ?? this.hairColor,
       facePhoto: clearFacePhoto ? null : facePhoto ?? this.facePhoto,
     );
   }
@@ -75,7 +103,10 @@ class CharacterLook {
       other.mouth == mouth &&
       other.mouthColor == mouthColor &&
       other.shirt == shirt &&
+      other.pants == pants &&
       other.accessory == accessory &&
+      other.hair == hair &&
+      other.hairColor == hairColor &&
       other.facePhoto == facePhoto;
 
   @override
@@ -86,7 +117,10 @@ class CharacterLook {
     mouth,
     mouthColor,
     shirt,
+    pants,
     accessory,
+    hair,
+    hairColor,
     facePhoto,
   );
 }

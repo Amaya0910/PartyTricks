@@ -8,6 +8,8 @@ import 'package:party_tricks/controllers/eyes_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
 import 'package:party_tricks/controllers/shirt_controller.dart';
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
@@ -70,6 +72,33 @@ class _FakeShopService implements ShopService {
     _profile = _profile.copyWith(
       coins: _profile.coins - shirt.price,
       ownedShirts: {..._profile.ownedShirts, shirt.id},
+    );
+    profiles.add(_profile);
+  }
+
+  @override
+  Future<void> buyPants({
+    required String uid,
+    required PantsStyle pants,
+  }) async {
+    if (_profile.coins < pants.price) {
+      throw const ShopException('No tienes suficientes monedas.');
+    }
+    _profile = _profile.copyWith(
+      coins: _profile.coins - pants.price,
+      ownedPants: {..._profile.ownedPants, pants.id},
+    );
+    profiles.add(_profile);
+  }
+
+  @override
+  Future<void> buyHair({required String uid, required HairStyle hair}) async {
+    if (_profile.coins < hair.price) {
+      throw const ShopException('No tienes suficientes monedas.');
+    }
+    _profile = _profile.copyWith(
+      coins: _profile.coins - hair.price,
+      ownedHairs: {..._profile.ownedHairs, hair.id},
     );
     profiles.add(_profile);
   }
@@ -262,6 +291,9 @@ void main() {
     expect(find.text(ShirtStyle.blue.title), findsNothing);
     expect(find.text(EyeStyle.ojo1.title), findsNothing);
 
+    // La fila de filtros se desplaza: se acerca el filtro antes de tocarlo.
+    await tester.ensureVisible(find.text('Accesorios'));
+    await tester.pump();
     await tester.tap(find.text('Accesorios'));
     await tester.pump();
     expect(find.text(AccessoryStyle.ogre.title), findsOneWidget);
@@ -293,6 +325,9 @@ void main() {
 
   testWidgets('comprar un accesorio, si alcanzan las monedas', (tester) async {
     await pump(tester);
+    // La fila de filtros se desplaza: se acerca el filtro antes de tocarlo.
+    await tester.ensureVisible(find.text('Accesorios'));
+    await tester.pump();
     await tester.tap(find.text('Accesorios'));
     await tester.pump();
     await tester.tap(find.text(AccessoryStyle.ogre.title));

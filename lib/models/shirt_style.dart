@@ -6,7 +6,7 @@ import 'package:party_tricks/models/shop_cosmetic.dart';
 
 /// Camisas del personaje. En el perfil se guarda solo el [id].
 ///
-/// Cada camisa es un PNG del mismo lienzo que el personaje (512x768) más sus
+/// Cada camisa es un PNG del mismo lienzo que el personaje (512x968) más sus
 /// mangas, que giran con los brazos:
 /// - de frente (`frente/camisas/`): `camisa_<n>.png` y
 ///   `manga_<n>_izquierda.png` / `manga_<n>_derecha.png`;
@@ -186,6 +186,87 @@ enum ShirtStyle implements ShopCosmetic {
     "Primer drop de Shift's",
     price: 100,
     rarity: Rarity.legendary,
+  ),
+
+  // --- Camisetas de fútbol (los nombres son provisionales). ---
+  soccer13(
+    13,
+    13,
+    'Camiseta de Fútbol 13',
+    'De partido de fútbol',
+    price: 60,
+    rarity: Rarity.rare,
+  ),
+  soccer14(
+    14,
+    14,
+    'Camiseta de Fútbol 14',
+    'De partido de fútbol',
+    price: 60,
+    rarity: Rarity.rare,
+  ),
+  soccer15(
+    15,
+    15,
+    'Camiseta de Fútbol 15',
+    'De partido de fútbol',
+    price: 75,
+    rarity: Rarity.epic,
+  ),
+  soccer16(
+    16,
+    16,
+    'Camiseta de Fútbol 16',
+    'De partido de fútbol',
+    price: 75,
+    rarity: Rarity.epic,
+  ),
+
+  // --- Segundo drop de Shift's: estampado delante y detrás. ---
+  shifts8(
+    17,
+    17,
+    "Camiseta Shift's 8",
+    "Segundo drop de Shift's",
+    hasBackArt: true,
+    price: 75,
+    rarity: Rarity.epic,
+  ),
+  shifts9(
+    18,
+    18,
+    "Camiseta Shift's 9",
+    "Segundo drop de Shift's",
+    hasBackArt: true,
+    price: 75,
+    rarity: Rarity.epic,
+  ),
+  shifts10(
+    19,
+    19,
+    "Camiseta Shift's 10",
+    "Segundo drop de Shift's",
+    hasBackArt: true,
+    price: 75,
+    rarity: Rarity.epic,
+  ),
+  shifts11(
+    20,
+    20,
+    "Camiseta Shift's 11",
+    "Segundo drop de Shift's",
+    hasBackArt: true,
+    price: 75,
+    rarity: Rarity.epic,
+  ),
+  shifts12(
+    21,
+    21,
+    "Camiseta Shift's 12",
+    "Segundo drop de Shift's",
+    hasBackArt: true,
+    price: 100,
+    rarity: Rarity.legendary,
   );
 
   const ShirtStyle(
@@ -196,6 +277,7 @@ enum ShirtStyle implements ShopCosmetic {
     this.tint,
     this.hasSleeves = true,
     this.sidedInProfile = false,
+    this.hasBackArt = false,
     this.price = 0,
     this.rarity = Rarity.common,
   });
@@ -222,6 +304,10 @@ enum ShirtStyle implements ShopCosmetic {
 
   /// Si de lado se ve distinta yendo a la derecha que a la izquierda.
   final bool sidedInProfile;
+
+  /// Si tiene dibujo propio de espalda (`espalda/camisas/`), por ejemplo con
+  /// un estampado atrás. Si no, de espalda se ve como de frente.
+  final bool hasBackArt;
 
   @override
   final int price;
@@ -250,6 +336,11 @@ enum ShirtStyle implements ShopCosmetic {
         return sidedInProfile
             ? '$_root/lado/camisas/camisa_${art}_${faceRight ? 'derecha' : 'izquierda'}.png'
             : '$_root/lado/camisas/camisa_$art.png';
+      case CharacterView.espalda:
+        // Las que no tienen espalda propia usan la de frente.
+        return hasBackArt
+            ? '$_root/espalda/camisas/camisa_$art.png'
+            : '$_root/frente/camisas/camisa_$art.png';
     }
   }
 

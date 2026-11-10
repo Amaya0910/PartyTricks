@@ -153,6 +153,35 @@ void main() {
     });
   });
 
+  // En Windows File.existsSync no distingue mayúsculas, pero Android sí: un
+  // archivo "Camisa_13.png" no se encuentra como "camisa_13.png" y la camisa se
+  // dibuja sin cuerpo. Por eso se compara el nombre exacto.
+  test('los nombres de los archivos de arte coinciden en mayúsculas', () {
+    final assets = <String>{
+      for (final shirt in ShirtStyle.values) ...[
+        shirt.bodyAsset(CharacterView.frente),
+        shirt.bodyAsset(CharacterView.lado, faceRight: true),
+        shirt.bodyAsset(CharacterView.lado, faceRight: false),
+        ?shirt.frontSleeve(left: true),
+        ?shirt.frontSleeve(left: false),
+        ?shirt.sideSleeve,
+      ],
+      for (final accessory in AccessoryStyle.values)
+        for (final view in CharacterView.values) accessory.assetFor(view),
+    };
+    for (final asset in assets) {
+      final file = File(asset);
+      final names = file.parent.listSync().map(
+        (e) => e.uri.pathSegments.where((s) => s.isNotEmpty).last,
+      );
+      expect(
+        names,
+        contains(file.uri.pathSegments.last),
+        reason: 'Mayúsculas distintas en $asset',
+      );
+    }
+  });
+
   group('los precios coinciden con firestore.rules', () {
     final rules = File('firestore.rules').readAsStringSync();
 

@@ -6,7 +6,7 @@ import 'package:party_tricks/models/shop_cosmetic.dart';
 /// Accesorios del personaje. En el perfil se guarda solo el [id]; sin
 /// accesorio es 0 (en el código, `null`).
 ///
-/// Cada accesorio es un PNG del mismo lienzo que el personaje (512x768) en
+/// Cada accesorio es un PNG del mismo lienzo que el personaje (512x968) en
 /// `assets/images/personaje/accesorios/`, que se dibuja con la cabeza y se
 /// mueve con ella. Si de lado se ve distinto, trae otro PNG ([sideFile]); si
 /// no, se usa el mismo.
@@ -82,6 +82,8 @@ enum AccessoryStyle implements ShopCosmetic {
   String assetFor(CharacterView view) => switch (view) {
     CharacterView.frente => '$_folder/$file',
     CharacterView.lado => '$_folder/${sideFile ?? file}',
+    // Por detrás se ven igual que de frente.
+    CharacterView.espalda => '$_folder/$file',
   };
 
   /// Busca el accesorio por su [id]. Null si es 0 (ninguno) o no existe.

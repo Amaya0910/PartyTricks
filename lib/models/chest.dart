@@ -1,4 +1,6 @@
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/models/shirt_style.dart';
@@ -8,13 +10,15 @@ import 'package:party_tricks/models/shop_cosmetic.dart';
 enum ChestOutcome { cosmetic, nothing, coins, dice }
 
 /// Lo que ganó el jugador al abrir un cofre. Si el premio es un cosmético,
-/// trae uno solo de [eyes], [mouth], [shirt] o [accessory].
+/// trae uno solo de [eyes], [mouth], [shirt], [pants], [hair] o [accessory].
 class ChestPrize {
   const ChestPrize(
     this.outcome, {
     this.eyes,
     this.mouth,
     this.shirt,
+    this.pants,
+    this.hair,
     this.accessory,
   });
 
@@ -25,6 +29,8 @@ class ChestPrize {
       eyes: cosmetic is EyeStyle ? cosmetic : null,
       mouth: cosmetic is MouthStyle ? cosmetic : null,
       shirt: cosmetic is ShirtStyle ? cosmetic : null,
+      pants: cosmetic is PantsStyle ? cosmetic : null,
+      hair: cosmetic is HairStyle ? cosmetic : null,
       accessory: cosmetic is AccessoryStyle ? cosmetic : null,
     );
   }
@@ -33,6 +39,8 @@ class ChestPrize {
   final EyeStyle? eyes;
   final MouthStyle? mouth;
   final ShirtStyle? shirt;
+  final PantsStyle? pants;
+  final HairStyle? hair;
   final AccessoryStyle? accessory;
 
   /// El cosmético ganado, sea cual sea. Null si el premio no es un cosmético.
@@ -40,6 +48,8 @@ class ChestPrize {
     if (eyes != null) return eyes;
     if (mouth != null) return mouth;
     if (shirt != null) return shirt;
+    if (pants != null) return pants;
+    if (hair != null) return hair;
     return accessory;
   }
 }

@@ -9,9 +9,14 @@ class ColorStrip extends StatelessWidget {
     required this.colors,
     required this.selected,
     required this.onSelected,
+    this.firstIsNone = false,
   });
 
   final List<Color> colors;
+
+  /// Si el primer color es "sin color" (el dibujo original): se marca con una
+  /// X roja.
+  final bool firstIsNone;
   final int selected;
   final ValueChanged<int> onSelected;
 
@@ -36,7 +41,10 @@ class ColorStrip extends StatelessWidget {
         itemBuilder: (context, index) => Center(
           child: _Swatch(
             color: colors[index],
-            label: 'Color ${index + 1}',
+            label: firstIsNone && index == 0
+                ? 'Sin color'
+                : 'Color ${index + 1}',
+            isNone: firstIsNone && index == 0,
             size: _swatch,
             isSelected: index == selected,
             onTap: () => onSelected(index),
@@ -54,8 +62,10 @@ class _Swatch extends StatelessWidget {
     required this.size,
     required this.isSelected,
     required this.onTap,
+    this.isNone = false,
   });
 
+  final bool isNone;
   final Color color;
   final String label;
   final double size;
@@ -89,7 +99,9 @@ class _Swatch extends StatelessWidget {
               width: isSelected ? 3 : 1,
             ),
           ),
-          child: isSelected
+          child: isNone
+              ? Icon(Icons.close_rounded, size: 24, color: Colors.red.shade600)
+              : isSelected
               ? Icon(Icons.check, size: 18, color: checkColor)
               : null,
         ),

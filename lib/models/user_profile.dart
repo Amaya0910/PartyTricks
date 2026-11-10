@@ -1,4 +1,7 @@
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_color.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/avatar_color.dart';
 import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/face_photo.dart';
@@ -32,6 +35,11 @@ class UserProfile {
     this.ownedShirts = const {},
     this.accessory,
     this.ownedAccessories = const {},
+    this.pants,
+    this.ownedPants = const {},
+    this.hair,
+    this.ownedHairs = const {},
+    this.hairColor = HairColor.defaultIndex,
     this.avatarColor = AvatarColor.defaultIndex,
     this.facePhoto,
     this.useFacePhoto = true,
@@ -110,6 +118,32 @@ class UserProfile {
   bool ownsAccessory(AccessoryStyle style) =>
       style.isFree || ownedAccessories.contains(style.id);
 
+  /// Pantalón puesto, o null si no lleva ninguno. En Firestore se guarda su
+  /// id, o 0 si no lleva (campo `pants`).
+  final PantsStyle? pants;
+
+  /// Ids de los pantalones que compró (campo `ownedPants`).
+  final Set<int> ownedPants;
+
+  /// Si puede ponerse [style]: ya lo compró.
+  bool ownsPants(PantsStyle style) =>
+      style.isFree || ownedPants.contains(style.id);
+
+  /// Cabello puesto, o null si no lleva ninguno. En Firestore se guarda su id,
+  /// o 0 si no lleva (campo `hair`).
+  final HairStyle? hair;
+
+  /// Ids de los cabellos que compró (campo `ownedHairs`).
+  final Set<int> ownedHairs;
+
+  /// Si puede ponerse [style]: ya lo compró.
+  bool ownsHair(HairStyle style) =>
+      style.isFree || ownedHairs.contains(style.id);
+
+  /// Posición del color del cabello blanco en [HairColor] (campo
+  /// `hairColor`). Todos los colores están desbloqueados.
+  final int hairColor;
+
   /// Posición del color de fondo de la foto de perfil en [AvatarColor].
   final int avatarColor;
 
@@ -171,6 +205,19 @@ class UserProfile {
         for (final value in map['ownedAccessories'] as List? ?? const [])
           if (value is num) value.toInt(),
       },
+      pants: PantsStyle.fromId((map['pants'] as num?)?.toInt()),
+      ownedPants: {
+        for (final value in map['ownedPants'] as List? ?? const [])
+          if (value is num) value.toInt(),
+      },
+      hair: HairStyle.fromId((map['hair'] as num?)?.toInt()),
+      ownedHairs: {
+        for (final value in map['ownedHairs'] as List? ?? const [])
+          if (value is num) value.toInt(),
+      },
+      hairColor: HairColor.clamp(
+        (map['hairColor'] as num?)?.toInt() ?? HairColor.defaultIndex,
+      ),
       avatarColor: AvatarColor.clamp(
         (map['avatarColor'] as num?)?.toInt() ?? AvatarColor.defaultIndex,
       ),
@@ -202,6 +249,11 @@ class UserProfile {
       'ownedShirts': ownedShirts.toList()..sort(),
       'accessory': accessory?.id ?? 0,
       'ownedAccessories': ownedAccessories.toList()..sort(),
+      'pants': pants?.id ?? 0,
+      'ownedPants': ownedPants.toList()..sort(),
+      'hair': hair?.id ?? 0,
+      'ownedHairs': ownedHairs.toList()..sort(),
+      'hairColor': hairColor,
       'avatarColor': avatarColor,
       if (facePhoto != null) 'facePhoto': facePhoto!.base64,
       'useFacePhoto': useFacePhoto,
@@ -230,6 +282,13 @@ class UserProfile {
     AccessoryStyle? accessory,
     bool clearAccessory = false,
     Set<int>? ownedAccessories,
+    PantsStyle? pants,
+    bool clearPants = false,
+    Set<int>? ownedPants,
+    HairStyle? hair,
+    bool clearHair = false,
+    Set<int>? ownedHairs,
+    int? hairColor,
     int? avatarColor,
     FacePhoto? facePhoto,
     bool clearFacePhoto = false,
@@ -256,6 +315,11 @@ class UserProfile {
       ownedShirts: ownedShirts ?? this.ownedShirts,
       accessory: clearAccessory ? null : accessory ?? this.accessory,
       ownedAccessories: ownedAccessories ?? this.ownedAccessories,
+      pants: clearPants ? null : pants ?? this.pants,
+      ownedPants: ownedPants ?? this.ownedPants,
+      hair: clearHair ? null : hair ?? this.hair,
+      ownedHairs: ownedHairs ?? this.ownedHairs,
+      hairColor: hairColor ?? this.hairColor,
       avatarColor: avatarColor ?? this.avatarColor,
       facePhoto: clearFacePhoto ? null : facePhoto ?? this.facePhoto,
       useFacePhoto: useFacePhoto ?? this.useFacePhoto,

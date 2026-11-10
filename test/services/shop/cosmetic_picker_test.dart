@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:party_tricks/models/accessory_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/models/rarity.dart';
 import 'package:party_tricks/models/shirt_style.dart';
@@ -22,6 +24,12 @@ void main() {
     }
     for (final s in ShirtStyle.values) {
       if (!s.isFree) total += s.rarity.weight;
+    }
+    for (final p in PantsStyle.values) {
+      total += p.rarity.weight;
+    }
+    for (final h in HairStyle.values) {
+      total += h.rarity.weight;
     }
     for (final a in AccessoryStyle.values) {
       total += a.rarity.weight;
@@ -70,6 +78,8 @@ void main() {
       ownedEyes: {for (final e in EyeStyle.values) e.number},
       ownedMouths: {for (final m in MouthStyle.values) m.number},
       ownedShirts: {for (final s in ShirtStyle.values) s.id},
+      ownedPants: {for (final p in PantsStyle.values) p.id},
+      ownedHairs: {for (final h in HairStyle.values) h.id},
       ownedAccessories: {for (final a in AccessoryStyle.values) a.id},
       random: FakeRandomSource([]),
     );

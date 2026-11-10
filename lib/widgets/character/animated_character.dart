@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/character_look.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/character_view.dart';
@@ -13,7 +15,7 @@ import 'package:party_tricks/widgets/character/character_head.dart';
 import 'package:party_tricks/widgets/character/character_layer.dart';
 
 export 'package:party_tricks/widgets/character/character_layer.dart'
-    show kCharacterCanvas;
+    show kCharacterCanvas, kCharacterTopMargin;
 
 /// Partes del cuerpo, en orden de dibujo (de atrás hacia adelante).
 ///
@@ -22,14 +24,17 @@ export 'package:party_tricks/widgets/character/character_layer.dart'
 ///   `assets/images/personaje/frente/cuerpo/linea_<id>.png`   (negro, no se tiñe)
 /// La cabeza es la misma de frente y de lado: está en `personaje/`.
 enum BodyPart {
-  cuerpo('cuerpo', Offset(256, 555)),
-  piernaIzquierda('pierna_izquierda', Offset(228, 511)),
-  piernaDerecha('pierna_derecha', Offset(284, 511)),
-  brazoIzquierdo('brazo_izquierdo', Offset(222, 392)),
-  brazoDerecho('brazo_derecha', Offset(290, 392)),
-  manoIzquierda('mano_izquierda', Offset(222, 392)), // gira con el brazo
-  manoDerecha('mano_derecha', Offset(290, 392)),
-  cabeza('cabeza', Offset(256, 360));
+  cuerpo('cuerpo', Offset(256, 555 + kCharacterTopMargin)),
+  piernaIzquierda('pierna_izquierda', Offset(228, 511 + kCharacterTopMargin)),
+  piernaDerecha('pierna_derecha', Offset(284, 511 + kCharacterTopMargin)),
+  brazoIzquierdo('brazo_izquierdo', Offset(222, 392 + kCharacterTopMargin)),
+  brazoDerecho('brazo_derecha', Offset(290, 392 + kCharacterTopMargin)),
+  manoIzquierda(
+    'mano_izquierda',
+    Offset(222, 392 + kCharacterTopMargin),
+  ), // gira con el brazo
+  manoDerecha('mano_derecha', Offset(290, 392 + kCharacterTopMargin)),
+  cabeza('cabeza', Offset(256, 360 + kCharacterTopMargin));
 
   const BodyPart(this.id, this.pivot);
 
@@ -103,6 +108,55 @@ class IdleAnimation implements CharacterAnimation {
   }
 }
 
+/// Caminar de espalda (hacia arriba en el mapa): las piernas se levantan una
+/// y luego la otra, el cuerpo sube y baja con cada paso y los brazos se
+/// mecen al revés de las piernas. La fase 0 a 1 son dos pasos.
+class WalkAwayAnimation implements CharacterAnimation {
+  const WalkAwayAnimation();
+
+  static const double _deg = math.pi / 180;
+
+  @override
+  Duration get period => const Duration(milliseconds: 700);
+
+  @override
+  PartTransform transformFor(BodyPart part, double t) {
+    final phase = t * 2 * math.pi;
+    final swing = math.sin(phase);
+    // El cuerpo está más abajo cuando las dos piernas tocan el piso.
+    final bob = -5 * (1 - swing.abs());
+    switch (part) {
+      case BodyPart.cuerpo:
+        return PartTransform(dy: bob);
+      case BodyPart.cabeza:
+        return PartTransform(
+          angle: math.sin(phase * 2) * 1.5 * _deg,
+          dy: bob * 1.1,
+        );
+      case BodyPart.piernaIzquierda:
+        final lift = math.max(0.0, swing);
+        return PartTransform(dy: -16 * lift, scaleY: 1 - 0.12 * lift);
+      case BodyPart.piernaDerecha:
+        final lift = math.max(0.0, -swing);
+        return PartTransform(dy: -16 * lift, scaleY: 1 - 0.12 * lift);
+      case BodyPart.brazoIzquierdo:
+      case BodyPart.manoIzquierda:
+        return PartTransform(
+          angle: 2.5 * _deg * swing,
+          dy: bob - 5 * swing,
+          scaleY: 1 - 0.05 * swing,
+        );
+      case BodyPart.brazoDerecho:
+      case BodyPart.manoDerecha:
+        return PartTransform(
+          angle: -2.5 * _deg * swing,
+          dy: bob + 5 * swing,
+          scaleY: 1 + 0.05 * swing,
+        );
+    }
+  }
+}
+
 /// Personaje animado por capas con tono de piel, ojos y boca configurables.
 class AnimatedCharacter extends StatefulWidget {
   const AnimatedCharacter({
@@ -115,9 +169,13 @@ class AnimatedCharacter extends StatefulWidget {
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor,
     this.shirt = ShirtStyle.defaultStyle,
+    this.pants,
     this.accessory,
+    this.hair,
+    this.hairTint,
     this.facePhoto,
     this.clothing = const [],
+    this.view = CharacterView.frente,
   });
 
   /// El personaje con el aspecto [look]. La foto de la cara es la de [look].
@@ -126,7 +184,9 @@ class AnimatedCharacter extends StatefulWidget {
     Key? key,
     CharacterAnimation animation = const IdleAnimation(),
     Animation<double>? phase,
+    CharacterView view = CharacterView.frente,
   }) : this(
+         view: view,
          key: key,
          skinTone: look.skinTone,
          animation: animation,
@@ -136,9 +196,16 @@ class AnimatedCharacter extends StatefulWidget {
          mouth: look.mouth,
          mouthColor: look.mouthColor,
          shirt: look.shirt,
+         pants: look.pants,
          accessory: look.accessory,
+         hair: look.hair,
+         hairTint: look.hairTint,
          facePhoto: look.facePhoto,
        );
+
+  /// Desde dónde se ve: de frente (con cara) o de espalda. De lado es
+  /// `WalkingCharacter`.
+  final CharacterView view;
 
   final Color skinTone;
   final CharacterAnimation animation;
@@ -165,14 +232,22 @@ class AnimatedCharacter extends StatefulWidget {
   /// Camisa puesta: el cuerpo la lleva y las mangas giran con los brazos.
   final ShirtStyle shirt;
 
+  /// Pantalón puesto, si lleva (solo de frente). Va sobre las piernas, sin
+  /// moverse: en el reposo las piernas están quietas.
+  final PantsStyle? pants;
+
   /// Accesorio de la cabeza, si lleva. Se mueve con ella.
   final AccessoryStyle? accessory;
+
+  /// Cabello, si lleva, y su color (null si trae el suyo).
+  final HairStyle? hair;
+  final Color? hairTint;
 
   /// Foto de la cara del jugador. Si hay, se dibuja en lugar de los ojos y
   /// la boca.
   final FacePhoto? facePhoto;
 
-  /// Capas de ropa/cara (mismo lienzo 512x768), se dibujan encima.
+  /// Capas de ropa/cara (mismo lienzo 512x968), se dibujan encima.
   final List<String> clothing;
 
   @override
@@ -220,14 +295,27 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
                   mouthColor: widget.mouthColor ?? widget.skinTone,
                   photo: widget.facePhoto,
                   accessory: widget.accessory,
+                  view: widget.view,
+                  hair: widget.hair,
+                  hairTint: widget.hairTint,
+                  includeBackHair: false,
                 )
               : _PartLayers(
                   part: part,
                   skinTone: widget.skinTone,
                   shirt: widget.shirt,
+                  view: widget.view,
                 ),
         ),
     ];
+    // La parte de atrás del cabello es la capa más atrás de todas: debajo del
+    // cuerpo, para que no se vea delante del cuello. Se mueve con la cabeza.
+    final backHairAsset = widget.hair?.backAssetFor(widget.view);
+    final backHair = backHairAsset == null
+        ? null
+        : CharacterLayer(backHairAsset, tint: widget.hairTint);
+    final pantsAsset = widget.pants?.assetFor(widget.view);
+    final pantsLayer = pantsAsset == null ? null : CharacterLayer(pantsAsset);
     final clothing = [
       for (final asset in widget.clothing) CharacterLayer(asset),
     ];
@@ -243,7 +331,15 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
               final t = _phase.value;
               return Stack(
                 children: [
-                  for (final p in parts)
+                  if (backHair != null)
+                    Transform(
+                      transform: _matrixOf(
+                        BodyPart.cabeza,
+                        widget.animation.transformFor(BodyPart.cabeza, t),
+                      ),
+                      child: backHair,
+                    ),
+                  for (final p in parts) ...[
                     Transform(
                       transform: _matrixOf(
                         p.part,
@@ -251,6 +347,10 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
                       ),
                       child: p.layers,
                     ),
+                    // El pantalón va sobre las dos piernas y debajo de los brazos.
+                    if (p.part == BodyPart.piernaDerecha && pantsLayer != null)
+                      pantsLayer,
+                  ],
                   ...clothing,
                 ],
               );
@@ -268,7 +368,11 @@ class _PartLayers extends StatelessWidget {
     required this.part,
     required this.skinTone,
     required this.shirt,
+    required this.view,
   });
+
+  /// De frente o de espalda (cambia el dibujo de la camisa).
+  final CharacterView view;
 
   final BodyPart part;
   final Color skinTone;
@@ -277,7 +381,7 @@ class _PartLayers extends StatelessWidget {
   /// Lo de la camisa que va con esta parte: la camisa en el cuerpo y cada
   /// manga en su brazo (gira con él y queda debajo de la mano).
   String? get _shirtAsset => switch (part) {
-    BodyPart.cuerpo => shirt.bodyAsset(CharacterView.frente),
+    BodyPart.cuerpo => shirt.bodyAsset(view),
     BodyPart.brazoIzquierdo => shirt.frontSleeve(left: true),
     BodyPart.brazoDerecho => shirt.frontSleeve(left: false),
     _ => null,

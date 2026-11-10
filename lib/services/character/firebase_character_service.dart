@@ -40,6 +40,18 @@ class FirebaseCharacterService implements CharacterService {
       _update(uid, 'accessory', accessory, 'No se pudo guardar el accesorio.');
 
   @override
+  Future<void> setHair({required String uid, required int hair}) =>
+      _update(uid, 'hair', hair, 'No se pudo guardar el cabello.');
+
+  @override
+  Future<void> setPants({required String uid, required int pants}) =>
+      _update(uid, 'pants', pants, 'No se pudo guardar el pantalón.');
+
+  @override
+  Future<void> setHairColor({required String uid, required int hairColor}) =>
+      _update(uid, 'hairColor', hairColor, 'No se pudo guardar el color.');
+
+  @override
   Future<void> setAvatarColor({
     required String uid,
     required int avatarColor,

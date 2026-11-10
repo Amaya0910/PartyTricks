@@ -57,8 +57,11 @@ class ShirtThumbnail extends StatelessWidget {
   final ShirtStyle style;
   final Color skin;
 
-  /// Zona del torso y los brazos, en píxeles del lienzo (512x768).
-  static const Rect _crop = Rect.fromLTWH(120, 296, 272, 292);
+  /// Zona de la camisa (el torso y el arranque de las mangas), en píxeles del
+  /// lienzo (512x968). Las camisas miden unos 130 px de ancho y llegan hasta
+  /// el y 715 (el traje de payaso, hasta el 757): sin brazos ni manos, la
+  /// camisa se ve grande y con su detalle.
+  static const Rect _crop = Rect.fromLTWH(146, 566, 220, 210);
 
   @override
   Widget build(BuildContext context) {

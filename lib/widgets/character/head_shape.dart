@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:party_tricks/widgets/character/character_layer.dart';
 
 /// La forma de la cabeza del personaje, sacada de `relleno_cabeza.png`. Con
 /// ella se recorta la foto de la cara para que cubra toda la cabeza, y se
 /// dibuja la guía de la cámara y del editor.
 abstract final class HeadShape {
-  /// Cuadrado que rodea la cabeza, en píxeles del lienzo (512x768). La foto
+  /// Cuadrado que rodea la cabeza, en píxeles del lienzo (512x968). La foto
   /// guardada llena este cuadrado.
-  static const Rect zone = Rect.fromLTWH(92, 46, 328, 328);
+  static const Rect zone = Rect.fromLTWH(
+    92,
+    46 + kCharacterTopMargin,
+    328,
+    328,
+  );
+
+  /// La misma zona con la altura original del lienzo, que es en la que están
+  /// medidos los puntos de [_contour].
+  static const Rect _drawnZone = Rect.fromLTWH(92, 46, 328, 328);
 
   /// Altura de los ojos y de la boca en la guía, de 0 (arriba) a 1 (abajo).
   static const double eyesLine = 0.48;
@@ -116,8 +126,10 @@ abstract final class HeadShape {
   /// pasan por los puntos medios del contorno, para que no se vean esquinas.
   static Path pathIn(Rect target) {
     Offset map(Offset point) => Offset(
-      target.left + (point.dx - zone.left) / zone.width * target.width,
-      target.top + (point.dy - zone.top) / zone.height * target.height,
+      target.left +
+          (point.dx - _drawnZone.left) / _drawnZone.width * target.width,
+      target.top +
+          (point.dy - _drawnZone.top) / _drawnZone.height * target.height,
     );
 
     final points = [for (final point in _contour) map(point)];

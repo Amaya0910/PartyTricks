@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
 import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/face_photo.dart';
@@ -28,6 +29,9 @@ class CharacterHead extends StatelessWidget {
     required this.mouthColor,
     this.photo,
     this.accessory,
+    this.hair,
+    this.hairTint,
+    this.includeBackHair = true,
     this.view = CharacterView.frente,
   });
 
@@ -43,29 +47,52 @@ class CharacterHead extends StatelessWidget {
   /// Accesorio de la cabeza (orejas, gorguera...), si lleva.
   final AccessoryStyle? accessory;
 
-  /// De lado no se usa la foto: es de frente.
+  /// Cabello, si lleva, y su color (null si trae el suyo). La parte de atrás
+  /// va detrás de la cabeza y el resto encima de la cara.
+  final HairStyle? hair;
+  final Color? hairTint;
+
+  /// Si dibuja la parte de atrás del cabello. El personaje completo la dibuja
+  /// aparte, detrás del cuerpo (que no se vea delante del cuello).
+  final bool includeBackHair;
+
+  /// De lado no se usa la foto (es de frente) y de espalda no hay cara.
   final CharacterView view;
 
   @override
   Widget build(BuildContext context) {
     final photo = view == CharacterView.frente ? this.photo : null;
-    final mouthLayer = MouthLayer(style: mouth, color: mouthColor, view: view);
-    return Stack(
-      children: [
-        CharacterLayer(BodyPart.cabeza.fillAsset, tint: skinTone),
-        if (photo == null && !mouth.overOutline) mouthLayer,
-        CharacterLayer(BodyPart.cabeza.outlineAsset),
-        if (accessory != null)
-          CharacterLayer(
+    // De espalda no se ve la cara: ni ojos, ni boca, ni foto.
+    final back = view == CharacterView.espalda;
+    final accessoryLayer = accessory == null
+        ? null
+        : CharacterLayer(
             accessory!.assetFor(view),
             tint: accessory!.skinTinted ? skinTone : null,
-          ),
-        if (photo != null)
+          );
+    final mouthLayer = MouthLayer(style: mouth, color: mouthColor, view: view);
+    final backHair = includeBackHair ? hair?.backAssetFor(view) : null;
+    return Stack(
+      children: [
+        // La parte de atrás del cabello va detrás de la cabeza.
+        if (backHair != null) CharacterLayer(backHair, tint: hairTint),
+        CharacterLayer(BodyPart.cabeza.fillAsset, tint: skinTone),
+        if (!back && photo == null && !mouth.overOutline) mouthLayer,
+        CharacterLayer(BodyPart.cabeza.outlineAsset),
+        if (back)
+          const SizedBox.shrink()
+        else if (photo != null)
           FacePhotoLayer(photo: photo)
         else ...[
           EyesLayer(style: eyes, color: eyeColor, view: view),
           if (mouth.overOutline) mouthLayer,
         ],
+        // De frente y de lado el cabello va sobre la cara y los accesorios
+        // sobre el cabello. De espalda es al revés: el cabello cubre toda la
+        // nuca y el accesorio queda debajo.
+        if (back && accessoryLayer != null) accessoryLayer,
+        if (hair != null) CharacterLayer(hair!.assetFor(view), tint: hairTint),
+        if (!back && accessoryLayer != null) accessoryLayer,
       ],
     );
   }

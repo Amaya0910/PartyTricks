@@ -33,6 +33,8 @@ class CosmeticOddsDialog extends ConsumerWidget {
       ownedEyes: profile?.ownedEyes ?? const {},
       ownedMouths: profile?.ownedMouths ?? const {},
       ownedShirts: profile?.ownedShirts ?? const {},
+      ownedPants: profile?.ownedPants ?? const {},
+      ownedHairs: profile?.ownedHairs ?? const {},
       ownedAccessories: profile?.ownedAccessories ?? const {},
     );
 

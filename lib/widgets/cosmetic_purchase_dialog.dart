@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/controllers/shop_controller.dart';
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/character_look.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
@@ -71,6 +73,8 @@ class CosmeticPurchaseDialog extends ConsumerStatefulWidget {
       EyeStyle eyes => look.copyWith(eyes: eyes),
       MouthStyle mouth => look.copyWith(mouth: mouth),
       ShirtStyle shirt => look.copyWith(shirt: shirt),
+      PantsStyle pants => look.copyWith(pants: pants),
+      HairStyle hair => look.copyWith(hair: hair),
       AccessoryStyle accessory => look.copyWith(accessory: accessory),
       _ => look,
     };
@@ -81,6 +85,8 @@ class CosmeticPurchaseDialog extends ConsumerStatefulWidget {
       EyeStyle eyes => shop.buyEyes(eyes),
       MouthStyle mouth => shop.buyMouth(mouth),
       ShirtStyle shirt => shop.buyShirt(shirt),
+      PantsStyle pants => shop.buyPants(pants),
+      HairStyle hair => shop.buyHair(hair),
       AccessoryStyle accessory => shop.buyAccessory(accessory),
       _ => throw ArgumentError('Cosmético desconocido: $cosmetic'),
     };
