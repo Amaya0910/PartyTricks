@@ -695,10 +695,46 @@ service cloud.firestore {
     // Amigos, chat e invitaciones (D-22)
     // ---------------------------------------------------------------------
 
+    // Campos del perfil público (PublicProfile.toMap). Si se agrega uno en la
+    // app, hay que agregarlo aquí. Ya están los de las ramas en curso
+    // (camisa, accesorio y cabello).
+    function publicProfileKeys() {
+      return ['username', 'friendCode', 'experience', 'photoUrl', 'skinTone',
+              'eyes', 'eyeColor', 'mouth', 'mouthColor', 'shirt', 'accessory',
+              'hair', 'hairColor', 'avatarColor', 'facePhoto'];
+    }
+
+    // Foto de perfil: nada, o una foto de Google por HTTPS (H-03). Es la
+    // misma lista de lib/services/security/trusted_photo_url.dart.
+    function photoUrlOk(data) {
+      return !('photoUrl' in data) || data.photoUrl == null
+        || (data.photoUrl is string && data.photoUrl.size() <= 2048
+            && data.photoUrl.matches('^https://lh3[.]googleusercontent[.]com/[A-Za-z0-9_=./-]+$'));
+    }
+
+    // El perfil público lo escribe su dueño, pero no puede inventar (H-04):
+    // el nombre tiene que ser el que reservó, el código de amistad el suyo y
+    // la XP la de su perfil privado.
+    function publicProfileOk(uid, data) {
+      let reservation = /databases/$(database)/documents/usernames/$(data.username.lower());
+      let code = /databases/$(database)/documents/friendCodes/$(data.friendCode);
+      let owner = /databases/$(database)/documents/users/$(uid);
+      return data.keys().hasOnly(publicProfileKeys())
+        && data.username is string
+        && exists(reservation) && get(reservation).data.uid == uid
+        && data.friendCode is string
+        && exists(code) && get(code).data.uid == uid
+        && data.experience == get(owner).data.get('experience', 0)
+        && photoUrlOk(data)
+        && facePhotoOk(data);
+    }
+
     // Lo que ven los demás: sin correo.
     match /publicProfiles/{uid} {
       allow read: if signedIn();
-      allow write: if isUser(uid) && facePhotoOk(request.resource.data);
+      allow create, update: if isUser(uid)
+        && publicProfileOk(uid, request.resource.data);
+      allow delete: if isUser(uid);
     }
 
     // Solicitudes y amistades. "get" va por id (así se puede leer aunque
