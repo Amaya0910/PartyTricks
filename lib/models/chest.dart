@@ -1,17 +1,47 @@
+import 'package:party_tricks/models/accessory_style.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
+import 'package:party_tricks/models/shop_cosmetic.dart';
 
 /// Premio que puede salir de un cofre.
 enum ChestOutcome { cosmetic, nothing, coins, dice }
 
 /// Lo que ganó el jugador al abrir un cofre. Si el premio es un cosmético,
-/// trae [eyes] o [mouth] (nunca los dos).
+/// trae uno solo de [eyes], [mouth], [shirt] o [accessory].
 class ChestPrize {
-  const ChestPrize(this.outcome, {this.eyes, this.mouth});
+  const ChestPrize(
+    this.outcome, {
+    this.eyes,
+    this.mouth,
+    this.shirt,
+    this.accessory,
+  });
+
+  /// El premio con [cosmetic] (ojos, boca, camisa o accesorio).
+  factory ChestPrize.cosmetic(ShopCosmetic cosmetic) {
+    return ChestPrize(
+      ChestOutcome.cosmetic,
+      eyes: cosmetic is EyeStyle ? cosmetic : null,
+      mouth: cosmetic is MouthStyle ? cosmetic : null,
+      shirt: cosmetic is ShirtStyle ? cosmetic : null,
+      accessory: cosmetic is AccessoryStyle ? cosmetic : null,
+    );
+  }
 
   final ChestOutcome outcome;
   final EyeStyle? eyes;
   final MouthStyle? mouth;
+  final ShirtStyle? shirt;
+  final AccessoryStyle? accessory;
+
+  /// El cosmético ganado, sea cual sea. Null si el premio no es un cosmético.
+  ShopCosmetic? get cosmetic {
+    if (eyes != null) return eyes;
+    if (mouth != null) return mouth;
+    if (shirt != null) return shirt;
+    return accessory;
+  }
 }
 
 /// Monedas que da el premio "100 Monedas".

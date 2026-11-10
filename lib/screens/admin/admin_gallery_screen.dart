@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/screens/admin/admin_page.dart';
 import 'package:party_tricks/screens/admin/admin_samples.dart';
+import 'package:party_tricks/screens/admin/animation_preview_screen.dart';
 import 'package:party_tricks/screens/admin/minigame_practice_screen.dart';
 import 'package:party_tricks/screens/results_screen.dart';
 import 'package:party_tricks/theme/app_colors.dart';
@@ -72,6 +73,12 @@ class AdminGalleryScreen extends StatelessWidget {
               label: 'Tonos de piel',
               icon: Icons.palette,
               onTap: () => open(const _CharacterPreview()),
+            ),
+            SettingsTile(
+              label: 'Animaciones',
+              icon: Icons.directions_walk,
+              onTap: () =>
+                  Navigator.of(context).push(AnimationPreviewScreen.route()),
             ),
           ],
         ),

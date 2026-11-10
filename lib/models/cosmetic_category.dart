@@ -8,7 +8,8 @@ enum CosmeticCategory {
   hair('Cabello', 'Cabello', 'Aún no tienes cabellos'),
   nose('Nariz', 'Nariz', 'Aún no tienes ninguna nariz'),
   eyes('Ojos', 'Ojo', 'Aún no tienes ojos'),
-  mouth('Boca', 'Boca', 'Aún no tienes ninguna boca');
+  mouth('Boca', 'Boca', 'Aún no tienes ninguna boca'),
+  accessory('Accesorios', 'Accesorio', 'Aún no tienes accesorios');
 
   const CosmeticCategory(this.label, this.itemName, this.emptyMessage);
 

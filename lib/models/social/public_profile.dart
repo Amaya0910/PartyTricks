@@ -1,9 +1,11 @@
+import 'package:party_tricks/models/accessory_style.dart';
 import 'package:party_tricks/models/avatar_color.dart';
 import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 
 /// Datos del jugador que pueden ver los demás (Cloud Firestore,
@@ -24,6 +26,8 @@ class PublicProfile {
     this.eyeColor = EyeColor.defaultIndex,
     this.mouth = MouthStyle.defaultStyle,
     this.mouthColor = MouthColor.defaultIndex,
+    this.shirt = ShirtStyle.defaultStyle,
+    this.accessory,
     this.avatarColor = AvatarColor.defaultIndex,
     this.facePhoto,
   });
@@ -45,6 +49,10 @@ class PublicProfile {
   final int eyeColor;
   final MouthStyle mouth;
   final int mouthColor;
+
+  /// Camisa y accesorio puestos (el accesorio se ve en la foto de perfil).
+  final ShirtStyle shirt;
+  final AccessoryStyle? accessory;
   final int avatarColor;
 
   /// La foto de la cara del jugador, solo si la está usando: con ella se
@@ -69,6 +77,8 @@ class PublicProfile {
       mouthColor: MouthColor.clamp(
         (map['mouthColor'] as num?)?.toInt() ?? MouthColor.defaultIndex,
       ),
+      shirt: ShirtStyle.fromId((map['shirt'] as num?)?.toInt()),
+      accessory: AccessoryStyle.fromId((map['accessory'] as num?)?.toInt()),
       avatarColor: AvatarColor.clamp(
         (map['avatarColor'] as num?)?.toInt() ?? AvatarColor.defaultIndex,
       ),
@@ -86,6 +96,8 @@ class PublicProfile {
     'eyeColor': eyeColor,
     'mouth': mouth.number,
     'mouthColor': mouthColor,
+    'shirt': shirt.id,
+    'accessory': accessory?.id ?? 0,
     'avatarColor': avatarColor,
     'facePhoto': facePhoto?.base64,
   };
@@ -102,6 +114,8 @@ class PublicProfile {
         eyeColor == other.eyeColor &&
         mouth == other.mouth &&
         mouthColor == other.mouthColor &&
+        shirt == other.shirt &&
+        accessory == other.accessory &&
         avatarColor == other.avatarColor &&
         facePhoto == other.facePhoto;
   }

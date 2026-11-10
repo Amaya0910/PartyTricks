@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:party_tricks/models/character_look.dart';
 import 'package:party_tricks/models/map/board_map.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
@@ -9,15 +10,17 @@ import 'package:party_tricks/services/map/board_walk.dart';
 import 'package:party_tricks/services/map/coin_tracker.dart';
 import 'package:party_tricks/services/map/map_assets.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/character/animated_character.dart';
+import 'package:party_tricks/widgets/character/walking_character.dart';
 import 'package:party_tricks/widgets/map/map_scenery.dart';
-import 'package:party_tricks/widgets/party_character.dart';
 
 /// El mapa dibujado de la partida.
 ///
 /// - Se puede mover y hacer zoom; la cámara sigue a tu personaje cuando
 ///   camina.
-/// - Se ven todos los jugadores. Avanzan saltando de casilla en casilla y,
-///   si comparten casilla, se ponen uno al lado del otro.
+/// - Se ven todos los jugadores. Avanzan caminando de casilla en casilla
+///   (de lado, mirando hacia donde van) y, quietos, se ven de frente. Si
+///   comparten casilla, se ponen uno al lado del otro.
 /// - Las casillas positivas tienen una moneda. Cuando tu personaje pasa por
 ///   ahí, crece, sube y desaparece solo para ti; vuelve en la siguiente
 ///   ronda.
@@ -34,6 +37,7 @@ class BoardMapView extends StatefulWidget {
     required this.state,
     required this.myId,
     required this.onChooseBranch,
+    this.looks = const {},
   });
 
   final BoardMap map;
@@ -45,6 +49,10 @@ class BoardMapView extends StatefulWidget {
   /// 0 = la primera casilla de `next` (camino principal), 1 = la segunda.
   final void Function(int branch) onChooseBranch;
 
+  /// Cómo se ve cada jugador (por id). Al que no esté se le dibuja con el
+  /// aspecto de quien no ha elegido nada.
+  final Map<String, CharacterLook> looks;
+
   @override
   State<BoardMapView> createState() => _BoardMapViewState();
 }
@@ -54,11 +62,17 @@ class _BoardMapViewState extends State<BoardMapView>
   /// Ancho del mundo que se ve en la pantalla al empezar (unas 4 casillas).
   /// Más grande = más lejos; desde unos 2700 ya se ve casi todo el mapa.
   static const _visibleWidth = 1100.0;
-  static const _hopDuration = Duration(milliseconds: 320);
-  static const _hopHeight = 70.0;
+
+  /// Lo que tarda en caminar de una casilla a la siguiente: una vuelta
+  /// completa de la caminata (dos pasos).
+  static const _stepDuration = Duration(milliseconds: 700);
 
   /// Alto del personaje en el mapa (arte_imagenes.md, sección 7).
   static const _characterHeight = 210.0;
+  static const _characterAspect = 2 / 3;
+
+  /// Dónde están los pies en el lienzo del personaje, de 0 (arriba) a 1.
+  static const _feetLine = 697 / 768;
 
   /// Separación entre jugadores que están en la misma casilla.
   static const _sideBySide = 120.0;
@@ -154,7 +168,7 @@ class _BoardMapViewState extends State<BoardMapView>
         () => _Walker(
           start: position,
           anchorOf: _anchorOf,
-          controller: AnimationController(vsync: this, duration: _hopDuration),
+          controller: AnimationController(vsync: this, duration: _stepDuration),
           onHop: id == widget.myId ? _followMe : null,
           onArrive: id == widget.myId ? _collectCoin : null,
           onIdle: () => setState(() {}), // Para mostrar las flechas.
@@ -385,20 +399,22 @@ class _BoardMapViewState extends State<BoardMapView>
           animation: moving,
           builder: (context, child) {
             final feet = _feetOf(id);
-            const width = _characterHeight * PartyCharacter.aspectRatio;
+            const width = _characterHeight * _characterAspect;
             return Positioned(
               left: feet.dx - width / 2,
-              top: feet.dy - _characterHeight,
+              // Los pies del dibujo quedan un poco arriba del borde del
+              // lienzo.
+              top: feet.dy - _characterHeight * _feetLine,
               width: width,
               height: _characterHeight,
-              child: Transform(
-                alignment: Alignment.bottomCenter,
-                transform: _walkers[id]!.stretch,
-                child: child,
-              ),
+              child: child!,
             );
           },
-          child: PartyCharacter(color: _colorOf(id), height: _characterHeight),
+          child: _Figure(
+            walker: _walkers[id]!,
+            look: widget.looks[id] ?? CharacterLook.standard,
+            color: _colorOf(id),
+          ),
         ),
     ];
   }
@@ -530,7 +546,7 @@ class _BoardMapViewState extends State<BoardMapView>
   }
 }
 
-/// Lleva a un jugador de casilla en casilla con un saltito.
+/// Lleva a un jugador de casilla en casilla, caminando.
 class _Walker {
   _Walker({
     required int start,
@@ -567,6 +583,9 @@ class _Walker {
   Offset _from;
   Offset _to;
 
+  /// Hacia dónde mira: a la derecha o a la izquierda según su último paso.
+  bool faceRight = true;
+
   bool get walking => controller.isAnimating || _pending.isNotEmpty;
 
   /// Agrega las casillas hasta [target] y empieza a caminar si estaba quieto.
@@ -585,32 +604,72 @@ class _Walker {
     final next = _pending.removeAt(0);
     _from = anchorOf(tile);
     _to = anchorOf(next);
+    if (_to.dx != _from.dx) faceRight = _to.dx > _from.dx;
     tile = next;
     controller.forward(from: 0);
   }
 
-  /// Dónde van los pies ahora, con el saltito entre casillas.
-  Offset get position {
-    final t = Curves.easeInOut.transform(controller.value);
-    final base = Offset.lerp(_from, _to, t)!;
-    return base.translate(
-      0,
-      -sin(pi * controller.value) * _BoardMapViewState._hopHeight,
-    );
-  }
-
-  /// Se estira en el aire y se aplasta un poco al caer, para que el salto
-  /// se note. Quieto no cambia nada.
-  Matrix4 get stretch {
-    final t = controller.value;
-    if (!controller.isAnimating || t == 0) return Matrix4.identity();
-    final air = sin(pi * t);
-    final landing = t > 0.85 ? sin(pi * (t - 0.85) / 0.15) : 0.0;
-    final scaleY = 1 + 0.08 * air - 0.12 * landing;
-    return Matrix4.diagonal3Values(2 - scaleY, scaleY, 1);
-  }
+  /// Dónde van los pies ahora. El paso es parejo (sin acelerar ni frenar en
+  /// cada casilla) para que se vea un solo caminar seguido y no coincida con
+  /// los pasos de las piernas.
+  Offset get position => Offset.lerp(_from, _to, controller.value)!;
 
   void dispose() => controller.dispose();
+}
+
+/// El personaje de un jugador en el mapa: de frente y respirando cuando está
+/// quieto, y de lado, caminando, mientras avanza de casilla en casilla.
+/// Debajo lleva una sombra con el color del jugador para distinguirlos.
+class _Figure extends StatelessWidget {
+  const _Figure({
+    required this.walker,
+    required this.look,
+    required this.color,
+  });
+
+  final _Walker walker;
+  final CharacterLook look;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    // Se arman una vez; abajo solo se elige cuál se muestra.
+    final idle = AnimatedCharacter.fromLook(look);
+    final walking = WalkingCharacter(
+      phase: walker.controller,
+      look: look,
+      faceRight: walker.faceRight,
+    );
+    return Stack(
+      children: [
+        Positioned(
+          left: 0,
+          right: 0,
+          top:
+              _BoardMapViewState._characterHeight *
+                  _BoardMapViewState._feetLine -
+              9,
+          height: 18,
+          child: FractionallySizedBox(
+            widthFactor: 0.8,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.characterShadow,
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: color, width: 3),
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: AnimatedBuilder(
+            animation: walker.controller,
+            builder: (context, _) => walker.walking ? walking : idle,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// Moneda flotando sobre una casilla positiva.

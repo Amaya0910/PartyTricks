@@ -4,7 +4,8 @@ import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 
 /// El aspecto del personaje vive en el perfil (`users/{uid}`): campos
-/// `skinTone`, `eyes`, `eyeColor`, `mouth` y `mouthColor`.
+/// `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor`, `shirt` y
+/// `accessory`.
 class FirebaseCharacterService implements CharacterService {
   FirebaseCharacterService(this._firestore);
 
@@ -29,6 +30,14 @@ class FirebaseCharacterService implements CharacterService {
   @override
   Future<void> setMouthColor({required String uid, required int mouthColor}) =>
       _update(uid, 'mouthColor', mouthColor, 'No se pudo guardar el color.');
+
+  @override
+  Future<void> setShirt({required String uid, required int shirt}) =>
+      _update(uid, 'shirt', shirt, 'No se pudo guardar la camisa.');
+
+  @override
+  Future<void> setAccessory({required String uid, required int accessory}) =>
+      _update(uid, 'accessory', accessory, 'No se pudo guardar el accesorio.');
 
   @override
   Future<void> setAvatarColor({

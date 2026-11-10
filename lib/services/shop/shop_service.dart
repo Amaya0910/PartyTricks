@@ -1,6 +1,8 @@
+import 'package:party_tricks/models/accessory_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
 
 /// Error al comprar, con un mensaje para mostrar.
 class ShopException implements Exception {
@@ -29,4 +31,17 @@ abstract class ShopService {
   /// Lanza [ShopException] si ya la tiene, si es gratis, si no alcanzan las
   /// monedas o si algo falla.
   Future<void> buyMouth({required String uid, required MouthStyle mouth});
+
+  /// Cobra las monedas de [shirt] y la agrega a las camisas del jugador.
+  /// Lanza [ShopException] si ya la tiene, si es gratis, si no alcanzan las
+  /// monedas o si algo falla.
+  Future<void> buyShirt({required String uid, required ShirtStyle shirt});
+
+  /// Cobra las monedas de [accessory] y lo agrega a los accesorios del
+  /// jugador. Lanza [ShopException] si ya lo tiene, si no alcanzan las
+  /// monedas o si algo falla.
+  Future<void> buyAccessory({
+    required String uid,
+    required AccessoryStyle accessory,
+  });
 }

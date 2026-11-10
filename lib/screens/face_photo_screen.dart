@@ -2,14 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:party_tricks/controllers/eyes_controller.dart';
+import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/controllers/face_photo_controller.dart';
-import 'package:party_tricks/controllers/mouth_controller.dart';
-import 'package:party_tricks/controllers/skin_tone_controller.dart';
-import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/face_photo.dart';
-import 'package:party_tricks/models/mouth_color.dart';
-import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/app_background.dart';
@@ -307,14 +302,7 @@ class _CharacterScene extends ConsumerWidget {
                     ),
                   ),
                 ),
-                AnimatedCharacter(
-                  skinTone: SkinTone.colorOf(ref.watch(skinToneProvider)),
-                  eyes: ref.watch(eyeStyleProvider),
-                  eyeColor: EyeColor.colorOf(ref.watch(eyeColorProvider)),
-                  mouth: ref.watch(mouthStyleProvider),
-                  mouthColor: MouthColor.colorOf(ref.watch(mouthColorProvider)),
-                  facePhoto: ref.watch(facePhotoProvider),
-                ),
+                AnimatedCharacter.fromLook(ref.watch(characterLookProvider)),
               ],
             ),
           ),

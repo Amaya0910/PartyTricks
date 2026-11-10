@@ -56,11 +56,12 @@ service cloud.firestore {
     // Cartera del perfil (D-28)
     // ---------------------------------------------------------------------
 
-    // También ownedEyes (D-29) y ownedMouths (D-30): los ojos y las bocas
-    // comprados solo cambian al comprar.
+    // También ownedEyes (D-29), ownedMouths (D-30), ownedShirts y
+    // ownedAccessories (D-33): los cosméticos comprados solo cambian al
+    // comprar o al abrir un cofre.
     function walletKeys() {
       return ['coins', 'diamonds', 'extraDice', 'experience', 'ownedEyes',
-              'ownedMouths'];
+              'ownedMouths', 'ownedShirts', 'ownedAccessories'];
     }
 
     function ownedEyesBefore() {
@@ -87,6 +88,57 @@ service cloud.firestore {
       return ownedMouthsAfter() == ownedMouthsBefore();
     }
 
+    function ownedShirtsBefore() {
+      return resource.data.get('ownedShirts', []);
+    }
+
+    function ownedShirtsAfter() {
+      return request.resource.data.get('ownedShirts', []);
+    }
+
+    function ownedShirtsUnchanged() {
+      return ownedShirtsAfter() == ownedShirtsBefore();
+    }
+
+    function ownedAccessoriesBefore() {
+      return resource.data.get('ownedAccessories', []);
+    }
+
+    function ownedAccessoriesAfter() {
+      return request.resource.data.get('ownedAccessories', []);
+    }
+
+    function ownedAccessoriesUnchanged() {
+      return ownedAccessoriesAfter() == ownedAccessoriesBefore();
+    }
+
+    // Ninguna de las listas de cosméticos cambia.
+    function noCosmeticChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedShirtsUnchanged() && ownedAccessoriesUnchanged();
+    }
+
+    // Solo cambia una de las listas: las otras tres quedan igual.
+    function onlyEyesChange() {
+      return ownedMouthsUnchanged() && ownedShirtsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyMouthsChange() {
+      return ownedEyesUnchanged() && ownedShirtsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyShirtsChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyAccessoriesChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedShirtsUnchanged();
+    }
+
     // Cuánto cambia [key] con esta escritura (lo que falta cuenta como 0).
     function delta(key) {
       return request.resource.data.get(key, 0) - resource.data.get(key, 0);
@@ -103,7 +155,9 @@ service cloud.firestore {
         && request.resource.data.get('extraDice', 0) == 0
         && request.resource.data.get('experience', 0) == 0
         && request.resource.data.get('ownedEyes', []).size() == 0
-        && request.resource.data.get('ownedMouths', []).size() == 0;
+        && request.resource.data.get('ownedMouths', []).size() == 0
+        && request.resource.data.get('ownedShirts', []).size() == 0
+        && request.resource.data.get('ownedAccessories', []).size() == 0;
     }
 
     // Compra de un cofre (D-18). Los precios (50, 100 y 150) y el premio de
@@ -115,13 +169,15 @@ service cloud.firestore {
       return (spent == 50 || spent == 100 || spent == 150)
         && request.resource.data.diamonds >= 0
         && delta('experience') == 0
-        && ((ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ((noCosmeticChange()
             && ((delta('coins') == 0 && delta('extraDice') == 0)
               || (delta('coins') == 100 && delta('extraDice') == 0)
               || (delta('coins') == 0 && delta('extraDice') == 1)))
           || (delta('coins') == 0 && delta('extraDice') == 0
-            && ((addsOneEyes() && ownedMouthsUnchanged())
-              || (addsOneMouth() && ownedEyesUnchanged()))));
+            && ((addsOneEyes() && onlyEyesChange())
+              || (addsOneMouth() && onlyMouthsChange())
+              || (addsOneShirt() && onlyShirtsChange())
+              || (addsOneAccessory() && onlyAccessoriesChange()))));
     }
 
     // El cofre puede regalar un cosmético (D-31): se agrega exactamente uno
@@ -142,6 +198,23 @@ service cloud.firestore {
         && mouthPrice(added[0]) > 0;
     }
 
+    function addsOneShirt() {
+      let added = ownedShirtsAfter().removeAll(ownedShirtsBefore());
+      return ownedShirtsAfter().hasAll(ownedShirtsBefore())
+        && added.size() == 1
+        && ownedShirtsAfter().size() == ownedShirtsBefore().size() + 1
+        && shirtPrice(added[0]) > 0;
+    }
+
+    function addsOneAccessory() {
+      let added = ownedAccessoriesAfter().removeAll(ownedAccessoriesBefore());
+      return ownedAccessoriesAfter().hasAll(ownedAccessoriesBefore())
+        && added.size() == 1
+        && ownedAccessoriesAfter().size()
+          == ownedAccessoriesBefore().size() + 1
+        && accessoryPrice(added[0]) > 0;
+    }
+
     // Premios de una partida: en la misma transacción se crea la marca
     // stats/{uid}/matches/{id} (así se cobra una sola vez) y el perfil
     // anota ese id en lastRewardMatch. Lo que se suma tiene que ser
@@ -154,8 +227,7 @@ service cloud.firestore {
         && !exists(marker) && existsAfter(marker)
         && exists(record)
         && delta('extraDice') == 0
-        && ownedEyesUnchanged()
-        && ownedMouthsUnchanged()
+        && noCosmeticChange()
         && rewardMatches(get(record).data.players, uid);
     }
 
@@ -191,7 +263,7 @@ service cloud.firestore {
         && added.size() == 1
         && ownedEyesAfter().size() == ownedEyesBefore().size() + 1
         && eyesPrice(added[0]) > 0
-        && ownedMouthsUnchanged()
+        && onlyEyesChange()
         && delta('coins') == -eyesPrice(added[0])
         && request.resource.data.coins >= 0
         && delta('diamonds') == 0
@@ -240,7 +312,7 @@ service cloud.firestore {
         && added.size() == 1
         && ownedMouthsAfter().size() == ownedMouthsBefore().size() + 1
         && mouthPrice(added[0]) > 0
-        && ownedEyesUnchanged()
+        && onlyMouthsChange()
         && delta('coins') == -mouthPrice(added[0])
         && request.resource.data.coins >= 0
         && delta('diamonds') == 0
@@ -264,6 +336,88 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['mouth'])
         || mouthOwned();
+    }
+
+    // Precio en monedas de cada camisa de la Tienda (D-33). Son los de
+    // lib/models/shirt_style.dart: si cambian allá, hay que cambiarlos aquí.
+    // La camisa 1 (azul, la de inicio) es gratis y no se compra; sus otros
+    // colores son del 101 al 108.
+    function shirtPrice(id) {
+      return {'101': 30, '102': 30, '103': 30, '104': 30, '105': 30,
+              '106': 30, '107': 30, '108': 30, '2': 45, '3': 60, '4': 60,
+              '5': 75, '6': 45, '7': 45, '8': 60, '9': 60, '10': 75,
+              '11': 75, '12': 100}.get(string(id), 0);
+    }
+
+    // Compra de una camisa: se agrega exactamente una que no tenía (y que se
+    // vende) y se resta exactamente su precio. Nada más cambia.
+    function isShirtPurchase() {
+      let added = ownedShirtsAfter().removeAll(ownedShirtsBefore());
+      return ownedShirtsAfter().hasAll(ownedShirtsBefore())
+        && added.size() == 1
+        && ownedShirtsAfter().size() == ownedShirtsBefore().size() + 1
+        && shirtPrice(added[0]) > 0
+        && onlyShirtsChange()
+        && delta('coins') == -shirtPrice(added[0])
+        && request.resource.data.coins >= 0
+        && delta('diamonds') == 0
+        && delta('extraDice') == 0
+        && delta('experience') == 0;
+    }
+
+    // La camisa que se pone el jugador tiene que ser la de inicio o comprada.
+    function shirtOwned() {
+      return request.resource.data.shirt == 1
+        || request.resource.data.shirt in ownedShirtsAfter();
+    }
+
+    function shirtAllowedOnCreate() {
+      return !request.resource.data.keys().hasAny(['shirt']) || shirtOwned();
+    }
+
+    function shirtChangeAllowed() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['shirt'])
+        || shirtOwned();
+    }
+
+    // Precio en monedas de cada accesorio de la Tienda (D-33). Son los de
+    // lib/models/accessory_style.dart: si cambian allá, hay que cambiarlos
+    // aquí. Ninguno es gratis.
+    function accessoryPrice(id) {
+      return {'1': 75, '2': 100}.get(string(id), 0);
+    }
+
+    function isAccessoryPurchase() {
+      let added = ownedAccessoriesAfter().removeAll(ownedAccessoriesBefore());
+      return ownedAccessoriesAfter().hasAll(ownedAccessoriesBefore())
+        && added.size() == 1
+        && ownedAccessoriesAfter().size()
+          == ownedAccessoriesBefore().size() + 1
+        && accessoryPrice(added[0]) > 0
+        && onlyAccessoriesChange()
+        && delta('coins') == -accessoryPrice(added[0])
+        && request.resource.data.coins >= 0
+        && delta('diamonds') == 0
+        && delta('extraDice') == 0
+        && delta('experience') == 0;
+    }
+
+    // El accesorio que se pone el jugador es ninguno (0) o uno comprado.
+    function accessoryOwned() {
+      return request.resource.data.accessory == 0
+        || request.resource.data.accessory in ownedAccessoriesAfter();
+    }
+
+    function accessoryAllowedOnCreate() {
+      return !request.resource.data.keys().hasAny(['accessory'])
+        || accessoryOwned();
+    }
+
+    function accessoryChangeAllowed() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['accessory'])
+        || accessoryOwned();
     }
 
     // Topes de lo que una partida puede dar a cada jugador. La XP máxima
@@ -311,11 +465,14 @@ service cloud.firestore {
       allow read: if isUser(uid) || isAdmin();
       allow create: if isUser(uid) && walletIsEmpty()
         && eyesAllowedOnCreate() && mouthAllowedOnCreate()
+        && shirtAllowedOnCreate() && accessoryAllowedOnCreate()
         && facePhotoOk(request.resource.data);
       allow update: if isUser(uid) && eyesChangeAllowed()
-        && mouthChangeAllowed() && facePhotoOk(request.resource.data)
+        && mouthChangeAllowed() && shirtChangeAllowed()
+        && accessoryChangeAllowed() && facePhotoOk(request.resource.data)
         && (!touchesWallet() || isAdmin() || isChestPurchase()
-            || isMatchReward(uid) || isEyesPurchase() || isMouthPurchase());
+            || isMatchReward(uid) || isEyesPurchase() || isMouthPurchase()
+            || isShirtPurchase() || isAccessoryPurchase());
       allow delete: if isUser(uid);
     }
 
@@ -430,12 +587,13 @@ service cloud.firestore {
     }
 
     match /invites/{inviteId} {
-      // El invitado ve sus invitaciones y solo puede marcarlas como vistas.
+      // El invitado ve sus invitaciones y solo puede marcarlas como vistas o
+      // rechazadas (el botón Rechazar de la notificación).
       allow read: if signedIn() && resource.data.toUid == request.auth.uid;
       allow update: if signedIn()
         && resource.data.toUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['seen']);
+             .hasOnly(['seen', 'declined']);
 
       // Solo a amigos que no te bloquearon.
       allow create: if signedIn()
@@ -446,6 +604,21 @@ service cloud.firestore {
                ? request.auth.uid + '_' + request.resource.data.toUid
                : request.resource.data.toUid + '_' + request.auth.uid)
         && !blockedBy(request.resource.data.toUid);
+    }
+
+    // Notificaciones: cada celular guarda aquí su código de Firebase Cloud
+    // Messaging con el uid de su dueño. Solo se puede escribir a nombre
+    // propio y nadie lo lee desde la app: lo lee la Cloud Function que manda
+    // los avisos (las funciones no pasan por estas reglas).
+    match /fcmTokens/{token} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'platform', 'updatedAt']);
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'platform', 'updatedAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
     // Bloqueos: el id es "bloqueador_bloqueado".

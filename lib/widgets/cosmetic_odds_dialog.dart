@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:party_tricks/controllers/eyes_controller.dart';
-import 'package:party_tricks/controllers/mouth_controller.dart';
-import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/models/chest.dart';
-import 'package:party_tricks/models/eye_color.dart';
-import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/rarity.dart';
-import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/shop/cosmetic_picker.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
 import 'package:party_tricks/widgets/chest_visuals.dart';
-import 'package:party_tricks/widgets/eyes_picker.dart';
-import 'package:party_tricks/widgets/mouth_picker.dart';
+import 'package:party_tricks/widgets/cosmetic_preview.dart';
 import 'package:party_tricks/widgets/rarity_badge.dart';
 
 /// Ventana con la probabilidad de cada cosmético cuando un cofre da un
@@ -39,11 +32,9 @@ class CosmeticOddsDialog extends ConsumerWidget {
     final chances = const CosmeticPicker().chances(
       ownedEyes: profile?.ownedEyes ?? const {},
       ownedMouths: profile?.ownedMouths ?? const {},
+      ownedShirts: profile?.ownedShirts ?? const {},
+      ownedAccessories: profile?.ownedAccessories ?? const {},
     );
-    final eyeColor = EyeColor.colorOf(ref.watch(eyeColorProvider));
-    final skin = SkinTone.colorOf(ref.watch(skinToneProvider));
-    final mouthColor =
-        MouthColor.colorOf(ref.watch(mouthColorProvider)) ?? skin;
 
     return DialogCard(
       title: 'Cosméticos',
@@ -93,15 +84,10 @@ class CosmeticOddsDialog extends ConsumerWidget {
                   shrinkWrap: true,
                   children: [
                     for (final rarity in Rarity.values.reversed)
-                      ..._group(
-                        rarity,
-                        [
-                          for (final c in chances)
-                            if (c.rarity == rarity) c,
-                        ],
-                        eyeColor,
-                        mouthColor,
-                      ),
+                      ..._group(rarity, [
+                        for (final c in chances)
+                          if (c.rarity == rarity) c,
+                      ]),
                   ],
                 ),
               ),
@@ -129,12 +115,7 @@ class CosmeticOddsDialog extends ConsumerWidget {
     );
   }
 
-  List<Widget> _group(
-    Rarity rarity,
-    List<CosmeticChance> group,
-    Color eyeColor,
-    Color mouthColor,
-  ) {
+  List<Widget> _group(Rarity rarity, List<CosmeticChance> group) {
     if (group.isEmpty) return const [];
     final total = group.fold<double>(0, (sum, c) => sum + c.percent);
     return [
@@ -159,11 +140,7 @@ class CosmeticOddsDialog extends ConsumerWidget {
       for (final c in group)
         Padding(
           padding: const EdgeInsets.only(bottom: 6),
-          child: _OddsTile(
-            chance: c,
-            eyeColor: eyeColor,
-            mouthColor: mouthColor,
-          ),
+          child: _OddsTile(chance: c),
         ),
     ];
   }
@@ -175,20 +152,12 @@ class CosmeticOddsDialog extends ConsumerWidget {
 }
 
 class _OddsTile extends StatelessWidget {
-  const _OddsTile({
-    required this.chance,
-    required this.eyeColor,
-    required this.mouthColor,
-  });
+  const _OddsTile({required this.chance});
 
   final CosmeticChance chance;
-  final Color eyeColor;
-  final Color mouthColor;
 
   @override
   Widget build(BuildContext context) {
-    final eyes = chance.eyes;
-    final mouth = chance.mouth;
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -201,9 +170,7 @@ class _OddsTile extends StatelessWidget {
         children: [
           AspectRatio(
             aspectRatio: 1.6,
-            child: eyes != null
-                ? EyesThumbnail(style: eyes, color: eyeColor)
-                : MouthThumbnail(style: mouth!, color: mouthColor),
+            child: CosmeticPreview(chance.cosmetic),
           ),
           const SizedBox(width: 10),
           Expanded(

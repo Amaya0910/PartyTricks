@@ -1,9 +1,12 @@
+import 'package:party_tricks/models/character_view.dart';
+import 'package:party_tricks/models/cosmetic_category.dart';
 import 'package:party_tricks/models/rarity.dart';
+import 'package:party_tricks/models/shop_cosmetic.dart';
 
 /// Ojos del personaje. En el perfil se guarda solo el [number].
 ///
 /// Cada ojo es un PNG del mismo lienzo que el personaje (512x768) en
-/// assets/images/personaje/ojos/. Algunos vienen en dos capas:
+/// assets/images/personaje/frente/ojos/. Algunos vienen en dos capas:
 /// - `ojo_<n>_relleno.png`: fondo del ojo, no se tiñe.
 /// - `ojo_<n>_linea.png`: contorno; sus partes blancas toman el color.
 ///
@@ -14,7 +17,7 @@ import 'package:party_tricks/models/rarity.dart';
 /// con monedas en la Tienda. Los precios también están en
 /// `firestore.rules` (`eyesPrice`, D-29): si cambian aquí, hay que
 /// cambiarlos allá o las compras se rechazarán.
-enum EyeStyle {
+enum EyeStyle implements ShopCosmetic {
   ojo1(
     1,
     'Ojos Pequeñitos',
@@ -34,7 +37,6 @@ enum EyeStyle {
     4,
     'Ojos Somnolientos',
     'Listos para una siesta',
-    layered: true,
     price: 45,
     rarity: Rarity.uncommon,
   ),
@@ -91,33 +93,51 @@ enum EyeStyle {
   final int number;
 
   /// Nombre y descripción para la Tienda.
+  @override
   final String title;
+  @override
   final String description;
 
   /// Si viene en dos capas (línea + relleno).
   final bool layered;
 
   /// Precio en monedas. 0 si viene gratis con la cuenta.
+  @override
   final int price;
 
   /// Qué tan raro es: define con qué frecuencia sale en los cofres.
+  @override
   final Rarity rarity;
 
+  @override
+  CosmeticCategory get category => CosmeticCategory.eyes;
+
+  @override
+  int get id => number;
+
   /// Si lo tienen todos desde el inicio.
+  @override
   bool get isFree => price == 0;
 
   /// Ojos de quien todavía no ha elegido unos.
   static const EyeStyle defaultStyle = ojo7;
 
-  static const String _folder = 'assets/images/personaje/ojos';
+  static String _folder(CharacterView view) =>
+      'assets/images/personaje/${view.folder}/ojos';
 
   /// Capa que se tiñe con el color de ojos.
-  String get tintedAsset =>
-      layered ? '$_folder/ojo_${number}_linea.png' : '$_folder/ojo_$number.png';
+  String get tintedAsset => tintedAssetIn(CharacterView.frente);
 
   /// Capa de abajo, sin teñir. Null si el ojo es un solo PNG.
-  String? get fillAsset =>
-      layered ? '$_folder/ojo_${number}_relleno.png' : null;
+  String? get fillAsset => fillAssetIn(CharacterView.frente);
+
+  /// Lo mismo, vistos desde [view] (de frente o de lado).
+  String tintedAssetIn(CharacterView view) => layered
+      ? '${_folder(view)}/ojo_${number}_linea.png'
+      : '${_folder(view)}/ojo_$number.png';
+
+  String? fillAssetIn(CharacterView view) =>
+      layered ? '${_folder(view)}/ojo_${number}_relleno.png' : null;
 
   /// Busca el ojo por número (por si en Firestore queda un valor viejo o
   /// que ya no existe, devuelve [defaultStyle]).

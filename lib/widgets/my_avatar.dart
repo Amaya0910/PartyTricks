@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/accessory_controller.dart';
 import 'package:party_tricks/controllers/avatar_controller.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
 import 'package:party_tricks/controllers/face_photo_controller.dart';
@@ -22,6 +23,7 @@ class MyAvatar extends ConsumerWidget {
       eyeColor: ref.watch(eyeColorProvider),
       mouth: ref.watch(mouthStyleProvider),
       mouthColor: ref.watch(mouthColorProvider),
+      accessory: ref.watch(accessoryProvider),
       avatarColor: ref.watch(avatarColorProvider),
       facePhoto: ref.watch(facePhotoProvider),
       size: size,

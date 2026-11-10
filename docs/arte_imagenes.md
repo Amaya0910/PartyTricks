@@ -33,9 +33,10 @@ assets/
 │   ├── mapa/
 │   │   ├── piezas/                plataformas, marcas, tienda, flecha, puentes y textura del camino
 │   │   └── decoraciones/          flores, rocas, arbustos y árboles
-│   ├── personaje/                 capas del cuerpo: linea_<parte> y relleno_<parte> (sección 7)
-│   │   ├── ojos/                  11 ojos (sección 8)
-│   │   └── bocas/                 10 bocas (sección 8)
+│   ├── personaje/                 cabeza (linea_cabeza y relleno_cabeza) y las carpetas de abajo (sección 7)
+│   │   ├── frente/                cuerpo/  ojos/  bocas/  camisas/   (de frente: quieto)
+│   │   ├── lado/                  cuerpo/  ojos/  bocas/  camisas/   (de lado: caminando)
+│   │   └── accesorios/            orejas de ogro y gorguera de bufón (sección 8.2)
 │   ├── cosmeticos/                (pendiente) camisa/  pantalon/  zapatos/  cabello/  nariz/
 │   └── iconos/                    barra de navegación y marcador del jugador
 ├── maps/
@@ -185,7 +186,7 @@ Carpeta: `assets/images/personaje/`
 
 ### 8.1 Ojos y bocas (hechos)
 
-Carpetas: `assets/images/personaje/ojos/` y `assets/images/personaje/bocas/`. Son capas del mismo lienzo de 512 × 768 y se dibujan encima de la cabeza (se mueven con ella).
+Carpetas: `assets/images/personaje/frente/{ojos,bocas}/` y `assets/images/personaje/lado/{ojos,bocas}/` (la misma lista de archivos en las dos vistas). Son capas del mismo lienzo de 512 × 768 y se dibujan encima de la cabeza (se mueven con ella).
 
 | Hecho | Cosmético | Archivos |
 |---|---|---|
@@ -286,3 +287,18 @@ Los botones y los marcos se siguen haciendo con Flutter, porque ya respetan `App
 - [ ] ¿Qué es `AS.kra` (3072 × 3072, 79 capas)?
 - [ ] ¿El **contorno blanco tipo sticker** va solo en portadas o también sobre el personaje en el mapa?
 - [ ] ¿La ropa se dibuja por partes del cuerpo (como las capas del personaje) o en una sola capa?
+
+### 8.2 Camisas y accesorios (hechos)
+
+Todo en el lienzo de 512 × 768. **Cada carpeta nueva hay que declararla en `pubspec.yaml`** (si falta, no falla: el personaje se ve sin esa pieza).
+
+| Hecho | Cosmético | Archivos |
+|---|---|---|
+| [x] | 12 camisas de frente | `frente/camisas/camisa_<n>.png` y sus mangas `manga_<n>_izquierda.png` / `manga_<n>_derecha.png` (la camisa 2 no tiene mangas). La camisa 1 va en **blanco**: el código la tiñe (azul de inicio y 8 colores más) |
+| [x] | 12 camisas de lado | `lado/camisas/camisa_<n>.png` y una sola `manga_<n>.png` para los dos brazos. La 5 trae `camisa_5_derecha.png` y `camisa_5_izquierda.png` porque no es simétrica: se usa una u otra según hacia dónde mire el personaje |
+| [x] | 2 accesorios | `accesorios/shrek.png` (orejas de ogro) con su versión de lado `shrek_lado.png`, y `buffon.png` (gorguera de bufón, sin versión de lado: se usa el mismo dibujo) |
+
+- Las camisas se dibujan sobre el cuerpo; cada manga gira con su brazo y queda **debajo** de la mano.
+- Los accesorios van con la cabeza, **encima** de la línea de la cabeza.
+- Las orejas de ogro toman el **tono de piel** del personaje: su relleno es blanco y el código lo tiñe como el relleno de la cabeza (`AccessoryStyle.skinTinted`). La gorguera conserva sus colores.
+- La boca va **entre** el relleno y la línea de la cabeza (el recorte no es perfecto y así el contorno lo tapa); la boca con la lengua afuera (`boca_9`) va encima de la línea.

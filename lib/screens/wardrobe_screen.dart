@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/accessory_controller.dart';
+import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
-import 'package:party_tricks/controllers/face_photo_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
+import 'package:party_tricks/controllers/shirt_controller.dart';
 import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/controllers/wardrobe_controller.dart';
 import 'package:party_tricks/models/cosmetic_category.dart';
-import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/screens/face_photo_screen.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/accessory_picker.dart';
 import 'package:party_tricks/widgets/category_tab_bar.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/cosmetic_slot.dart';
 import 'package:party_tricks/widgets/eyes_picker.dart';
 import 'package:party_tricks/widgets/mouth_picker.dart';
+import 'package:party_tricks/widgets/shirt_picker.dart';
 import 'package:party_tricks/widgets/skin_tone_picker.dart';
 
 /// Vestuario: el personaje arriba, las categorías en el medio y los
@@ -24,13 +27,10 @@ import 'package:party_tricks/widgets/skin_tone_picker.dart';
 class WardrobeScreen extends ConsumerWidget {
   const WardrobeScreen({super.key});
 
-  /// Provisional: cosméticos que ya tiene el jugador, por categoría.
-  /// Se reemplaza por los cosméticos desbloqueados del perfil
-  /// (feature/player-profile). Con el mapa vacío, todas las categorías
-  /// muestran su mensaje de "Aún no tienes...".
-  static const Map<CosmeticCategory, List<String>> _ownedItems = {
-    CosmeticCategory.shirt: ['Camisa 1'],
-  };
+  /// Provisional: cosméticos que ya tiene el jugador en las categorías que
+  /// todavía no tienen arte (pantalón, zapatos, cabello y nariz). Con el
+  /// mapa vacío, esas categorías muestran su mensaje de "Aún no tienes...".
+  static const Map<CosmeticCategory, List<String>> _ownedItems = {};
 
   /// Guarda un cambio del personaje y, si falla, muestra el mensaje.
   Future<void> _save(
@@ -58,6 +58,10 @@ class WardrobeScreen extends ConsumerWidget {
     final mouthColor = ref.watch(mouthColorProvider);
     final ownedMouths = ref.watch(ownedMouthsProvider);
     final skinColor = SkinTone.colorOf(skinTone);
+    final shirt = ref.watch(shirtProvider);
+    final ownedShirts = ref.watch(ownedShirtsProvider);
+    final accessory = ref.watch(accessoryProvider);
+    final ownedAccessories = ref.watch(ownedAccessoriesProvider);
 
     return Column(
       children: [
@@ -67,17 +71,11 @@ class WardrobeScreen extends ConsumerWidget {
             bottom: false,
             child: Stack(
               children: [
-                // Falta agregar los cosméticos equipados (clothing).
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: AnimatedCharacter(
-                      skinTone: skinColor,
-                      eyes: eyeStyle,
-                      eyeColor: EyeColor.colorOf(eyeColor),
-                      mouth: mouthStyle,
-                      mouthColor: MouthColor.colorOf(mouthColor),
-                      facePhoto: ref.watch(facePhotoProvider),
+                    child: AnimatedCharacter.fromLook(
+                      ref.watch(characterLookProvider),
                     ),
                   ),
                 ),
@@ -138,6 +136,24 @@ class WardrobeScreen extends ConsumerWidget {
                   onColorSelected: (index) => _save(
                     context,
                     () => ref.read(mouthControllerProvider).selectColor(index),
+                  ),
+                ),
+                CosmeticCategory.shirt => ShirtPicker(
+                  styles: ownedShirts,
+                  selectedStyle: shirt,
+                  skin: skinColor,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(shirtControllerProvider).select(style),
+                  ),
+                ),
+                CosmeticCategory.accessory => AccessoryPicker(
+                  styles: ownedAccessories,
+                  selectedStyle: accessory,
+                  skin: skinColor,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(accessoryControllerProvider).select(style),
                   ),
                 ),
                 _ => _OwnedItems(

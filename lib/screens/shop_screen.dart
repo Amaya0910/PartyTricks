@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/accessory_controller.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
-import 'package:party_tricks/controllers/skin_tone_controller.dart';
+import 'package:party_tricks/controllers/shirt_controller.dart';
 import 'package:party_tricks/models/chest.dart';
-import 'package:party_tricks/models/eye_color.dart';
 import 'package:party_tricks/models/eye_style.dart';
-import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/mouth_style.dart';
 import 'package:party_tricks/models/rarity.dart';
-import 'package:party_tricks/models/skin_tone.dart';
+import 'package:party_tricks/models/shop_cosmetic.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/chest_dialog.dart';
 import 'package:party_tricks/widgets/chest_reward_dialog.dart';
 import 'package:party_tricks/widgets/chest_visuals.dart';
+import 'package:party_tricks/widgets/cosmetic_preview.dart';
 import 'package:party_tricks/widgets/cosmetic_purchase_dialog.dart';
-import 'package:party_tricks/widgets/eyes_picker.dart';
-import 'package:party_tricks/widgets/mouth_picker.dart';
 import 'package:party_tricks/widgets/shop_item_row.dart';
 import 'package:party_tricks/widgets/stat_pill.dart';
 
@@ -24,7 +22,9 @@ import 'package:party_tricks/widgets/stat_pill.dart';
 enum ShopFilter {
   all('Todos'),
   eyes('Ojos'),
-  mouth('Bocas');
+  mouth('Bocas'),
+  shirt('Camisas'),
+  accessory('Accesorios');
 
   const ShopFilter(this.label);
 
@@ -66,7 +66,7 @@ class _ShopEntry {
 }
 
 /// Tienda de Tricks: los cofres arriba y, debajo, los cosméticos que el
-/// jugador todavía no tiene (ojos y bocas), con un filtro por categoría. El
+/// jugador todavía no tiene (ojos, bocas, camisas y accesorios), con un filtro por categoría. El
 /// fondo lo pone MainShellScreen.
 class ShopScreen extends ConsumerStatefulWidget {
   const ShopScreen({super.key});
@@ -85,54 +85,45 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
     await ChestRewardDialog.show(context, chest, prize);
   }
 
-  Future<void> _openEyes(BuildContext context, EyeStyle eyes) async {
-    final bought = await CosmeticPurchaseDialog.showEyes(context, eyes);
+  /// Abre la compra de [cosmetic] y, si se compró, avisa dónde ponérselo.
+  Future<void> _open(BuildContext context, ShopCosmetic cosmetic) async {
+    final bought = await CosmeticPurchaseDialog.show(context, cosmetic);
     if (!bought || !context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('¡Ya tienes los ${eyes.title}! Póntelos en el Vestuario'),
-      ),
-    );
+    final message = switch (cosmetic) {
+      EyeStyle() =>
+        '¡Ya tienes los ${cosmetic.title}! Póntelos en el Vestuario',
+      MouthStyle() =>
+        '¡Ya tienes la ${cosmetic.title}! Póntela en el Vestuario',
+      _ => '¡Compraste ${cosmetic.title}! Está en tu Vestuario',
+    };
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _openMouth(BuildContext context, MouthStyle mouth) async {
-    final bought = await CosmeticPurchaseDialog.showMouth(context, mouth);
-    if (!bought || !context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('¡Ya tienes la ${mouth.title}! Póntela en el Vestuario'),
-      ),
+  _ShopEntry _entry(ShopFilter filter, ShopCosmetic cosmetic) {
+    return _ShopEntry(
+      filter: filter,
+      rarity: cosmetic.rarity,
+      title: cosmetic.title,
+      description: cosmetic.description,
+      price: cosmetic.price,
+      preview: CosmeticPreview(cosmetic),
+      onTap: () => _open(context, cosmetic),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final eyeColor = EyeColor.colorOf(ref.watch(eyeColorProvider));
-    final skin = SkinTone.colorOf(ref.watch(skinToneProvider));
-    // Sin color, lo blanco de la boca toma el tono de piel.
-    final mouthColor =
-        MouthColor.colorOf(ref.watch(mouthColorProvider)) ?? skin;
     final entries = [
       for (final eyes in ref.watch(eyesForSaleProvider))
-        _ShopEntry(
-          filter: ShopFilter.eyes,
-          rarity: eyes.rarity,
-          title: eyes.title,
-          description: eyes.description,
-          price: eyes.price,
-          preview: EyesThumbnail(style: eyes, color: eyeColor),
-          onTap: () => _openEyes(context, eyes),
-        ),
+        _entry(ShopFilter.eyes, eyes),
       for (final mouth in ref.watch(mouthsForSaleProvider))
-        _ShopEntry(
-          filter: ShopFilter.mouth,
-          rarity: mouth.rarity,
-          title: mouth.title,
-          description: mouth.description,
-          price: mouth.price,
-          preview: MouthThumbnail(style: mouth, color: mouthColor),
-          onTap: () => _openMouth(context, mouth),
-        ),
+        _entry(ShopFilter.mouth, mouth),
+      for (final shirt in ref.watch(shirtsForSaleProvider))
+        _entry(ShopFilter.shirt, shirt),
+      for (final accessory in ref.watch(accessoriesForSaleProvider))
+        _entry(ShopFilter.accessory, accessory),
     ];
     final visible = [
       for (final entry in entries)
@@ -420,6 +411,8 @@ class _EmptyItems extends StatelessWidget {
     ShopFilter.all => '¡Ya tienes todos los cosméticos!',
     ShopFilter.eyes => '¡Ya tienes todos los ojos!',
     ShopFilter.mouth => '¡Ya tienes todas las bocas!',
+    ShopFilter.shirt => '¡Ya tienes todas las camisas!',
+    ShopFilter.accessory => '¡Ya tienes todos los accesorios!',
   };
 
   @override

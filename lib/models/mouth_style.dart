@@ -1,4 +1,7 @@
+import 'package:party_tricks/models/character_view.dart';
+import 'package:party_tricks/models/cosmetic_category.dart';
 import 'package:party_tricks/models/rarity.dart';
+import 'package:party_tricks/models/shop_cosmetic.dart';
 
 /// Una capa del PNG de una boca: su archivo y si toma el color elegido.
 class MouthLayerSpec {
@@ -13,7 +16,7 @@ class MouthLayerSpec {
 /// Bocas del personaje. En el perfil se guarda solo el [number].
 ///
 /// Cada boca es un PNG del mismo lienzo que el personaje (512x768) en
-/// assets/images/personaje/bocas/. Algunas vienen en dos capas
+/// assets/images/personaje/frente/bocas/. Algunas vienen en dos capas
 /// (`boca_<n>_relleno.png` y `boca_<n>_linea.png`) y otras en un solo PNG
 /// (`boca_<n>.png`).
 ///
@@ -26,14 +29,8 @@ class MouthLayerSpec {
 /// con monedas en la Tienda. Los precios también están en
 /// `firestore.rules` (`mouthPrice`, D-30): si cambian aquí, hay que
 /// cambiarlos allá o las compras se rechazarán.
-enum MouthStyle {
-  boca1(
-    1,
-    'Boca Carcajada',
-    'Una risa a todo pulmón',
-    layered: true,
-    tintable: false,
-  ),
+enum MouthStyle implements ShopCosmetic {
+  boca1(1, 'Boca Carcajada', 'Una risa a todo pulmón', tintable: false),
   boca2(
     2,
     'Boca Traviesa',
@@ -110,38 +107,60 @@ enum MouthStyle {
   final int number;
 
   /// Nombre y descripción para la Tienda.
+  @override
   final String title;
+  @override
   final String description;
 
   /// Si viene en dos capas (relleno + línea).
   final bool layered;
+
+  /// Si se dibuja por encima de la línea de la cabeza. Casi todas van
+  /// debajo (entre el relleno y la línea) porque el recorte del arte no es
+  /// perfecto y así el contorno tapa los bordes; la de la lengua afuera
+  /// sobresale de la cabeza y va encima.
+  bool get overOutline => this == boca9;
 
   /// Si su parte blanca puede tomar color. Las que no (1, 9 y 10) se ven
   /// siempre igual.
   final bool tintable;
 
   /// Precio en monedas. 0 si viene gratis con la cuenta.
+  @override
   final int price;
 
   /// Qué tan rara es: define con qué frecuencia sale en los cofres.
+  @override
   final Rarity rarity;
 
+  @override
+  CosmeticCategory get category => CosmeticCategory.mouth;
+
+  @override
+  int get id => number;
+
   /// Si lo tienen todos desde el inicio.
+  @override
   bool get isFree => price == 0;
 
   /// Boca de quien todavía no ha elegido una.
   static const MouthStyle defaultStyle = boca1;
 
-  static const String _folder = 'assets/images/personaje/bocas';
+  static String _folder(CharacterView view) =>
+      'assets/images/personaje/${view.folder}/bocas';
 
   /// Capas de abajo hacia arriba.
-  List<MouthLayerSpec> get layers {
+  List<MouthLayerSpec> get layers => layersIn(CharacterView.frente);
+
+  /// Lo mismo, vista desde [view] (de frente o de lado).
+  List<MouthLayerSpec> layersIn(CharacterView view) {
+    final folder = _folder(view);
     if (!layered) {
-      return [MouthLayerSpec('$_folder/boca_$number.png', tinted: tintable)];
+      return [MouthLayerSpec('$folder/boca_$number.png', tinted: tintable)];
     }
     return [
-      MouthLayerSpec('$_folder/boca_${number}_relleno.png', tinted: false),
-      MouthLayerSpec('$_folder/boca_${number}_linea.png', tinted: tintable),
+      MouthLayerSpec('$folder/boca_${number}_relleno.png', tinted: false),
+      MouthLayerSpec('$folder/boca_${number}_linea.png', tinted: tintable),
     ];
   }
 
