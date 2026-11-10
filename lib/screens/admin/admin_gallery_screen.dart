@@ -5,6 +5,7 @@ import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/screens/admin/admin_page.dart';
 import 'package:party_tricks/screens/admin/admin_samples.dart';
 import 'package:party_tricks/screens/admin/animation_preview_screen.dart';
+import 'package:party_tricks/screens/admin/map_preview_screen.dart';
 import 'package:party_tricks/screens/admin/minigame_practice_screen.dart';
 import 'package:party_tricks/screens/results_screen.dart';
 import 'package:party_tricks/theme/app_colors.dart';
@@ -79,6 +80,11 @@ class AdminGalleryScreen extends StatelessWidget {
               icon: Icons.directions_walk,
               onTap: () =>
                   Navigator.of(context).push(AnimationPreviewScreen.route()),
+            ),
+            SettingsTile(
+              label: 'Mapa con personajes',
+              icon: Icons.map,
+              onTap: () => Navigator.of(context).push(MapPreviewScreen.route()),
             ),
           ],
         ),
