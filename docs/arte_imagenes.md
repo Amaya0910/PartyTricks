@@ -36,6 +36,7 @@ assets/
 │   ├── personaje/                 cabeza (linea_cabeza y relleno_cabeza) y las carpetas de abajo (sección 7)
 │   │   ├── frente/                cuerpo/  ojos/  bocas/  camisas/   (de frente: quieto)
 │   │   ├── lado/                  cuerpo/  ojos/  bocas/  camisas/   (de lado: caminando)
+│   │   ├── espalda/               cabellos/  camisas/  pantalones/   (de espalda; el cuerpo es el de frente, D-40)
 │   │   └── accesorios/            orejas de ogro y gorguera de bufón (sección 8.2)
 │   ├── cosmeticos/                (pendiente) camisa/  pantalon/  zapatos/  cabello/  nariz/
 │   └── iconos/                    barra de navegación y marcador del jugador
@@ -339,3 +340,18 @@ Carpeta `assets/images/personaje/frente/pantalones/` (declarada en `pubspec.yaml
 - Ícono adaptativo de Android: el fondo es el color liso del logo (`#8DDDFF`) y el frente es el logo reducido, para que el gorro y la P no se corten con el círculo.
 - Arranque: `logo_arranque.png` (1152) con esquinas redondeadas; en Android se usa como `drawable/logo_arranque.png` con `splash_background` (`values/colors.xml`), y en Android 12 o más (`values-v31`) como ícono del arranque.
 - Si se cambia el logo, hay que volver a generar todos esos archivos.
+
+### 8.5 Pantalones nuevos y vista de espalda (generados)
+
+Todo en el lienzo de 512 × 968. Se generaron con un programa (no se dibujaron en Krita); si se dibujan a mano, se reemplazan los PNG sin tocar el código (D-40, D-41 y D-42).
+
+| Carpeta | Qué hay |
+|---|---|
+| `frente/pantalones/pantalon_<2..21>.png` | Los 20 pantalones nuevos de frente |
+| `lado/pantalones/pantalon_<id>_cadera.png`, `_muslo.png`, `_rodilla.png` | De lado: la cintura (fija), lo que va sobre el muslo y sobre la pantorrilla. Las bermudas no tienen rodilla y las faldas solo cadera |
+| `espalda/pantalones/pantalon_<2..21>.png` | De espalda: sin bragueta ni hebilla y con bolsillos traseros |
+| `espalda/cabellos/cabello_<1..11>.png` | Cabello de espalda: cubre la cabeza hasta donde llega en la vista de lado; usa la parte de atrás de los cabellos 1, 3 y 6 |
+| `frente/camisas/camisa_<17..21>.png` y mangas, `lado/camisas/`, `espalda/camisas/camisa_<17..21>.png` | Las cinco camisetas del segundo drop, con el estampado de atrás en la espalda |
+
+- Las camisas y los accesorios que no están en esta tabla se ven de espalda como de frente.
+- Pendiente de dibujar a mano: la espalda de las demás camisas, los cabellos de espalda y los pantalones.

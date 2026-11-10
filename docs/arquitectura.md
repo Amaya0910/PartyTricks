@@ -44,6 +44,7 @@ Los principios SOLID se aplican separando responsabilidades: las pantallas no ha
 |---|---|
 | Authentication | Registro e inicio de sesión con correo y contraseña (Firebase guarda la contraseña, no la base de datos del juego) |
 | Cloud Firestore | Datos permanentes: perfiles, amigos, chat, catálogo de la tienda |
+| Cloud Messaging y Cloud Functions | Notificaciones de mensajes e invitaciones: una función (`functions/`) manda el aviso y la app lo muestra con sus botones (D-45) |
 | Realtime Database | Datos de la partida en vivo: salas, turnos, posiciones y detección de desconexiones |
 | Storage | _(sin uso por ahora)_ La foto de la cara va en Firestore, reducida (D-32) |
 

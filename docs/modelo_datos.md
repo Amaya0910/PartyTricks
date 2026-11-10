@@ -69,7 +69,7 @@ Las preferencias de Ajustes (notificaciones, sonido, efectos e idioma) **no** va
 
 ### 2.2 Cosmético
 
-Hoy existen **ojos** (11), **bocas** (10), **camisas** (23), **pantalones** (1), **cabellos** (11) y **accesorios** (2), definidos en código, en `lib/models/eye_style.dart` (`EyeStyle`), `mouth_style.dart`, `shirt_style.dart`, `pants_style.dart`, `hair_style.dart` y `accessory_style.dart`. Todos implementan `ShopCosmetic` (`shop_cosmetic.dart`). La categoría de cada cosmético del Vestuario está en `lib/models/cosmetic_category.dart` (`CosmeticCategory`). Zapatos y nariz todavía no tienen catálogo.
+Hoy existen **ojos** (11), **bocas** (10), **camisas** (28), **pantalones** (21), **cabellos** (11) y **accesorios** (2), definidos en código, en `lib/models/eye_style.dart` (`EyeStyle`), `mouth_style.dart`, `shirt_style.dart`, `pants_style.dart`, `hair_style.dart` y `accessory_style.dart`. Todos implementan `ShopCosmetic` (`shop_cosmetic.dart`). La categoría de cada cosmético del Vestuario está en `lib/models/cosmetic_category.dart` (`CosmeticCategory`). Zapatos y nariz todavía no tienen catálogo.
 
 | Campo | Descripción |
 |---|---|
@@ -146,7 +146,8 @@ Viven en Cloud Firestore (ver `decisiones.md`, D-22). Las fechas se guardan en m
 | `friendships` | `{id de pareja}` | `members` (los dos uid), `requestedBy`, `status` (`pending` o `accepted`), `createdAt` | Solicitud y amistad |
 | `chats` | `{id de pareja}` | `members`, `lastMessage` (copia del último mensaje), `lastReadAt` (uid → fecha) | Lista de amigos: último mensaje y sin leer |
 | `chats/{id}/messages` | automático | `senderId`, `text`, `sentAt`, `type` (`text` o `invite`) y, en invitaciones, `roomId` y `roomCode` | Mensajes |
-| `invites` | automático | `fromUid`, `fromName`, `toUid`, `roomId`, `roomCode`, `sentAt`, `seen` | Aviso emergente de invitación |
+| `invites` | automático | `fromUid`, `fromName`, `toUid`, `roomId`, `roomCode`, `sentAt`, `seen` y, si la rechazó desde la notificación, `declined` | Aviso emergente de invitación |
+| `fcmTokens` | código del celular (FCM) | `uid` (su dueño), `platform`, `updatedAt` | A qué celulares mandar las notificaciones (D-45). Solo se escribe a nombre propio; lo lee la Cloud Function |
 | `blocks` | `{bloqueador}_{bloqueado}` | `blocker`, `blocked`, `createdAt` | Bloqueos |
 | `reports` | automático | `reporterUid`, `reportedUid`, `reason`, `chatId`, `createdAt` | Reportes para revisar |
 

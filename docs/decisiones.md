@@ -554,3 +554,68 @@
 - **Motivo:** el ícono genérico de Flutter y el nombre `party_tricks` no se veían como un producto terminado.
 - **Alternativas:** el paquete `flutter_launcher_icons` (una dependencia más para algo que se hace una vez); cambiar el nombre del paquete (rompería todos los imports sin ganar nada).
 - **Pendiente:** verlo en un celular real; si se cambia el logo hay que volver a generar los archivos (ver `arte_imagenes.md`).
+
+## D-40. Vista de espalda
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - El personaje tiene una **tercera vista, de espalda** (`CharacterView.espalda`), sin cara (no se dibujan ojos, boca ni foto). Sirve para el Vestuario y para el mapa cuando el personaje **sube** por la pantalla (un paso sube si va más arriba que a los lados, `_Walker.isGoingUp`); al bajar o ir de lado se sigue viendo de lado, y quieto, de frente.
+  - **Cuerpo:** usa las mismas capas de `frente/cuerpo/` (no hay arte nuevo). **Cabeza:** relleno y línea de la cabeza, sin cara, con el cabello encima. **Accesorios:** se ven igual que de frente, pero van **debajo del cabello**.
+  - **Cabello** (`espalda/cabellos/cabello_<id>.png`): cubre la cabeza hasta el borde de abajo (la mayoría) o hasta donde llega en la vista de lado. Los cabellos con parte de atrás (1, 3 y 6) usan esa parte; el flequillo no se usa. El borde de abajo sigue la forma del cabello de lado. **Se generaron con un programa** a partir de los dibujos de frente y de lado: si se dibujan a mano, se reemplazan los PNG.
+  - **Pantalones** (`espalda/pantalones/`): los 20 nuevos, sin bragueta ni hebilla y con bolsillos traseros. El dorado usa el de frente. **Camisas** (`espalda/camisas/`): solo las del segundo drop (D-42) tienen espalda propia (`ShirtStyle.hasBackArt`); las demás usan el dibujo de frente.
+  - **Animaciones** nuevas en `CharacterClip`: *Reposo de espalda* (como el de frente) y *Caminar de espalda* (`WalkAwayAnimation`: una pierna se levanta y luego la otra, el cuerpo sube y baja y los brazos se mecen al revés). Aparecen solas en la vista previa de animaciones.
+  - **Vestuario:** el botón de girar pasa de frente a lado a espalda.
+- **Pendiente:** dibujar a mano la espalda de las camisas y los cabellos que se ven raros; el salto (animación) no está hecho.
+
+## D-41. Veinte pantalones nuevos, con frente, lado y espalda
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - `PantsStyle` pasa de 1 a **21 pantalones** (ids 2 a 21 nuevos): jeans, bermudas cargo y tropical, deportivo, tres faldas (tutú, Bonnie y colegio de magia) y referencias a la cultura pop (Pitufo, Ogro, Pirata, Camuflado, Clyde, Fontanero, Juego del Calamar, Charro, Padrino, Disco, Mono Amarillo, Payaso y Neón). Los nombres con referencias son provisionales; se cambian en `pants_style.dart` sin tocar el `id`.
+  - **Rareza y precio:** común 30 (3), poco común 45 (6), raro 60 (6), épico 75 (4) y legendario 100 (Neón). Están en `firestore.rules` (`pantsPrice`) y una prueba los compara.
+  - **Largo** (`PantsCut`): *largo* (cadera, muslo y rodilla de lado), *corto* (cadera y muslo) y *falda* (una sola pieza fija sobre las piernas).
+  - **Capas de lado** (`lado/pantalones/pantalon_<id>_cadera|muslo|rodilla.png`): de abajo hacia arriba, el muslo y la pantorrilla del personaje, el pantalón del muslo (arranca en la cadera, sin línea arriba) y el de la rodilla (sin línea arriba, para que la unión no se note). La cadera (cintura y cinturón) va **debajo** del muslo del pantalón; la falda, **encima** de las piernas. La pierna de atrás lleva el pantalón un 14 % más oscuro.
+  - El dorado (id 1) sigue sin dibujo de lado.
+- **Arte:** los 20 se generaron con un programa (formas tomadas de las capas de las piernas), no se dibujaron en Krita. Si luego se dibujan a mano, se reemplazan los PNG sin tocar el código.
+
+## D-42. Camisetas del segundo drop de Shift's
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:** cinco camisetas nuevas (`shifts8` a `shifts12`, ids 17 a 21) con los diseños del drop 02: Shift's con el perro (blanca con letras azules, negra roja y negra azul) y "the danger of men's" (blanca y negra, rosa). Las cuatro primeras son épicas (75 monedas) y la última, legendaria (100). Traen estampado delante, la placa militar en la manga y el estampado de atrás en la vista de espalda.
+- **Arte:** los estampados se sacaron de los mockups del drop (texto, perro y silueta); las placas de las mangas se dibujaron aparte. De lado solo se ve la placa. Nombres y precios provisionales.
+- **Nota:** las camisetas llevan armas dibujadas (uzis y una pistola); conviene revisarlo antes de publicar la app en las tiendas.
+
+## D-43. Caminos del mapa en curvas suaves
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:** los caminos entre casillas dejan de ser rectas y pasan a **curvas Bézier cúbicas sin quiebres** (`RouteCurves`, `services/map/route_curves.dart`). En cada casilla, la curva que llega y la que sale comparten la misma dirección (el promedio de las dos rectas); en una bifurcación, cada desvío sale con su propia curva. El **dibujo** (`MapPathsPainter`) y la **caminata** (`_Walker`) usan los mismos tramos, y el personaje avanza a **paso parejo** por distancia, no por el parámetro de la curva. Las flechas de elegir camino apuntan hacia donde sale la curva.
+- **Ajuste:** el redondeo se cambia con `handle` en `RouteCurves.build` (0,38 por defecto).
+- **Aviso:** los archivos del mapa son del área de Brayan; hay que avisarle antes de unir la rama.
+
+## D-44. Vista previa del mapa en administración y filtros de la Tienda
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - Administración → Galería → **Mapa con personajes** (`map_preview_screen.dart`): el mapa real con de 1 a 4 personajes (el primero con el aspecto del administrador, los demás de ejemplo) y botones para avanzar casillas. Sirve para ver cómo caminan (de lado y de espalda), cómo se ven quietos y cómo van las curvas. Nada se guarda ni crea una partida.
+  - Los **filtros de la Tienda** pasan de botones que ocupaban varias líneas a **una sola fila con scroll**: texto pequeño, el elegido en azul y subrayado, y el ícono de ordenar fijo a la derecha.
+
+## D-45. Notificaciones de mensajes e invitaciones
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - La app avisa con una **notificación** cuando un amigo te escribe y cuando te invita a una party. Tocar un mensaje abre ese chat en Amigos. La invitación trae dos botones: **Aceptar** (abre la app, entra a la sala con el código y abre la sala de espera) y **Rechazar** (marca la invitación como vista y rechazada, sin abrir la app).
+  - **Cliente** (`services/notifications/`, `widgets/notification_host.dart`): `firebase_messaging` recibe los avisos y `flutter_local_notifications` los muestra con sus botones. Cada celular se registra en `fcmTokens/{token}` con el uid de su dueño. El interruptor de notificaciones de Ajustes los activa y desactiva; al cerrar sesión se borra el código. Con la app abierta, un mensaje avisa salvo que ya tengas ese chat abierto, y las invitaciones no (ya salen como aviso dentro de la app).
+  - **Servidor** (`functions/`, Cloud Functions): `notifyMessage` y `notifyInvite` mandan el aviso cuando se crea un mensaje o una invitación. A Android le llega solo datos (la app arma la notificación con sus botones aunque esté cerrada) y a iOS el aviso con su categoría. Los códigos que ya no sirven se borran.
+  - **Reglas:** `fcmTokens` (solo a nombre propio, sin lectura desde la app) y el invitado puede marcar `seen` y `declined`.
+- **Motivo:** enterarse de mensajes e invitaciones sin tener la app abierta.
+- **Pendiente:**
+  - **Desplegar** las funciones (`firebase deploy --only functions`, necesita el plan Blaze) y publicar las reglas. Sin la función, solo avisan los mensajes con la app abierta.
+  - iOS: subir la clave APNs a Firebase y activar *Push Notifications* y *Background Modes* en Xcode.
+  - Probarlo en dos celulares.
+  - Se usa `flutter_local_notifications` 22 (la 23 pide una versión del SDK de Android que no compila aquí) y `getToken` de Firebase aunque aparezca como deprecado, porque la función manda con el código FCM de siempre.
