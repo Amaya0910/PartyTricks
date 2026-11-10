@@ -46,7 +46,12 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | `camisasCompradas` | `ownedShirts` | Lista con los ids de las camisas compradas o ganadas. La 1 no se guarda. Solo cambia al comprar o abrir un cofre (D-33) |
 | `accesorio` | `accessory` | Id del accesorio puesto, o 0 si no lleva ninguno. Si falta, ninguno. Tiene que ser comprado |
 | `accesoriosComprados` | `ownedAccessories` | Lista con los ids de los accesorios comprados o ganados. Solo cambia al comprar o abrir un cofre (D-33) |
-| _(pantalón, zapatos, cabello y nariz)_ | _(por construir)_ | Cuando existan esos cosméticos |
+| `cabello` | `hair` | Id del cabello puesto, o 0 si no lleva ninguno. Si falta, ninguno. Tiene que ser comprado |
+| `cabellosComprados` | `ownedHairs` | Lista con los ids de los cabellos comprados o ganados. Solo cambia al comprar o abrir un cofre (D-35) |
+| `colorCabello` | `hairColor` | Posición del color del cabello blanco (0 = blanco). Todos los colores están desbloqueados |
+| `pantalon` | `pants` | Id del pantalón puesto, o 0 si no lleva ninguno. Si falta, ninguno. Tiene que ser comprado |
+| `pantalonesComprados` | `ownedPants` | Lista con los ids de los pantalones comprados o ganados. Solo cambia al comprar o abrir un cofre (D-36) |
+| _(zapatos y nariz)_ | _(por construir)_ | Cuando existan esos cosméticos |
 | `fotoCara` | `facePhoto` | Opcional. La foto de la cara: un JPEG de 256 × 256 en base64, de hasta 60 000 caracteres. Reemplaza a los ojos y la boca y cubre toda la cabeza (D-32) |
 | `usarFotoCara` | `useFacePhoto` | Si la foto se está usando o se prefieren los ojos y la boca. Si falta, `true` |
 
@@ -64,13 +69,13 @@ Las preferencias de Ajustes (notificaciones, sonido, efectos e idioma) **no** va
 
 ### 2.2 Cosmético
 
-Hoy existen **ojos** (11), **bocas** (10), **camisas** (19) y **accesorios** (2), definidos en código, en `lib/models/eye_style.dart` (`EyeStyle`), `mouth_style.dart`, `shirt_style.dart` y `accessory_style.dart`. Los cuatro implementan `ShopCosmetic` (`shop_cosmetic.dart`). La categoría de cada cosmético del Vestuario está en `lib/models/cosmetic_category.dart` (`CosmeticCategory`). Pantalón, zapatos, cabello y nariz todavía no tienen catálogo.
+Hoy existen **ojos** (11), **bocas** (10), **camisas** (28), **pantalones** (21), **cabellos** (11) y **accesorios** (2), definidos en código, en `lib/models/eye_style.dart` (`EyeStyle`), `mouth_style.dart`, `shirt_style.dart`, `pants_style.dart`, `hair_style.dart` y `accessory_style.dart`. Todos implementan `ShopCosmetic` (`shop_cosmetic.dart`). La categoría de cada cosmético del Vestuario está en `lib/models/cosmetic_category.dart` (`CosmeticCategory`). Zapatos y nariz todavía no tienen catálogo.
 
 | Campo | Descripción |
 |---|---|
 | `number` (ojos y bocas) / `id` (camisas y accesorios) | Lo que se guarda en el perfil. En las camisas, el arte (`art`) puede repetirse: la camisa 1 tiene 9 colores con ids distintos |
 | `title` y `description` | Texto que se muestra en la Tienda |
-| `price` | En monedas; 0 si viene gratis con la cuenta. Los precios también están en `firestore.rules` (`eyesPrice`, `mouthPrice`, `shirtPrice` y `accessoryPrice`) y hay que cambiarlos en los dos sitios (una prueba los compara) |
+| `price` | En monedas; 0 si viene gratis con la cuenta. Los precios también están en `firestore.rules` (`eyesPrice`, `mouthPrice`, `shirtPrice`, `pantsPrice`, `hairPrice` y `accessoryPrice`) y hay que cambiarlos en los dos sitios (una prueba los compara) |
 | `rarity` | Rareza (`lib/models/rarity.dart`): decide qué tan seguido sale en los cofres |
 | `layered` y `tintable` | Si viene en dos capas de arte y si su parte blanca puede tomar color |
 
@@ -141,7 +146,8 @@ Viven en Cloud Firestore (ver `decisiones.md`, D-22). Las fechas se guardan en m
 | `friendships` | `{id de pareja}` | `members` (los dos uid), `requestedBy`, `status` (`pending` o `accepted`), `createdAt` | Solicitud y amistad |
 | `chats` | `{id de pareja}` | `members`, `lastMessage` (copia del último mensaje), `lastReadAt` (uid → fecha) | Lista de amigos: último mensaje y sin leer |
 | `chats/{id}/messages` | automático | `senderId`, `text`, `sentAt`, `type` (`text` o `invite`) y, en invitaciones, `roomId` y `roomCode` | Mensajes |
-| `invites` | automático | `fromUid`, `fromName`, `toUid`, `roomId`, `roomCode`, `sentAt`, `seen` | Aviso emergente de invitación |
+| `invites` | automático | `fromUid`, `fromName`, `toUid`, `roomId`, `roomCode`, `sentAt`, `seen` y, si la rechazó desde la notificación, `declined` | Aviso emergente de invitación |
+| `fcmTokens` | código del celular (FCM) | `uid` (su dueño), `platform`, `updatedAt` | A qué celulares mandar las notificaciones (D-45). Solo se escribe a nombre propio; lo lee la Cloud Function |
 | `blocks` | `{bloqueador}_{bloqueado}` | `blocker`, `blocked`, `createdAt` | Bloqueos |
 | `reports` | automático | `reporterUid`, `reportedUid`, `reason`, `chatId`, `createdAt` | Reportes para revisar |
 

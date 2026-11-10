@@ -44,6 +44,7 @@ Los principios SOLID se aplican separando responsabilidades: las pantallas no ha
 |---|---|
 | Authentication | Registro e inicio de sesión con correo y contraseña (Firebase guarda la contraseña, no la base de datos del juego) |
 | Cloud Firestore | Datos permanentes: perfiles, amigos, chat, catálogo de la tienda |
+| Cloud Messaging y Cloud Functions | Notificaciones de mensajes e invitaciones: una función (`functions/`) manda el aviso y la app lo muestra con sus botones (D-45) |
 | Realtime Database | Datos de la partida en vivo: salas, turnos, posiciones y detección de desconexiones |
 | Storage | _(sin uso por ahora)_ La foto de la cara va en Firestore, reducida (D-32) |
 
@@ -55,7 +56,7 @@ Los principios SOLID se aplican separando responsabilidades: las pantallas no ha
 - Código de amistad (único).
 - Experiencia acumulada; el nivel se calcula a partir de ella.
 - Monedas y diamantes de la cuenta.
-- Cómo se ve su personaje: tono de piel, ojos y boca con sus colores, la camisa y el accesorio puestos, los ojos, bocas, camisas y accesorios comprados, el color de fondo de la foto de perfil y, si quiere, la foto de su cara. La **foto de perfil es la cabeza del personaje**; los demás la ven gracias a `publicProfiles`.
+- Cómo se ve su personaje: tono de piel, ojos y boca con sus colores, la camisa, el cabello (y su color) y el accesorio puestos, los ojos, bocas, camisas, cabellos y accesorios comprados, el color de fondo de la foto de perfil y, si quiere, la foto de su cara. La **foto de perfil es la cabeza del personaje**; los demás la ven gracias a `publicProfiles`.
 - Lista de amigos y chats.
 
 ---
