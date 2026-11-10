@@ -39,6 +39,11 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Llaves de firma (H-06): nunca se suben. android/.gitignore ya ignora
+# key.properties; esto cubre una llave copiada en cualquier carpeta.
+*.jks
+*.keystore
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
