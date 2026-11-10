@@ -3,7 +3,7 @@
          amigos e invitaciones a jugar). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
-        android:label="party_tricks"
+        android:label="Party Tricks"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
