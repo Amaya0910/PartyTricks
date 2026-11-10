@@ -56,12 +56,20 @@ class CharacterHead extends StatelessWidget {
   /// aparte, detrás del cuerpo (que no se vea delante del cuello).
   final bool includeBackHair;
 
-  /// De lado no se usa la foto: es de frente.
+  /// De lado no se usa la foto (es de frente) y de espalda no hay cara.
   final CharacterView view;
 
   @override
   Widget build(BuildContext context) {
     final photo = view == CharacterView.frente ? this.photo : null;
+    // De espalda no se ve la cara: ni ojos, ni boca, ni foto.
+    final back = view == CharacterView.espalda;
+    final accessoryLayer = accessory == null
+        ? null
+        : CharacterLayer(
+            accessory!.assetFor(view),
+            tint: accessory!.skinTinted ? skinTone : null,
+          );
     final mouthLayer = MouthLayer(style: mouth, color: mouthColor, view: view);
     final backHair = includeBackHair ? hair?.backAssetFor(view) : null;
     return Stack(
@@ -69,21 +77,22 @@ class CharacterHead extends StatelessWidget {
         // La parte de atrás del cabello va detrás de la cabeza.
         if (backHair != null) CharacterLayer(backHair, tint: hairTint),
         CharacterLayer(BodyPart.cabeza.fillAsset, tint: skinTone),
-        if (photo == null && !mouth.overOutline) mouthLayer,
+        if (!back && photo == null && !mouth.overOutline) mouthLayer,
         CharacterLayer(BodyPart.cabeza.outlineAsset),
-        if (photo != null)
+        if (back)
+          const SizedBox.shrink()
+        else if (photo != null)
           FacePhotoLayer(photo: photo)
         else ...[
           EyesLayer(style: eyes, color: eyeColor, view: view),
           if (mouth.overOutline) mouthLayer,
         ],
-        // El cabello va sobre la cara y los accesorios sobre el cabello.
+        // De frente y de lado el cabello va sobre la cara y los accesorios
+        // sobre el cabello. De espalda es al revés: el cabello cubre toda la
+        // nuca y el accesorio queda debajo.
+        if (back && accessoryLayer != null) accessoryLayer,
         if (hair != null) CharacterLayer(hair!.assetFor(view), tint: hairTint),
-        if (accessory != null)
-          CharacterLayer(
-            accessory!.assetFor(view),
-            tint: accessory!.skinTinted ? skinTone : null,
-          ),
+        if (!back && accessoryLayer != null) accessoryLayer,
       ],
     );
   }

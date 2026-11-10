@@ -82,6 +82,8 @@ enum AccessoryStyle implements ShopCosmetic {
   String assetFor(CharacterView view) => switch (view) {
     CharacterView.frente => '$_folder/$file',
     CharacterView.lado => '$_folder/${sideFile ?? file}',
+    // Por detrás se ven igual que de frente.
+    CharacterView.espalda => '$_folder/$file',
   };
 
   /// Busca el accesorio por su [id]. Null si es 0 (ninguno) o no existe.

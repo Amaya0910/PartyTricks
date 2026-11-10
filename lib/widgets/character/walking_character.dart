@@ -155,6 +155,9 @@ class WalkingCharacter extends StatelessWidget {
 
   static const String _folder = 'assets/images/personaje/lado/cuerpo';
 
+  /// El pantalón de la pierna de atrás: igual de oscuro que su piel.
+  static const Color _farPantsTint = Color(0xFFDBDBDB);
+
   // Articulaciones, en píxeles del lienzo de 512 x 968 (con el margen de arriba).
   static const Offset shoulder = Offset(256, 425 + kCharacterTopMargin);
   static const Offset hip = Offset(256, 535 + kCharacterTopMargin);
@@ -239,7 +242,31 @@ class WalkingCharacter extends StatelessWidget {
             child: child,
           );
 
-    Widget leg(Widget thigh, Widget shin, double thighAngle, double kneeAngle) {
+    // El pantalón de lado: la cadera no se mueve; el muslo y la rodilla giran
+    // con la pierna. La pierna de atrás lo lleva un poco más oscuro, como la
+    // piel.
+    final pants = look.pants;
+    CharacterLayer? pantsLayer(String? asset, {bool far = false}) =>
+        asset == null
+        ? null
+        : CharacterLayer(asset, tint: far ? _farPantsTint : null);
+    final hipLayer = pantsLayer(pants?.sideHipAsset);
+    final nearPantsThigh = pantsLayer(pants?.sideThighAsset);
+    final nearPantsKnee = pantsLayer(pants?.sideKneeAsset);
+    final farPantsThigh = pantsLayer(pants?.sideThighAsset, far: true);
+    final farPantsKnee = pantsLayer(pants?.sideKneeAsset, far: true);
+
+    // De abajo hacia arriba: el muslo y la pantorrilla del personaje, luego el
+    // pantalón del muslo y, encima, el de la rodilla (sin línea arriba, para
+    // que la unión no se note).
+    Widget leg(
+      Widget thigh,
+      Widget shin,
+      double thighAngle,
+      double kneeAngle, {
+      Widget? pantsThigh,
+      Widget? pantsKnee,
+    }) {
       return Transform(
         transform: _around(hip, thighAngle),
         child: Stack(
@@ -247,6 +274,9 @@ class WalkingCharacter extends StatelessWidget {
             thigh,
             // La pantorrilla gira con el muslo y, además, desde la rodilla.
             Transform(transform: _around(knee, kneeAngle), child: shin),
+            ?pantsThigh,
+            if (pantsKnee != null)
+              Transform(transform: _around(knee, kneeAngle), child: pantsKnee),
           ],
         ),
       );
@@ -283,14 +313,36 @@ class WalkingCharacter extends StatelessWidget {
                 child: Stack(
                   children: [
                     mirror(arm(farArm, pose.farArm)),
-                    mirror(leg(farThigh, farShin, pose.farThigh, pose.farKnee)),
+                    mirror(
+                      leg(
+                        farThigh,
+                        farShin,
+                        pose.farThigh,
+                        pose.farKnee,
+                        pantsThigh: farPantsThigh,
+                        pantsKnee: farPantsKnee,
+                      ),
+                    ),
                     mirror(stretch(torso, pose.torsoScale)),
                     shirt.sidedInProfile
                         ? stretch(shirtLayer, pose.torsoScale)
                         : mirror(stretch(shirtLayer, pose.torsoScale)),
+                    // El pantalón largo o corto va debajo del muslo; la falda,
+                    // encima de las piernas.
+                    if (hipLayer != null && !pants!.hipOverLegs)
+                      mirror(stretch(hipLayer, pose.torsoScale)),
                     mirror(
-                      leg(nearThigh, nearShin, pose.nearThigh, pose.nearKnee),
+                      leg(
+                        nearThigh,
+                        nearShin,
+                        pose.nearThigh,
+                        pose.nearKnee,
+                        pantsThigh: nearPantsThigh,
+                        pantsKnee: nearPantsKnee,
+                      ),
                     ),
+                    if (hipLayer != null && pants!.hipOverLegs)
+                      mirror(stretch(hipLayer, pose.torsoScale)),
                     mirror(arm(nearArm, pose.nearArm)),
                     mirror(
                       Transform(

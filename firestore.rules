@@ -409,7 +409,8 @@ service cloud.firestore {
               '106': 30, '107': 30, '108': 30, '2': 45, '3': 60, '4': 60,
               '5': 75, '6': 45, '7': 45, '8': 60, '9': 60, '10': 75,
               '11': 75, '12': 100, '13': 60, '14': 60, '15': 75,
-              '16': 75}.get(string(id), 0);
+              '16': 75, '17': 75, '18': 75, '19': 75, '20': 75,
+              '21': 100}.get(string(id), 0);
     }
 
     // Compra de una camisa: se agrega exactamente una que no tenía (y que se
@@ -448,7 +449,7 @@ service cloud.firestore {
     // lib/models/pants_style.dart: si cambian allá, hay que cambiarlos aquí.
     // Ninguno es gratis.
     function pantsPrice(id) {
-      return {'1': 45}.get(string(id), 0);
+      return {'1': 45, '2': 30, '3': 30, '4': 30, '5': 45, '6': 45, '7': 45, '8': 45, '9': 45, '10': 45, '11': 60, '12': 60, '13': 60, '14': 60, '15': 60, '16': 60, '17': 75, '18': 75, '19': 75, '20': 75, '21': 100}.get(string(id), 0);
     }
 
     function isPantsPurchase() {

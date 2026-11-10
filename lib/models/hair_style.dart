@@ -146,7 +146,8 @@ enum HairStyle implements ShopCosmetic {
   static String _path(CharacterView view, String file) =>
       'assets/images/personaje/${view.folder}/cabellos/$file';
 
-  /// El dibujo que va delante de la cabeza.
+  /// El dibujo que va delante de la cabeza. De espalda cubre la parte de
+  /// atrás de la cabeza (`espalda/cabellos/`).
   String assetFor(CharacterView view) => _path(view, 'cabello_$id.png');
 
   /// La parte que va detrás de la cabeza, o null si este cabello no la tiene

@@ -108,6 +108,55 @@ class IdleAnimation implements CharacterAnimation {
   }
 }
 
+/// Caminar de espalda (hacia arriba en el mapa): las piernas se levantan una
+/// y luego la otra, el cuerpo sube y baja con cada paso y los brazos se
+/// mecen al revés de las piernas. La fase 0 a 1 son dos pasos.
+class WalkAwayAnimation implements CharacterAnimation {
+  const WalkAwayAnimation();
+
+  static const double _deg = math.pi / 180;
+
+  @override
+  Duration get period => const Duration(milliseconds: 700);
+
+  @override
+  PartTransform transformFor(BodyPart part, double t) {
+    final phase = t * 2 * math.pi;
+    final swing = math.sin(phase);
+    // El cuerpo está más abajo cuando las dos piernas tocan el piso.
+    final bob = -5 * (1 - swing.abs());
+    switch (part) {
+      case BodyPart.cuerpo:
+        return PartTransform(dy: bob);
+      case BodyPart.cabeza:
+        return PartTransform(
+          angle: math.sin(phase * 2) * 1.5 * _deg,
+          dy: bob * 1.1,
+        );
+      case BodyPart.piernaIzquierda:
+        final lift = math.max(0.0, swing);
+        return PartTransform(dy: -16 * lift, scaleY: 1 - 0.12 * lift);
+      case BodyPart.piernaDerecha:
+        final lift = math.max(0.0, -swing);
+        return PartTransform(dy: -16 * lift, scaleY: 1 - 0.12 * lift);
+      case BodyPart.brazoIzquierdo:
+      case BodyPart.manoIzquierda:
+        return PartTransform(
+          angle: 2.5 * _deg * swing,
+          dy: bob - 5 * swing,
+          scaleY: 1 - 0.05 * swing,
+        );
+      case BodyPart.brazoDerecho:
+      case BodyPart.manoDerecha:
+        return PartTransform(
+          angle: -2.5 * _deg * swing,
+          dy: bob + 5 * swing,
+          scaleY: 1 + 0.05 * swing,
+        );
+    }
+  }
+}
+
 /// Personaje animado por capas con tono de piel, ojos y boca configurables.
 class AnimatedCharacter extends StatefulWidget {
   const AnimatedCharacter({
@@ -126,6 +175,7 @@ class AnimatedCharacter extends StatefulWidget {
     this.hairTint,
     this.facePhoto,
     this.clothing = const [],
+    this.view = CharacterView.frente,
   });
 
   /// El personaje con el aspecto [look]. La foto de la cara es la de [look].
@@ -134,7 +184,9 @@ class AnimatedCharacter extends StatefulWidget {
     Key? key,
     CharacterAnimation animation = const IdleAnimation(),
     Animation<double>? phase,
+    CharacterView view = CharacterView.frente,
   }) : this(
+         view: view,
          key: key,
          skinTone: look.skinTone,
          animation: animation,
@@ -150,6 +202,10 @@ class AnimatedCharacter extends StatefulWidget {
          hairTint: look.hairTint,
          facePhoto: look.facePhoto,
        );
+
+  /// Desde dónde se ve: de frente (con cara) o de espalda. De lado es
+  /// `WalkingCharacter`.
+  final CharacterView view;
 
   final Color skinTone;
   final CharacterAnimation animation;
@@ -239,6 +295,7 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
                   mouthColor: widget.mouthColor ?? widget.skinTone,
                   photo: widget.facePhoto,
                   accessory: widget.accessory,
+                  view: widget.view,
                   hair: widget.hair,
                   hairTint: widget.hairTint,
                   includeBackHair: false,
@@ -247,16 +304,17 @@ class _AnimatedCharacterState extends State<AnimatedCharacter>
                   part: part,
                   skinTone: widget.skinTone,
                   shirt: widget.shirt,
+                  view: widget.view,
                 ),
         ),
     ];
     // La parte de atrás del cabello es la capa más atrás de todas: debajo del
     // cuerpo, para que no se vea delante del cuello. Se mueve con la cabeza.
-    final backHairAsset = widget.hair?.backAssetFor(CharacterView.frente);
+    final backHairAsset = widget.hair?.backAssetFor(widget.view);
     final backHair = backHairAsset == null
         ? null
         : CharacterLayer(backHairAsset, tint: widget.hairTint);
-    final pantsAsset = widget.pants?.assetFor(CharacterView.frente);
+    final pantsAsset = widget.pants?.assetFor(widget.view);
     final pantsLayer = pantsAsset == null ? null : CharacterLayer(pantsAsset);
     final clothing = [
       for (final asset in widget.clothing) CharacterLayer(asset),
@@ -310,7 +368,11 @@ class _PartLayers extends StatelessWidget {
     required this.part,
     required this.skinTone,
     required this.shirt,
+    required this.view,
   });
+
+  /// De frente o de espalda (cambia el dibujo de la camisa).
+  final CharacterView view;
 
   final BodyPart part;
   final Color skinTone;
@@ -319,7 +381,7 @@ class _PartLayers extends StatelessWidget {
   /// Lo de la camisa que va con esta parte: la camisa en el cuerpo y cada
   /// manga en su brazo (gira con él y queda debajo de la mano).
   String? get _shirtAsset => switch (part) {
-    BodyPart.cuerpo => shirt.bodyAsset(CharacterView.frente),
+    BodyPart.cuerpo => shirt.bodyAsset(view),
     BodyPart.brazoIzquierdo => shirt.frontSleeve(left: true),
     BodyPart.brazoDerecho => shirt.frontSleeve(left: false),
     _ => null,

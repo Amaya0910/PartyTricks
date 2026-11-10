@@ -10,6 +10,7 @@ import 'package:party_tricks/controllers/shirt_controller.dart';
 import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/controllers/wardrobe_controller.dart';
 import 'package:party_tricks/models/character_look.dart';
+import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/cosmetic_category.dart';
 import 'package:party_tricks/models/hair_color.dart';
 import 'package:party_tricks/models/mouth_color.dart';
@@ -243,8 +244,9 @@ class _OwnedItems extends StatelessWidget {
   }
 }
 
-/// Tu personaje en reposo, con un botón pequeño para verlo de lado (reposo de
-/// lado, solo del Vestuario) o de frente.
+/// Tu personaje en reposo, con un botón pequeño para verlo de frente, de lado
+/// o de espalda (cada toque pasa a la siguiente vista; el reposo de lado y de
+/// espalda solo se ven en el Vestuario).
 class _CharacterStage extends StatefulWidget {
   const _CharacterStage({required this.look});
 
@@ -256,7 +258,7 @@ class _CharacterStage extends StatefulWidget {
 
 class _CharacterStageState extends State<_CharacterStage>
     with SingleTickerProviderStateMixin {
-  bool _side = false;
+  CharacterView _view = CharacterView.frente;
 
   late final AnimationController _phase = AnimationController(
     vsync: this,
@@ -269,12 +271,32 @@ class _CharacterStageState extends State<_CharacterStage>
     super.dispose();
   }
 
+  /// El reposo de cada vista.
+  CharacterClip get _clip => switch (_view) {
+    CharacterView.frente => CharacterClip.idle,
+    CharacterView.lado => CharacterClip.idleSide,
+    CharacterView.espalda => CharacterClip.idleBack,
+  };
+
+  CharacterView get _next => switch (_view) {
+    CharacterView.frente => CharacterView.lado,
+    CharacterView.lado => CharacterView.espalda,
+    CharacterView.espalda => CharacterView.frente,
+  };
+
+  String get _nextLabel => switch (_next) {
+    CharacterView.frente => 'Ver de frente',
+    CharacterView.lado => 'Ver de lado',
+    CharacterView.espalda => 'Ver de espalda',
+  };
+
   void _toggle() {
-    setState(() => _side = !_side);
-    if (_side) {
-      _phase.repeat();
-    } else {
+    setState(() => _view = _next);
+    if (_view == CharacterView.frente) {
       _phase.stop();
+    } else {
+      _phase.duration = _clip.period;
+      _phase.repeat();
     }
   }
 
@@ -285,16 +307,16 @@ class _CharacterStageState extends State<_CharacterStage>
         Positioned.fill(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: _side
-                ? CharacterClip.idleSide.build(look: widget.look, phase: _phase)
-                : AnimatedCharacter.fromLook(widget.look),
+            child: _view == CharacterView.frente
+                ? AnimatedCharacter.fromLook(widget.look)
+                : _clip.build(look: widget.look, phase: _phase),
           ),
         ),
         Positioned(
           top: 12,
           left: 12,
           child: IconButton.filledTonal(
-            tooltip: _side ? 'Ver de frente' : 'Ver de lado',
+            tooltip: _nextLabel,
             onPressed: _toggle,
             icon: const Icon(Icons.autorenew),
           ),

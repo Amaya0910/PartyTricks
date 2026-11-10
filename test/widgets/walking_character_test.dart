@@ -7,6 +7,7 @@ import 'package:party_tricks/models/character_look.dart';
 import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/widgets/character/character_layer.dart';
 import 'package:party_tricks/widgets/character/walking_character.dart';
 
@@ -98,6 +99,85 @@ void main() {
       );
     });
 
+    Future<List<String>> assetsWith(
+      WidgetTester tester,
+      PantsStyle pants,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SizedBox(
+            height: 300,
+            child: WalkingCharacter(
+              phase: const AlwaysStoppedAnimation(0.3),
+              look: CharacterLook.standard.copyWith(pants: pants),
+            ),
+          ),
+        ),
+      );
+      return tester
+          .widgetList<CharacterLayer>(find.byType(CharacterLayer))
+          .map((layer) => layer.asset)
+          .toList();
+    }
+
+    testWidgets('el pantalón largo: muslo y rodilla sobre las piernas', (
+      tester,
+    ) async {
+      final assets = await assetsWith(tester, PantsStyle.jeans);
+      int at(String name, {bool last = false}) => last
+          ? assets.lastIndexWhere((a) => a.endsWith(name))
+          : assets.indexWhere((a) => a.endsWith(name));
+      // Una de cada para las dos piernas.
+      expect(
+        assets.where((a) => a.endsWith('pantalon_2_muslo.png')),
+        hasLength(2),
+      );
+      expect(
+        assets.where((a) => a.endsWith('pantalon_2_rodilla.png')),
+        hasLength(2),
+      );
+      expect(
+        assets.where((a) => a.endsWith('pantalon_2_cadera.png')),
+        hasLength(1),
+      );
+      // En la pierna cercana: pantorrilla del personaje < pantalón del
+      // muslo < pantalón de la rodilla.
+      final shin = at('rodilla_relleno.png', last: true);
+      final pantsThigh = at('pantalon_2_muslo.png', last: true);
+      final pantsKnee = at('pantalon_2_rodilla.png', last: true);
+      expect(pantsThigh, greaterThan(shin));
+      expect(pantsKnee, greaterThan(pantsThigh));
+      // La cadera va debajo del muslo de la pierna cercana.
+      expect(
+        at('pantalon_2_cadera.png'),
+        lessThan(at('muslo_relleno.png', last: true)),
+      );
+    });
+
+    testWidgets('las bermudas no tienen capa de rodilla', (tester) async {
+      final assets = await assetsWith(tester, PantsStyle.cargo);
+      expect(assets.where((a) => a.contains('pantalon_3_muslo')), hasLength(2));
+      expect(assets.where((a) => a.contains('pantalon_3_rodilla')), isEmpty);
+    });
+
+    testWidgets('la falda va sobre las piernas y no se mueve con ellas', (
+      tester,
+    ) async {
+      final assets = await assetsWith(tester, PantsStyle.tutu);
+      expect(assets.where((a) => a.contains('pantalon_10_')), hasLength(1));
+      expect(
+        assets.indexWhere((a) => a.endsWith('pantalon_10_cadera.png')),
+        greaterThan(
+          assets.lastIndexWhere((a) => a.endsWith('muslo_relleno.png')),
+        ),
+      );
+    });
+
+    testWidgets('sin dibujo de lado no se ve el pantalón', (tester) async {
+      final assets = await assetsWith(tester, PantsStyle.golden);
+      expect(assets.where((a) => a.contains('pantalon')), isEmpty);
+    });
+
     testWidgets('solo mueve sus capas: no las vuelve a armar', (tester) async {
       final controller = AnimationController(
         vsync: tester,
@@ -152,7 +232,10 @@ void main() {
     bool exists(String asset) => File(asset).existsSync();
 
     test('todos los ojos y bocas tienen sus capas en las dos vistas', () {
-      for (final view in CharacterView.values) {
+      // De espalda no se ve la cara, así que no tiene ojos ni bocas.
+      for (final view in CharacterView.values.where(
+        (v) => v != CharacterView.espalda,
+      )) {
         for (final eyes in EyeStyle.values) {
           expect(
             exists(eyes.tintedAssetIn(view)),

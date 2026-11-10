@@ -41,6 +41,9 @@ flutter:
     - assets/images/personaje/accesorios/
     - assets/images/personaje/frente/bocas/
     - assets/images/personaje/frente/camisas/
+    - assets/images/personaje/espalda/cabellos/
+    - assets/images/personaje/espalda/camisas/
+    - assets/images/personaje/espalda/pantalones/
     - assets/images/personaje/frente/cabellos/
     - assets/images/personaje/frente/cuerpo/
     - assets/images/personaje/frente/ojos/
@@ -52,6 +55,7 @@ flutter:
     - assets/images/personaje/lado/ojos/
     - assets/maps/mapa_01/
 
+    - assets/images/personaje/lado/pantalones/
   # Tipografía del mockup.
   fonts:
     - family: Inter

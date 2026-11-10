@@ -14,22 +14,69 @@ import 'package:party_tricks/widgets/pants_picker.dart';
 
 void main() {
   group('los pantalones', () {
-    test('hay uno, y no es gratis', () {
-      expect(PantsStyle.values, hasLength(1));
+    test('hay 21, con ids seguidos, y ninguno es gratis', () {
+      expect(PantsStyle.values, hasLength(21));
+      expect(PantsStyle.values.map((p) => p.id), [
+        for (var i = 1; i <= 21; i++) i,
+      ]);
       expect(PantsStyle.golden.id, 1);
-      expect(PantsStyle.golden.isFree, isFalse);
+      expect(PantsStyle.values.every((p) => !p.isFree), isTrue);
+      expect(PantsStyle.values.map((p) => p.title).toSet(), hasLength(21));
     });
 
-    test(
-      'tiene dibujo de frente (todavía no de lado) y está declarado',
-      () async {
-        TestWidgetsFlutterBinding.ensureInitialized();
-        final asset = PantsStyle.golden.assetFor(CharacterView.frente)!;
-        expect(File(asset).existsSync(), isTrue);
-        await rootBundle.load(asset);
-        expect(PantsStyle.golden.assetFor(CharacterView.lado), isNull);
-      },
-    );
+    test('hay de todos los largos y de todas las rarezas', () {
+      expect(
+        PantsStyle.values.map((p) => p.cut).toSet(),
+        PantsCut.values.toSet(),
+      );
+      expect(
+        PantsStyle.values.where((p) => p.cut == PantsCut.skirt),
+        hasLength(3),
+      );
+      expect(PantsStyle.neon.rarity.level, 5);
+    });
+
+    test('el dorado solo tiene dibujo de frente', () {
+      expect(PantsStyle.golden.sideArt, isFalse);
+      expect(PantsStyle.golden.assetFor(CharacterView.lado), isNull);
+      expect(PantsStyle.golden.sideThighAsset, isNull);
+    });
+
+    test('cada capa existe, con su nombre exacto, y está declarada', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      // En Android los nombres distinguen mayúsculas: se compara el nombre
+      // tal como está en la carpeta.
+      Set<String> names(String dir) =>
+          Directory(dir).listSync().map((e) => e.uri.pathSegments.last).toSet();
+      final front = names('assets/images/personaje/frente/pantalones');
+      final side = names('assets/images/personaje/lado/pantalones');
+      for (final p in PantsStyle.values) {
+        final frontAsset = p.assetFor(CharacterView.frente)!;
+        expect(front, contains(frontAsset.split('/').last), reason: p.title);
+        await rootBundle.load(frontAsset);
+        for (final asset in [
+          p.sideHipAsset,
+          p.sideThighAsset,
+          p.sideKneeAsset,
+        ]) {
+          if (asset == null) continue;
+          expect(side, contains(asset.split('/').last), reason: p.title);
+          await rootBundle.load(asset);
+        }
+      }
+    });
+
+    test('las capas de lado dependen del largo', () {
+      expect(PantsStyle.jeans.sideKneeAsset, isNotNull);
+      expect(PantsStyle.jeans.sideThighAsset, isNotNull);
+      expect(PantsStyle.cargo.sideKneeAsset, isNull);
+      expect(PantsStyle.cargo.sideThighAsset, isNotNull);
+      expect(PantsStyle.tutu.sideThighAsset, isNull);
+      expect(PantsStyle.tutu.sideKneeAsset, isNull);
+      expect(PantsStyle.tutu.sideHipAsset, isNotNull);
+      expect(PantsStyle.tutu.hipOverLegs, isTrue);
+      expect(PantsStyle.jeans.hipOverLegs, isFalse);
+    });
 
     test('el precio coincide con firestore.rules', () {
       final rules = File('firestore.rules').readAsStringSync();
@@ -105,6 +152,6 @@ void main() {
     expect(find.byType(NoneMark), findsOneWidget);
     await t.tap(find.byType(NoneMark));
     expect(picked, isNull);
-    expect(find.byType(PantsThumbnail), findsOneWidget);
+    expect(find.byType(PantsThumbnail), findsWidgets);
   });
 }
