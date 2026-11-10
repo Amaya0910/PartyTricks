@@ -6,7 +6,13 @@
         android:label="Party Tricks"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
+        <!-- H-05: los datos de la app (la sesión de Firebase y la caché de
+             Firestore, con el correo y los chats) no salen del celular en
+             copias de seguridad ni al pasar a un celular nuevo. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
