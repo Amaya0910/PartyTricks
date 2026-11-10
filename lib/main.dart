@@ -6,10 +6,13 @@ import 'package:party_tricks/firebase_options.dart';
 import 'package:party_tricks/navigation/root_navigator.dart';
 import 'package:party_tricks/services/notifications/notification_background.dart';
 import 'package:party_tricks/screens/app_gate.dart';
+import 'package:party_tricks/services/release_logging.dart';
 import 'package:party_tricks/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // En release no se escribe nada en la consola (H-09).
+  silenceDebugLogsInRelease();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Los avisos que llegan con la app cerrada se atienden en otro proceso.
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
