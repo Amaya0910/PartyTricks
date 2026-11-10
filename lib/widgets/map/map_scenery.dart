@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:party_tricks/models/map/board_map.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/map/map_assets.dart';
+import 'package:party_tricks/services/map/route_curves.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/map/map_paths_painter.dart';
 
@@ -15,11 +16,15 @@ class MapScenery extends StatelessWidget {
     super.key,
     required this.map,
     required this.board,
+    required this.routes,
     required this.pathTexture,
   });
 
   final BoardMap map;
   final BoardLayout board;
+
+  /// Los caminos suaves entre casillas.
+  final RouteCurves routes;
   final ui.Image pathTexture;
 
   /// Tamaño de las marcas pintadas sobre el pasto.
@@ -42,11 +47,7 @@ class MapScenery extends StatelessWidget {
             ),
             Positioned.fill(
               child: CustomPaint(
-                painter: MapPathsPainter(
-                  map: map,
-                  board: board,
-                  texture: pathTexture,
-                ),
+                painter: MapPathsPainter(routes: routes, texture: pathTexture),
               ),
             ),
             for (final layer in _layersByDepth()) layer.widget,

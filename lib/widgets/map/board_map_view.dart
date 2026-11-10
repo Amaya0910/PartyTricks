@@ -3,12 +3,14 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/character_look.dart';
+import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/map/board_map.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/map/board_walk.dart';
 import 'package:party_tricks/services/map/coin_tracker.dart';
 import 'package:party_tricks/services/map/map_assets.dart';
+import 'package:party_tricks/services/map/route_curves.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/character/walking_character.dart';
@@ -118,9 +120,13 @@ class _BoardMapViewState extends State<BoardMapView>
   /// armar (ni a ordenar sus piezas) con cada cambio de la partida.
   late Widget _scenery = _buildScenery();
 
+  /// Los caminos suaves; se vuelven a calcular solo si cambia el mapa.
+  late RouteCurves _routes = RouteCurves.build(widget.map, widget.board);
+
   Widget _buildScenery() => MapScenery(
     map: widget.map,
     board: widget.board,
+    routes: _routes,
     pathTexture: widget.pathTexture,
   );
 
@@ -141,6 +147,9 @@ class _BoardMapViewState extends State<BoardMapView>
     if (oldWidget.map != widget.map ||
         oldWidget.board != widget.board ||
         oldWidget.pathTexture != widget.pathTexture) {
+      if (oldWidget.map != widget.map || oldWidget.board != widget.board) {
+        _routes = RouteCurves.build(widget.map, widget.board);
+      }
       _scenery = _buildScenery();
     }
     _coins.onRound(widget.state.round);
@@ -169,6 +178,7 @@ class _BoardMapViewState extends State<BoardMapView>
         () => _Walker(
           start: position,
           anchorOf: _anchorOf,
+          routes: () => _routes,
           controller: AnimationController(vsync: this, duration: _stepDuration),
           onHop: id == widget.myId ? _followMe : null,
           onArrive: id == widget.myId ? _collectCoin : null,
@@ -441,7 +451,18 @@ class _BoardMapViewState extends State<BoardMapView>
     final fork = _anchorOf(me.tile);
     return [
       for (final tileId in widget.board.tile(me.tile).next)
-        (fork, _anchorOf(tileId)),
+        // La flecha apunta hacia donde sale la curva, no hacia la casilla.
+        (
+          fork,
+          _routes
+              .curve(
+                me.tile,
+                tileId,
+                fallbackFrom: fork,
+                fallbackTo: _anchorOf(tileId),
+              )
+              .pointAt(0.3),
+        ),
     ];
   }
 
@@ -552,13 +573,13 @@ class _Walker {
   _Walker({
     required int start,
     required this.anchorOf,
+    required this.routes,
     required this.controller,
     required this.onIdle,
     this.onHop,
     this.onArrive,
   }) : tile = start,
-       _from = anchorOf(start),
-       _to = anchorOf(start) {
+       _curve = RouteCurve.straight(anchorOf(start), anchorOf(start)) {
     controller
       ..addListener(() => onHop?.call())
       ..addStatusListener((status) {
@@ -569,6 +590,10 @@ class _Walker {
   }
 
   final Offset Function(int tileId) anchorOf;
+
+  /// Los caminos suaves; se pide al usarlos porque se recalculan si cambia
+  /// el mapa.
+  final RouteCurves Function() routes;
   final AnimationController controller;
   final VoidCallback onIdle;
 
@@ -581,11 +606,14 @@ class _Walker {
   /// Casilla a la que llegó o hacia la que está saltando.
   int tile;
   final List<int> _pending = [];
-  Offset _from;
-  Offset _to;
+  RouteCurve _curve;
 
   /// Hacia dónde mira: a la derecha o a la izquierda según su último paso.
   bool faceRight = true;
+
+  /// Si este paso va hacia arriba en la pantalla (más arriba que a los
+  /// lados): entonces se le ve de espalda.
+  bool goingUp = false;
 
   bool get walking => controller.isAnimating || _pending.isNotEmpty;
 
@@ -603,23 +631,33 @@ class _Walker {
       return;
     }
     final next = _pending.removeAt(0);
-    _from = anchorOf(tile);
-    _to = anchorOf(next);
-    if (_to.dx != _from.dx) faceRight = _to.dx > _from.dx;
+    final from = anchorOf(tile);
+    final to = anchorOf(next);
+    _curve = routes().curve(tile, next, fallbackFrom: from, fallbackTo: to);
+    if (to.dx != from.dx) faceRight = to.dx > from.dx;
+    goingUp = isGoingUp(from, to);
     tile = next;
     controller.forward(from: 0);
+  }
+
+  /// Un paso va "hacia arriba" si sube bastante más de lo que se mueve de
+  /// lado (más de unos 55 grados sobre la horizontal).
+  static bool isGoingUp(Offset from, Offset to) {
+    final up = from.dy - to.dy;
+    return up > 0 && up > (to.dx - from.dx).abs() * 1.4;
   }
 
   /// Dónde van los pies ahora. El paso es parejo (sin acelerar ni frenar en
   /// cada casilla) para que se vea un solo caminar seguido y no coincida con
   /// los pasos de las piernas.
-  Offset get position => Offset.lerp(_from, _to, controller.value)!;
+  Offset get position => _curve.pointAt(controller.value);
 
   void dispose() => controller.dispose();
 }
 
 /// El personaje de un jugador en el mapa: de frente y respirando cuando está
-/// quieto, y de lado, caminando, mientras avanza de casilla en casilla.
+/// quieto, de lado caminando mientras avanza de casilla en casilla y de
+/// espalda cuando el paso sube por la pantalla.
 /// Debajo lleva una sombra con el color del jugador para distinguirlos.
 class _Figure extends StatelessWidget {
   const _Figure({
@@ -640,6 +678,13 @@ class _Figure extends StatelessWidget {
       phase: walker.controller,
       look: look,
       faceRight: walker.faceRight,
+    );
+    // Cuando sube por el mapa se le ve de espalda.
+    final walkingAway = AnimatedCharacter.fromLook(
+      look,
+      phase: walker.controller,
+      view: CharacterView.espalda,
+      animation: const WalkAwayAnimation(),
     );
     return Stack(
       children: [
@@ -665,7 +710,11 @@ class _Figure extends StatelessWidget {
         Positioned.fill(
           child: AnimatedBuilder(
             animation: walker.controller,
-            builder: (context, _) => walker.walking ? walking : idle,
+            builder: (context, _) => !walker.walking
+                ? idle
+                : walker.goingUp
+                ? walkingAway
+                : walking,
           ),
         ),
       ],
