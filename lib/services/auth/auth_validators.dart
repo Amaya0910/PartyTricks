@@ -22,17 +22,6 @@ class AuthValidators {
     return null;
   }
 
-  /// Al iniciar sesión se acepta el correo o el nombre de usuario. Si trae
-  /// una arroba se trata como correo y se revisa su formato.
-  static String? identifier(String? value) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Escribe tu correo o nombre de usuario.';
-    if (text.contains('@') && !_emailPattern.hasMatch(text)) {
-      return 'El correo no es válido.';
-    }
-    return null;
-  }
-
   static String? username(String? value) {
     final text = value?.trim() ?? '';
     if (text.isEmpty) return 'Escribe un nombre de usuario.';

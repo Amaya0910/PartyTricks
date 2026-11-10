@@ -17,21 +17,10 @@ void main() {
     });
   });
 
-  group('identifier (correo o nombre de usuario)', () {
-    test('acepta un correo o un nombre de usuario', () {
-      expect(AuthValidators.identifier('tay@correo.com'), isNull);
-      expect(AuthValidators.identifier('Tay_01'), isNull);
-      expect(AuthValidators.identifier('  tay_01  '), isNull);
-    });
-
-    test('rechaza vacío', () {
-      expect(AuthValidators.identifier(null), isNotNull);
-      expect(AuthValidators.identifier('   '), isNotNull);
-    });
-
-    test('si trae arroba, revisa el formato del correo', () {
-      expect(AuthValidators.identifier('tay@correo'), isNotNull);
-      expect(AuthValidators.identifier('tay@'), isNotNull);
+  group('inicio de sesión solo con correo (H-01)', () {
+    test('un nombre de usuario ya no sirve para entrar', () {
+      expect(AuthValidators.email('Tay_01'), 'El correo no es válido.');
+      expect(AuthValidators.email('  tay_01  '), 'El correo no es válido.');
     });
   });
 

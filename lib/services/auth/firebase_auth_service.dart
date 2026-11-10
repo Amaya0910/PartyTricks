@@ -9,6 +9,7 @@ import 'package:party_tricks/services/auth/auth_service.dart';
 import 'package:party_tricks/services/auth/firebase_error_messages.dart';
 import 'package:party_tricks/services/auth/friend_code_generator.dart';
 import 'package:party_tricks/services/auth/google_id_token_source.dart';
+import 'package:party_tricks/services/auth/username_reservation.dart';
 
 /// Se usa dentro de la transacción cuando el código de amistad ya existe.
 class _FriendCodeTaken implements Exception {
@@ -24,8 +25,8 @@ class _UsernameTaken implements Exception {
 ///
 /// Colecciones:
 /// - `users/{uid}`: el perfil.
-/// - `usernames/{nombre en minúsculas}`: reserva el nombre de usuario y guarda
-///   el correo, para poder iniciar sesión con el nombre.
+/// - `usernames/{nombre en minúsculas}`: reserva el nombre de usuario. Solo
+///   guarda el uid: el correo no se publica (H-01).
 /// - `friendCodes/{código}`: reserva el código de amistad.
 ///
 /// Las reservas se crean en la misma transacción que el perfil, así dos
@@ -152,15 +153,13 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<UserProfile> signIn({
-    required String identifier,
+    required String email,
     required String password,
   }) async {
-    final email = await _resolveEmail(identifier);
-
     final User user;
     try {
       final credential = await _auth.signInWithEmailAndPassword(
-        email: email,
+        email: email.trim(),
         password: password,
       );
       user = credential.user!;
@@ -179,7 +178,7 @@ class FirebaseAuthService implements AuthService {
         UserProfile.fromMap(snapshot.id, data),
         user,
       );
-      await _publishEmailForUsernameLogin(profile);
+      await _removeEmailFromReservation(profile);
       return profile;
     } on FirebaseException catch (e) {
       debugPrint('Inicio de sesión: error de Firestore ${e.code} ${e.message}');
@@ -215,7 +214,7 @@ class FirebaseAuthService implements AuthService {
         UserProfile.fromMap(snapshot.id, data),
         user,
       );
-      await _publishEmailForUsernameLogin(profile);
+      await _removeEmailFromReservation(profile);
       return GoogleSignInResult.signedIn;
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageFor(e));
@@ -300,36 +299,18 @@ class FirebaseAuthService implements AuthService {
     }
   }
 
-  /// Devuelve el correo para autenticar: el mismo texto si es un correo, o el
-  /// que está guardado junto al nombre de usuario (sin distinguir mayúsculas).
-  Future<String> _resolveEmail(String identifier) async {
-    final text = identifier.trim();
-    if (text.contains('@')) return text;
-
+  /// Las reservas creadas antes de H-01 guardaban el correo (para entrar con
+  /// el nombre). Al entrar se le quita a la reserva propia. Si falla, no
+  /// importa: el inicio de sesión ya salió bien y se intenta la próxima vez.
+  Future<void> _removeEmailFromReservation(UserProfile profile) async {
+    final ref = _usernames.doc(profile.username.toLowerCase());
     try {
-      final snapshot = await _usernames.doc(text.toLowerCase()).get();
-      final email = snapshot.data()?['email'] as String?;
-      if (email == null || email.isEmpty) {
-        throw const AuthException(FirebaseErrorMessages.wrongCredentials);
+      final snapshot = await ref.get();
+      if (snapshot.data()?.containsKey('email') ?? false) {
+        await ref.update({'email': FieldValue.delete()});
       }
-      return email;
     } on FirebaseException catch (e) {
-      debugPrint('Búsqueda de usuario: ${e.code} ${e.message}');
-      throw AuthException(_firestoreMessage(e));
-    }
-  }
-
-  /// Las cuentas creadas antes de poder entrar con el nombre de usuario no
-  /// guardaron su correo en la reserva. Se completa al iniciar sesión con el
-  /// correo. Si falla, no importa: el inicio de sesión ya salió bien.
-  Future<void> _publishEmailForUsernameLogin(UserProfile profile) async {
-    try {
-      await _usernames.doc(profile.username.toLowerCase()).set({
-        'uid': profile.uid,
-        'email': profile.email,
-      }, SetOptions(merge: true));
-    } on FirebaseException catch (e) {
-      debugPrint('No se pudo guardar el correo del usuario: ${e.code}');
+      debugPrint('No se pudo quitar el correo de la reserva: ${e.code}');
     }
   }
 
@@ -347,8 +328,9 @@ class FirebaseAuthService implements AuthService {
           final usernameRef = _usernames.doc(username.toLowerCase());
           final codeRef = _friendCodes.doc(friendCode);
 
-          final usernameSnapshot = await transaction.get(usernameRef);
-          if (usernameSnapshot.exists) throw const _UsernameTaken();
+          if (await UsernameReservation.isTaken(transaction, usernameRef)) {
+            throw const _UsernameTaken();
+          }
           final codeSnapshot = await transaction.get(codeRef);
           if (codeSnapshot.exists) throw const _FriendCodeTaken();
 
@@ -358,7 +340,7 @@ class FirebaseAuthService implements AuthService {
             username: username,
             friendCode: friendCode,
           );
-          transaction.set(usernameRef, {'uid': uid, 'email': email});
+          transaction.set(usernameRef, UsernameReservation.data(uid));
           transaction.set(codeRef, {'uid': uid});
           transaction.set(_users.doc(uid), profile.toMap());
           return profile;

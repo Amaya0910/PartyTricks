@@ -618,14 +618,26 @@ service cloud.firestore {
       allow delete: if isUser(uid);
     }
 
-    // Reserva del nombre de usuario. Se lee sin sesión para poder iniciar
-    // sesión con el nombre, pero solo por nombre exacto (get), nunca la
-    // lista completa: tiene correos y hay jugadores menores.
+    // Reserva del nombre de usuario: solo guarda el uid (H-01). Antes
+    // guardaba el correo y se leía sin sesión para entrar con el nombre, así
+    // que cualquiera podía sacar el correo de un jugador. Ahora se entra con
+    // el correo o con Google, y la reserva solo se lee con sesión (para saber
+    // si un nombre está libre), nunca la lista completa.
+    //
+    // Las reservas viejas que todavía tienen el correo solo las lee su dueño,
+    // y la app le quita el correo cuando vuelve a entrar.
     match /usernames/{name} {
-      allow get: if true;
+      allow get: if signedIn()
+        && (resource == null || !('email' in resource.data)
+            || resource.data.uid == request.auth.uid);
       allow list: if false;
-      allow create: if isUser(request.resource.data.uid);
-      allow update, delete: if isUser(resource.data.uid);
+      allow create: if isUser(request.resource.data.uid)
+        && request.resource.data.keys().hasOnly(['uid']);
+      // Solo para quitarle el correo a una reserva vieja.
+      allow update: if isUser(resource.data.uid)
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isUser(resource.data.uid);
     }
 
     // Reserva del código de amistad. Se busca por código exacto para
