@@ -587,12 +587,13 @@ service cloud.firestore {
     }
 
     match /invites/{inviteId} {
-      // El invitado ve sus invitaciones y solo puede marcarlas como vistas.
+      // El invitado ve sus invitaciones y solo puede marcarlas como vistas o
+      // rechazadas (el botón Rechazar de la notificación).
       allow read: if signedIn() && resource.data.toUid == request.auth.uid;
       allow update: if signedIn()
         && resource.data.toUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['seen']);
+             .hasOnly(['seen', 'declined']);
 
       // Solo a amigos que no te bloquearon.
       allow create: if signedIn()
@@ -603,6 +604,21 @@ service cloud.firestore {
                ? request.auth.uid + '_' + request.resource.data.toUid
                : request.resource.data.toUid + '_' + request.auth.uid)
         && !blockedBy(request.resource.data.toUid);
+    }
+
+    // Notificaciones: cada celular guarda aquí su código de Firebase Cloud
+    // Messaging con el uid de su dueño. Solo se puede escribir a nombre
+    // propio y nadie lo lee desde la app: lo lee la Cloud Function que manda
+    // los avisos (las funciones no pasan por estas reglas).
+    match /fcmTokens/{token} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'platform', 'updatedAt']);
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'platform', 'updatedAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
     // Bloqueos: el id es "bloqueador_bloqueado".

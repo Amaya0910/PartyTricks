@@ -47,3 +47,5 @@ app.*.map.json
 
 
 /assets/mock/
+# Cloud Functions
+functions/node_modules/
