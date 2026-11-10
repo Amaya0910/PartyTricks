@@ -59,4 +59,11 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
+    <!-- H-10: el plugin de la cámara declara el micrófono, pero la app solo
+         toma fotos (enableAudio: false). Se quita del manifiesto final para
+         pedir solo los permisos que se usan. -->
+    <uses-permission
+        xmlns:tools="http://schemas.android.com/tools"
+        android:name="android.permission.RECORD_AUDIO"
+        tools:node="remove" />
 </manifest>
