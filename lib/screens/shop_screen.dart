@@ -315,6 +315,9 @@ class _ChestCard extends StatelessWidget {
 }
 
 /// Fila de chips para filtrar los cosméticos por categoría.
+/// Los filtros y el orden, en una sola fila: los filtros se desplazan hacia
+/// los lados (texto pequeño, el elegido subrayado) y el orden queda fijo a la
+/// derecha. Ocupa una línea en vez de varias.
 class _FilterBar extends StatelessWidget {
   const _FilterBar({
     required this.selected,
@@ -332,40 +335,30 @@ class _FilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
+      height: 42,
       color: AppColors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.only(left: 8),
       child: Row(
         children: [
           Expanded(
-            child: Wrap(
-              spacing: 8,
-              children: [
-                for (final filter in ShopFilter.values)
-                  ChoiceChip(
-                    label: Text(filter.label),
-                    selected: filter == selected,
-                    onSelected: (_) => onSelected(filter),
-                    showCheckmark: false,
-                    backgroundColor: AppColors.wardrobeChip,
-                    selectedColor: AppColors.blueStrong,
-                    labelStyle: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: filter == selected
-                          ? AppColors.white
-                          : AppColors.wardrobeInk,
+            // Son pocos: se arman todos, sin esperar a que se desplace.
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final filter in ShopFilter.values)
+                    _FilterTab(
+                      label: filter.label,
+                      selected: filter == selected,
+                      onTap: () => onSelected(filter),
                     ),
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
           PopupMenuButton<ShopSort>(
             tooltip: 'Ordenar',
+            iconSize: 20,
             icon: const Icon(Icons.sort, color: AppColors.wardrobeInk),
             initialValue: sort,
             onSelected: onSortSelected,
@@ -375,6 +368,60 @@ class _FilterBar extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Un filtro de la fila: solo texto; el elegido va en azul y subrayado.
+class _FilterTab extends StatelessWidget {
+  const _FilterTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Center(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: selected ? AppColors.blueStrong : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected
+                        ? AppColors.blueStrong
+                        : AppColors.wardrobeInk,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

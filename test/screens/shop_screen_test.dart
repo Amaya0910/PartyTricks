@@ -291,6 +291,9 @@ void main() {
     expect(find.text(ShirtStyle.blue.title), findsNothing);
     expect(find.text(EyeStyle.ojo1.title), findsNothing);
 
+    // La fila de filtros se desplaza: se acerca el filtro antes de tocarlo.
+    await tester.ensureVisible(find.text('Accesorios'));
+    await tester.pump();
     await tester.tap(find.text('Accesorios'));
     await tester.pump();
     expect(find.text(AccessoryStyle.ogre.title), findsOneWidget);
@@ -322,6 +325,9 @@ void main() {
 
   testWidgets('comprar un accesorio, si alcanzan las monedas', (tester) async {
     await pump(tester);
+    // La fila de filtros se desplaza: se acerca el filtro antes de tocarlo.
+    await tester.ensureVisible(find.text('Accesorios'));
+    await tester.pump();
     await tester.tap(find.text('Accesorios'));
     await tester.pump();
     await tester.tap(find.text(AccessoryStyle.ogre.title));
