@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -5,6 +8,16 @@ plugins {
     // END: FlutterFire Configuration
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// H-06: la versión release se firma con la llave del equipo, nunca con la de
+// depuración. La ruta y las claves de la llave van en android/key.properties,
+// que no se sube a Git (ver android/key.properties.example).
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+val hasReleaseKey = keystorePropertiesFile.exists()
+if (hasReleaseKey) {
+    FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
 }
 
 android {
@@ -30,12 +43,56 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (hasReleaseKey) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            // R8 reduce y ofusca el código Java/Kotlin y quita los recursos
+            // sin usar. Flutter ya lo activa en release; aquí queda explícito.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
+    }
+}
+
+// H-06: una versión release sin la llave del equipo o sin ofuscar el código
+// Dart no se arma (antes salía firmada con la llave de depuración).
+gradle.taskGraph.whenReady {
+    val buildsRelease = allTasks.any { task ->
+        task.project == project &&
+            task.name.endsWith("Release") &&
+            listOf("assemble", "bundle", "package").any { task.name.startsWith(it) }
+    }
+    if (!buildsRelease) return@whenReady
+    if (!hasReleaseKey) {
+        throw GradleException(
+            "Falta android/key.properties: la versión release no se firma con la " +
+                "llave de depuración. Copia android/key.properties.example y " +
+                "llénalo con la llave del equipo.",
+        )
+    }
+    if (project.findProperty("dart-obfuscation")?.toString() != "true") {
+        throw GradleException(
+            "La versión release tiene que ofuscar el código Dart. Compila con: " +
+                "flutter build apk --release --obfuscate " +
+                "--split-debug-info=build/app/outputs/symbols",
+        )
     }
 }
 

@@ -6,7 +6,7 @@ class FirebaseErrorMessages {
   const FirebaseErrorMessages._();
 
   static const String wrongCredentials =
-      'Correo, usuario o contraseña incorrectos.';
+      'Correo o contraseña incorrectos.';
 
   static String auth(FirebaseAuthException error) {
     switch (error.code) {

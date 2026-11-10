@@ -618,14 +618,26 @@ service cloud.firestore {
       allow delete: if isUser(uid);
     }
 
-    // Reserva del nombre de usuario. Se lee sin sesión para poder iniciar
-    // sesión con el nombre, pero solo por nombre exacto (get), nunca la
-    // lista completa: tiene correos y hay jugadores menores.
+    // Reserva del nombre de usuario: solo guarda el uid (H-01). Antes
+    // guardaba el correo y se leía sin sesión para entrar con el nombre, así
+    // que cualquiera podía sacar el correo de un jugador. Ahora se entra con
+    // el correo o con Google, y la reserva solo se lee con sesión (para saber
+    // si un nombre está libre), nunca la lista completa.
+    //
+    // Las reservas viejas que todavía tienen el correo solo las lee su dueño,
+    // y la app le quita el correo cuando vuelve a entrar.
     match /usernames/{name} {
-      allow get: if true;
+      allow get: if signedIn()
+        && (resource == null || !('email' in resource.data)
+            || resource.data.uid == request.auth.uid);
       allow list: if false;
-      allow create: if isUser(request.resource.data.uid);
-      allow update, delete: if isUser(resource.data.uid);
+      allow create: if isUser(request.resource.data.uid)
+        && request.resource.data.keys().hasOnly(['uid']);
+      // Solo para quitarle el correo a una reserva vieja.
+      allow update: if isUser(resource.data.uid)
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isUser(resource.data.uid);
     }
 
     // Reserva del código de amistad. Se busca por código exacto para
@@ -683,10 +695,46 @@ service cloud.firestore {
     // Amigos, chat e invitaciones (D-22)
     // ---------------------------------------------------------------------
 
+    // Campos del perfil público (PublicProfile.toMap). Si se agrega uno en la
+    // app, hay que agregarlo aquí. Ya están los de las ramas en curso
+    // (camisa, accesorio y cabello).
+    function publicProfileKeys() {
+      return ['username', 'friendCode', 'experience', 'photoUrl', 'skinTone',
+              'eyes', 'eyeColor', 'mouth', 'mouthColor', 'shirt', 'accessory',
+              'hair', 'hairColor', 'avatarColor', 'facePhoto'];
+    }
+
+    // Foto de perfil: nada, o una foto de Google por HTTPS (H-03). Es la
+    // misma lista de lib/services/security/trusted_photo_url.dart.
+    function photoUrlOk(data) {
+      return !('photoUrl' in data) || data.photoUrl == null
+        || (data.photoUrl is string && data.photoUrl.size() <= 2048
+            && data.photoUrl.matches('^https://lh3[.]googleusercontent[.]com/[A-Za-z0-9_=./-]+$'));
+    }
+
+    // El perfil público lo escribe su dueño, pero no puede inventar (H-04):
+    // el nombre tiene que ser el que reservó, el código de amistad el suyo y
+    // la XP la de su perfil privado.
+    function publicProfileOk(uid, data) {
+      let reservation = /databases/$(database)/documents/usernames/$(data.username.lower());
+      let code = /databases/$(database)/documents/friendCodes/$(data.friendCode);
+      let owner = /databases/$(database)/documents/users/$(uid);
+      return data.keys().hasOnly(publicProfileKeys())
+        && data.username is string
+        && exists(reservation) && get(reservation).data.uid == uid
+        && data.friendCode is string
+        && exists(code) && get(code).data.uid == uid
+        && data.experience == get(owner).data.get('experience', 0)
+        && photoUrlOk(data)
+        && facePhotoOk(data);
+    }
+
     // Lo que ven los demás: sin correo.
     match /publicProfiles/{uid} {
       allow read: if signedIn();
-      allow write: if isUser(uid) && facePhotoOk(request.resource.data);
+      allow create, update: if isUser(uid)
+        && publicProfileOk(uid, request.resource.data);
+      allow delete: if isUser(uid);
     }
 
     // Solicitudes y amistades. "get" va por id (así se puede leer aunque
@@ -711,18 +759,67 @@ service cloud.firestore {
       allow delete: if inPair(pairId);
     }
 
+    // Código de sala: 6 letras y números sin I, O, 0 ni 1 (igual que en
+    // database.rules.json).
+    function roomCodeOk(code) {
+      return code is string && code.matches('^[A-HJ-NP-Z2-9]{6}$');
+    }
+
+    // Un mensaje tal como lo arma la app (ChatMessage.toMap), siempre a
+    // nombre propio (H-08). También es la vista previa del chat.
+    function messageOk(m) {
+      return m.keys().hasOnly(['senderId', 'text', 'sentAt', 'type', 'roomId',
+                               'roomCode'])
+        && m.senderId == request.auth.uid
+        && m.text is string && m.text.size() <= 200
+        && m.sentAt is int
+        && m.get('type', 'text') in ['text', 'invite']
+        && (!('roomId' in m) || (m.roomId is string && m.roomId.size() <= 40))
+        && (!('roomCode' in m) || roomCodeOk(m.roomCode));
+    }
+
+    // Cada uno marca como leído solo lo suyo.
+    function lastReadOk(before, data) {
+      let mine = request.auth.uid;
+      return data.lastReadAt is map
+        && data.lastReadAt.diff(before.get('lastReadAt', {})).affectedKeys()
+             .hasOnly([mine])
+        && data.lastReadAt[mine] is int;
+    }
+
+    // Resumen del chat (H-08): los miembros son la pareja, la vista previa es
+    // un mensaje propio y la marca de leído es la propia.
+    function chatSummaryOk(pairId) {
+      let data = request.resource.data;
+      let before = resource == null ? {} : resource.data;
+      let changed = data.diff(before).affectedKeys();
+      return data.keys().hasOnly(['members', 'lastMessage', 'lastReadAt'])
+        && (!changed.hasAny(['members'])
+            || (data.members is list && data.members.size() == 2
+                && data.members.hasAll(pairId.split('_'))))
+        && (!changed.hasAny(['lastMessage']) || messageOk(data.lastMessage))
+        && (!changed.hasAny(['lastReadAt']) || lastReadOk(before, data));
+    }
+
+    // El nombre en una invitación es el que reservó quien invita (H-08).
+    function inviterNameOk(name) {
+      let reservation = /databases/$(database)/documents/usernames/$(name.lower());
+      return name is string && exists(reservation)
+        && get(reservation).data.uid == request.auth.uid;
+    }
+
     match /chats/{pairId} {
-      allow get, write: if inPair(pairId);
+      allow get: if inPair(pairId);
       allow list: if signedIn() && request.auth.uid in resource.data.members;
+      allow create, update: if inPair(pairId) && chatSummaryOk(pairId);
+      allow delete: if inPair(pairId);
 
       match /messages/{messageId} {
         allow read: if inPair(pairId);
-        // Solo entre amigos, a nombre propio, de máximo 200 caracteres y si
-        // el otro no te bloqueó.
+        // Solo entre amigos, a nombre propio, de máximo 200 caracteres, con
+        // los campos de la app (H-08) y si el otro no te bloqueó.
         allow create: if inPair(pairId)
-          && request.resource.data.senderId == request.auth.uid
-          && request.resource.data.text is string
-          && request.resource.data.text.size() <= 200
+          && messageOk(request.resource.data)
           && areFriends(pairId)
           && !blockedBy(otherOf(pairId));
       }
@@ -738,9 +835,20 @@ service cloud.firestore {
              .hasOnly(['seen', 'declined']);
 
       // Solo a amigos que no te bloquearon.
+      // Con los campos de la app y el nombre real de quien invita (H-08).
       allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['fromUid', 'fromName', 'toUid',
+                                                 'roomId', 'roomCode', 'sentAt',
+                                                 'seen'])
         && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
         && request.resource.data.toUid != request.auth.uid
+        && inviterNameOk(request.resource.data.fromName)
+        && request.resource.data.roomId is string
+        && request.resource.data.roomId.size() <= 40
+        && roomCodeOk(request.resource.data.roomCode)
+        && request.resource.data.sentAt is int
+        && request.resource.data.seen == false
         && areFriends(
              request.auth.uid < request.resource.data.toUid
                ? request.auth.uid + '_' + request.resource.data.toUid
@@ -775,10 +883,24 @@ service cloud.firestore {
     }
 
     // Reportes: se pueden crear, pero nadie los lee desde la app (los
-    // revisa un adulto o el docente en la consola de Firebase).
+    // revisa un adulto o el docente en la consola de Firebase). Solo con los
+    // campos de la app y un motivo de lib/models/social/report_reason.dart
+    // (H-08): si cambian allá, hay que cambiarlos aquí.
     match /reports/{reportId} {
       allow create: if signedIn()
-        && request.resource.data.reporterUid == request.auth.uid;
+        && request.resource.data.keys().hasOnly(['reporterUid', 'reportedUid',
+                                                 'reason', 'chatId',
+                                                 'createdAt'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.reportedUid is string
+        && request.resource.data.reportedUid != request.auth.uid
+        && request.resource.data.reason in ['offensiveLanguage', 'harassment',
+                                            'inappropriateContent', 'other']
+        && request.resource.data.chatId == (
+             request.auth.uid < request.resource.data.reportedUid
+               ? request.auth.uid + '_' + request.resource.data.reportedUid
+               : request.resource.data.reportedUid + '_' + request.auth.uid)
+        && request.resource.data.createdAt is int;
     }
   }
 }

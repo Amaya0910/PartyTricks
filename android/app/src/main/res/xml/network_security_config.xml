@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- H-03: la app solo habla por HTTPS (Firebase y las fotos de Google).
+     Prohíbe el tráfico en claro aunque una URL llegue con http, y solo confía
+     en los certificados del sistema. En las versiones de depuración también
+     acepta certificados instalados por el usuario, para poder revisar el
+     tráfico con mitmproxy o Charles sin debilitar la versión release. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

@@ -18,12 +18,12 @@ class LoginCard extends ConsumerStatefulWidget {
 }
 
 class _LoginCardState extends ConsumerState<LoginCard> {
-  final TextEditingController _identifier = TextEditingController();
+  final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
 
   @override
   void dispose() {
-    _identifier.dispose();
+    _email.dispose();
     _password.dispose();
     super.dispose();
   }
@@ -32,7 +32,7 @@ class _LoginCardState extends ConsumerState<LoginCard> {
     FocusScope.of(context).unfocus();
     await ref
         .read(authControllerProvider.notifier)
-        .signIn(identifier: _identifier.text, password: _password.text);
+        .signIn(email: _email.text, password: _password.text);
   }
 
   @override
@@ -54,8 +54,8 @@ class _LoginCardState extends ConsumerState<LoginCard> {
       ),
       fields: [
         AuthTextField(
-          controller: _identifier,
-          hint: 'Ingrese su correo o nombre de usuario',
+          controller: _email,
+          hint: 'Ingrese su correo',
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
           enabled: !form.isLoading,

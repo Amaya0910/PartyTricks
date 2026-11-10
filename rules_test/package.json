@@ -1,0 +1,15 @@
+{
+  "name": "party-tricks-rules-test",
+  "private": true,
+  "description": "Pruebas de las reglas de Firestore y Realtime Database de Party Tricks con el emulador local de Firebase (auditoría de seguridad, ver los hallazgos H-01, H-03, H-04 y H-08).",
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore,database --project demo-party-tricks \"node --test --test-concurrency=1 --test-reporter=spec\"",
+    "test:solo": "node --test --test-concurrency=1 --test-reporter=spec"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.2.0",
+    "firebase-tools": "^15.35.0"
+  }
+}
