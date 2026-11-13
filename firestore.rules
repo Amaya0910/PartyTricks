@@ -22,6 +22,14 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // Correo verificado (H-13). Las funciones sociales (amistades, chat e
+    // invitaciones) lo exigen: sin esto, una cuenta creada con un correo ajeno
+    // podría escribirle a otros jugadores. Las cuentas de Google ya llegan
+    // verificadas.
+    function verified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
     // Los ids de pareja son "uidA_uidB" (en orden alfabético).
     function inPair(pairId) {
       return signedIn() && request.auth.uid in pairId.split('_');
@@ -745,6 +753,7 @@ service cloud.firestore {
       allow list: if signedIn() && request.auth.uid in resource.data.members;
 
       allow create: if inPair(pairId)
+        && verified()
         && request.resource.data.requestedBy == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.members.hasAll(pairId.split('_'))
@@ -752,6 +761,7 @@ service cloud.firestore {
 
       // Aceptar: solo se puede cambiar el estado.
       allow update: if inPair(pairId)
+        && verified()
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['status']);
 
@@ -811,7 +821,8 @@ service cloud.firestore {
     match /chats/{pairId} {
       allow get: if inPair(pairId);
       allow list: if signedIn() && request.auth.uid in resource.data.members;
-      allow create, update: if inPair(pairId) && chatSummaryOk(pairId);
+      allow create, update: if inPair(pairId) && verified()
+        && chatSummaryOk(pairId);
       allow delete: if inPair(pairId);
 
       match /messages/{messageId} {
@@ -819,6 +830,7 @@ service cloud.firestore {
         // Solo entre amigos, a nombre propio, de máximo 200 caracteres, con
         // los campos de la app (H-08) y si el otro no te bloqueó.
         allow create: if inPair(pairId)
+          && verified()
           && messageOk(request.resource.data)
           && areFriends(pairId)
           && !blockedBy(otherOf(pairId));
@@ -836,7 +848,7 @@ service cloud.firestore {
 
       // Solo a amigos que no te bloquearon.
       // Con los campos de la app y el nombre real de quien invita (H-08).
-      allow create: if signedIn()
+      allow create: if verified()
         && request.resource.data.keys().hasOnly(['fromUid', 'fromName', 'toUid',
                                                  'roomId', 'roomCode', 'sentAt',
                                                  'seen'])

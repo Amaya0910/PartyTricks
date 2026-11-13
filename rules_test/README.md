@@ -2,7 +2,7 @@
 
 Pruebas automáticas de `firestore.rules` y `database.rules.json` con el
 emulador local de Firebase. Salieron de la auditoría de seguridad (OWASP Mobile
-Top 10): cada archivo prueba un hallazgo (`h01_…`, `h03_…`, `h04_…`, `h08_…`).
+Top 10): cada archivo prueba un hallazgo (`h01_…`, `h03_…`, `h04_…`, `h08_…`, `h13_…`).
 
 Cada archivo tiene dos tipos de prueba:
 

@@ -56,7 +56,8 @@ describe('H-08 · Chat, invitaciones y reportes con campos validados', () => {
     });
   });
 
-  const dbDe = (uid) => env.authenticatedContext(uid).firestore();
+  const dbDe = (uid) =>
+    env.authenticatedContext(uid, { email_verified: true }).firestore();
 
   // Como FirestoreSocialPaths.addMessage: el mensaje y el resumen del chat
   // van en la misma escritura.
