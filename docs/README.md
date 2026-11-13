@@ -7,6 +7,7 @@ Este es el índice de la documentación. Cada documento tiene un propósito; si 
 
 | Documento | Qué contiene |
 |---|---|
+| [`requerimientos.md`](requerimientos.md) | Requerimientos funcionales y no funcionales, con prioridad y estado |
 | [`diseno_juego.md`](diseno_juego.md) | Concepto, reglas, mecánicas y flujo de una partida |
 | [`arquitectura.md`](arquitectura.md) | Estructura de carpetas, capas, Firebase y gestión de estado |
 | [`pantallas.md`](pantallas.md) | Pantallas y navegación (enlazadas al mockup de Figma) |
