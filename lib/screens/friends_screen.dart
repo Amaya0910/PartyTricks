@@ -13,6 +13,7 @@ import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/friend_request_tile.dart';
 import 'package:party_tricks/widgets/friend_tile.dart';
 import 'package:party_tricks/widgets/join_code_dialog.dart';
+import 'package:party_tricks/widgets/verify_email_banner.dart';
 
 /// Pestaña Amigos: la tarjeta "Tus amigos" con las solicitudes, la lista y
 /// el botón "+"; o el chat con un amigo, en la misma tarjeta (como en el
@@ -124,6 +125,7 @@ class _FriendsList extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const _Title(),
+            const VerifyEmailBanner(),
             Expanded(
               child: loading
                   ? const Center(child: CircularProgressIndicator())

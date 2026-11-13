@@ -262,6 +262,11 @@ class FirebaseAuthService implements AuthService {
     if (user == null) return false;
     try {
       await user.reload();
+      // El permiso de amigos y chat (H-13) mira el claim `email_verified` del
+      // token: hay que pedir uno nuevo, si no el viejo sigue diciendo false.
+      if (_auth.currentUser?.emailVerified ?? false) {
+        await user.getIdToken(true);
+      }
     } on FirebaseAuthException catch (e) {
       throw AuthException(_messageFor(e));
     }
