@@ -619,3 +619,29 @@
   - iOS: subir la clave APNs a Firebase y activar *Push Notifications* y *Background Modes* en Xcode.
   - Probarlo en dos celulares.
   - Se usa `flutter_local_notifications` 22 (la 23 pide una versión del SDK de Android que no compila aquí) y `getToken` de Firebase aunque aparezca como deprecado, porque la función manda con el código FCM de siempre.
+
+## D-46. Tienda al pasar, turno de 40 s y mensaje de "no quedan jugadores"
+
+- **Fecha:** 2026-11-13
+- **Estado:** Propuesta
+- **Decisión:**
+  - **Tienda al pasar por encima:** la tienda del mapa se abre al caer en su casilla **y también al pasar** por ella. De paso, el movimiento se detiene con los pasos que faltan en `stepsLeft` (fase `shopping`); el botón dice **Seguir** y, al tocarlo, el jugador termina de avanzar y se aplica la casilla donde cae. Al caer, el botón sigue diciendo **Terminar**. Cambios en `game_engine.dart` (`_move`, `_afterStep`, `_leaveShop`); sin cambios de esquema ni de reglas.
+  - **Turno de 40 s:** a quien no decide en 40 s (lanzar, elegir camino o salir de la tienda) se le salta el turno aunque siga conectado. El conteo lo lleva el `RoomGuard` del anfitrión y se reinicia en cada decisión; `DisconnectionPolicy.turnTimeout` pasa de 30 a 40 s y también es lo que se espera a un desconectado.
+  - **Mensaje de "no quedan jugadores":** si todos los demás salieron o llevan 40 s desconectados, se muestra "¡Se acabó la fiesta!" con "Lo sentimos, no quedan jugadores :(" y el botón **Regresar a menú** (`NoPlayersLeftView`). No da premios. Si alguien vuelve antes, el mensaje se quita solo.
+- **Motivo:** con 2 tiendas en 42 casillas y entrando solo al caer, cada jugador visitaba una tienda 0,4 veces en una partida de 10 rondas (simulación), y el diamante "Más comprador" era casi un sorteo. Un jugador conectado que no hace nada trababa la partida.
+- **Pendiente:**
+  - Confirmar los valores de casillas, monedas y precios propuestos en `diseno_juego.md` (6.2 y 8) y pasarlos al código.
+  - Con la tienda de paso, las visitas suben; volver a simular y revisar los precios.
+  - Probar el turno de 40 s y la pantalla de "no quedan jugadores" con varios celulares.
+
+## D-47. Más efectos en las casillas especiales y menú de Jugar con la tarjeta de la app
+
+- **Fecha:** 2026-11-13
+- **Estado:** Propuesta
+- **Decisión:**
+  - **Efectos especiales:** pasan de 5 a **14** (6 buenos, 6 malos y 2 neutros). Nuevos: Viento a favor, Escudo de regalo, Ítem sorpresa, Diamante de regalo, Cambio de monedas, Dado de 2, Pierdes el turno, Se te cae un ítem y Paga la cuenta de la fiesta. Cada uno tiene **peso** en el sorteo (`PendingEffect.weight`), así los fuertes (diamante, perder el turno) salen menos. Los malos pesan un poco más que los buenos (49 contra 47). La lista, con sus pesos, está en `diseno_juego.md`, sección 6.1.
+  - El efecto se sortea al caer y se aplica al lanzar el dado (`GameEngine._roll` y `_applyEffect`). "Pierdes el turno" no lanza el dado y pasa el turno. Los nombres guardados de los cinco efectos de antes no cambian; un efecto que la versión no conoce se ignora al leer la partida.
+  - El panel de la partida muestra el efecto pendiente de cada jugador con su nombre (`PendingEffect.title`), en verde, rojo o morado.
+  - **Menú de Jugar:** usa `DialogCard` con fondo desenfocado, como los demás diálogos, y sus botones llevan ícono y solo el título. Sin cambios de lógica.
+- **Motivo:** las especiales daban siempre uno de 5 efectos y casi ninguno cambiaba la partida; el menú de Jugar era el único diálogo con el estilo básico de Material.
+- **Pendiente:** probar en celulares; revisar los pesos al jugar; "Cambio de monedas" y "Pierdes el turno" son los más fuertes y pueden frustrar a quien los recibe.

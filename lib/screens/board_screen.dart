@@ -11,6 +11,7 @@ import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
+import 'package:party_tricks/services/game_engine/tile_effects.dart';
 import 'package:party_tricks/services/map/map_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
@@ -22,6 +23,7 @@ import 'package:party_tricks/widgets/map_items_dialog.dart';
 import 'package:party_tricks/widgets/map/board_map_view.dart';
 import 'package:party_tricks/widgets/minigames/minigame_result_overlay.dart';
 import 'package:party_tricks/widgets/minigames/minigame_view.dart';
+import 'package:party_tricks/widgets/no_players_left_view.dart';
 
 /// Pantalla de la partida: el tablero, los jugadores y lo que toca hacer.
 ///
@@ -50,6 +52,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   /// Presencia, cambio de anfitrión y turnos de los desconectados.
   RoomGuard? _guard;
   String? _myUid;
+
+  /// Todos los demás se fueron: se muestra el mensaje de "no quedan
+  /// jugadores". Si alguien vuelve, se quita solo.
+  bool _alone = false;
 
   /// Mide la partida para las estadísticas (tiempo jugando y en minijuegos).
   final _timeTracker = MatchTimeTracker();
@@ -125,6 +131,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
           .sendAction(widget.roomId, SkipTurn(playerId)),
       onMinigameTimeout: (action) =>
           ref.read(gameServiceProvider).sendAction(widget.roomId, action),
+      onAloneChanged: (alone) {
+        if (mounted) setState(() => _alone = alone);
+      },
     )..start();
     final room = ref.read(roomProvider(widget.roomId)).value;
     _guard!.update(
@@ -265,6 +274,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     if (game != null) _diceCounts ??= _diceCountsOf(game);
     if (game != null && me != null && game.phase == GamePhase.finished) {
       return ResultsScreen(game: game, myId: me.uid, onExit: _leave);
+    }
+    if (_alone && game != null && game.phase != GamePhase.finished) {
+      return NoPlayersLeftView(onExit: _leave);
     }
     final mapView = game == null || me == null ? null : _mapView(game, me.uid);
     final players = game == null ? null : _minigamePlayers(game);
@@ -498,7 +510,8 @@ class _Panel extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: _Button(
-              label: 'Terminar',
+              // De paso (le quedan pasos) sigue su camino; si cayó, termina.
+              label: game.stepsLeft > 0 ? 'Seguir' : 'Terminar',
               onPressed: () => onAction(LeaveShop(myId)),
             ),
           ),
@@ -558,6 +571,22 @@ class _PlayerRow extends StatelessWidget {
           fontWeight: hasTurn ? FontWeight.bold : FontWeight.normal,
         ),
       ),
+      // Lo que le dejó una casilla especial para su siguiente turno.
+      subtitle: switch (player.pendingEffect) {
+        final effect? => Text(
+          '✨ ${effect.title}',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: switch (effect.kind) {
+              EffectKind.good => Colors.green.shade700,
+              EffectKind.bad => Colors.red.shade700,
+              EffectKind.neutral => Colors.deepPurple,
+            },
+          ),
+        ),
+        null => null,
+      },
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

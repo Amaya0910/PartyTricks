@@ -124,6 +124,131 @@ void main() {
     });
   });
 
+  group('tiempo máximo por turno', () {
+    test('el turno dura 40 segundos', () {
+      expect(policy.turnTimeout, const Duration(seconds: 40));
+    });
+
+    test('se salta a quien sigue conectado pero no hace nada', () {
+      final started = testNow;
+      for (final phase in [
+        GamePhase.rolling,
+        GamePhase.choosingBranch,
+        GamePhase.shopping,
+      ]) {
+        final turn = game('ana', phase);
+        expect(
+          policy.shouldSkipTurn(
+            testRoom(),
+            turn,
+            started.add(const Duration(seconds: 39)),
+            turnStartedAt: started,
+          ),
+          isFalse,
+          reason: '${phase.name} a los 39 s',
+        );
+        expect(
+          policy.shouldSkipTurn(
+            testRoom(),
+            turn,
+            started.add(const Duration(seconds: 40)),
+            turnStartedAt: started,
+          ),
+          isTrue,
+          reason: '${phase.name} a los 40 s',
+        );
+      }
+    });
+
+    test('no cuenta en el minijuego ni al terminar', () {
+      final started = testNow;
+      final later = started.add(const Duration(minutes: 5));
+      for (final phase in [GamePhase.minigame, GamePhase.finished]) {
+        expect(
+          policy.shouldSkipTurn(
+            testRoom(),
+            game('ana', phase),
+            later,
+            turnStartedAt: started,
+          ),
+          isFalse,
+          reason: phase.name,
+        );
+      }
+    });
+  });
+
+  group('quedarse solo', () {
+    test('solo si todos los demás salieron o llevan desconectados', () {
+      final turn = game('host', GamePhase.rolling);
+      expect(
+        policy.isAlone(
+          testRoom(anaConnected: false, betoConnected: false),
+          turn,
+          'host',
+          testNow,
+        ),
+        isTrue,
+      );
+      expect(
+        policy.isAlone(testRoom(anaConnected: false), turn, 'host', testNow),
+        isFalse,
+        reason: 'Beto sigue conectado',
+      );
+    });
+
+    test('quien salió de la sala cuenta como ido', () {
+      final room = Room(
+        id: 'sala',
+        code: 'ABC234',
+        isPublic: false,
+        hostUid: 'host',
+        maxPlayers: 4,
+        rounds: 5,
+        status: RoomStatus.playing,
+        lobbyEndsAt: testNow,
+        players: {
+          'host': RoomPlayer(uid: 'host', username: 'Host', joinedAt: testNow),
+        },
+      );
+      expect(
+        policy.isAlone(room, game('host', GamePhase.rolling), 'host', testNow),
+        isTrue,
+      );
+    });
+
+    test('un desconectado reciente puede volver: aún no está solo', () {
+      final room = testRoom(anaConnected: false, betoConnected: false);
+      // testRoom los marca desconectados a las 19:00.
+      final soon = DateTime(2026, 10, 28, 19, 0, 10);
+      expect(
+        policy.isAlone(room, game('host', GamePhase.rolling), 'host', soon),
+        isFalse,
+      );
+    });
+
+    test('no al terminar la partida ni si el propio jugador no está', () {
+      final room = testRoom(anaConnected: false, betoConnected: false);
+      expect(
+        policy.isAlone(room, game('host', GamePhase.finished), 'host', testNow),
+        isFalse,
+      );
+      expect(
+        policy.isAlone(
+          testRoom(
+            hostPresent: false,
+            anaConnected: false,
+            betoConnected: false,
+          ),
+          game('ana', GamePhase.rolling),
+          'host',
+          testNow,
+        ),
+        isFalse,
+      );
+    });
+  });
+
   group('salas abandonadas', () {
     test('con alguien conectado nunca está abandonada', () {
       final old = testNow.subtract(const Duration(days: 3));

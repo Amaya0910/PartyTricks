@@ -8,9 +8,11 @@
 
 | Caso | Qué pasa |
 |---|---|
-| Un jugador pierde la conexión | El servidor lo marca `connected: false` con la hora (`lastSeen`). Si es su turno y no vuelve en **30 s**, el anfitrión se lo salta |
-| Se desconecta en la tienda (`shopping`) | Pasados los 30 s, el anfitrión lo saca de la tienda sin comprar y sigue el siguiente. La partida no se bloquea |
-| Se desconecta en una bifurcación | Pasados los 30 s, sigue por el camino principal |
+| Un jugador pierde la conexión | El servidor lo marca `connected: false` con la hora (`lastSeen`). Si es su turno y no vuelve en **40 s**, el anfitrión se lo salta |
+| Un jugador sigue conectado pero **no hace nada** en su turno | Pasados **40 s** desde que empezó a esperarse (lanzar, elegir camino o tienda), el anfitrión le salta el turno. El conteo lo lleva el teléfono del anfitrión (`RoomGuard`) y se reinicia en cada decisión |
+| Se desconecta en la tienda (`shopping`) | Pasados los 40 s, el anfitrión lo saca de la tienda sin comprar y sigue el siguiente. La partida no se bloquea |
+| Se desconecta en una bifurcación | Pasados los 40 s, sigue por el camino principal |
+| Los demás jugadores se fueron y solo queda uno | Ve **"¡Se acabó la fiesta!"** con "Lo sentimos, no quedan jugadores :(" y el botón **Regresar a menú** (`NoPlayersLeftView`). Cuenta como "ido" quien salió de la sala o lleva 40 s desconectado; si alguien vuelve antes, el mensaje se quita solo. No hay premios |
 | Vuelve a conectarse | Se marca conectado solo. Conserva todo (posición, monedas, diamantes, mochila), porque la partida vive en la base de datos. Al jugar de nuevo deja de estar "ausente" |
 | Cierra la app y la vuelve a abrir | En Inicio aparece **"Tienes una partida en curso" → Volver** |
 | El anfitrión pierde la conexión | La partida sigue. Si no vuelve en **15 s**, el jugador conectado que llegó primero toma `hostUid` y su teléfono empieza a aplicar las acciones. Las que llegaron mientras tanto esperan en la fila y no se pierden |
@@ -28,7 +30,7 @@
 | Tiempo | Valor | Mínimo de las reglas |
 |---|---|---|
 | `hostTimeout`: espera al anfitrión antes de reemplazarlo | 15 s | 10 s. Si se pone menos, se usa 10 s |
-| `turnTimeout`: espera a un jugador antes de saltar su turno | 30 s | — |
+| `turnTimeout`: tiempo máximo de un turno (conectado o no) y espera a un desconectado antes de saltarlo | 40 s | — |
 | `abandonedAfter`: sala sin nadie y sin señales | 2 h | 2 h |
 
 Los tiempos se comparan con la **hora del servidor** (`.info/serverTimeOffset`), porque `lastSeen` la pone el servidor. Así no importa si el reloj de un celular está mal.

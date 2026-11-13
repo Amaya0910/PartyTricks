@@ -30,6 +30,7 @@ class RoomGuard {
     required this.policy,
     this.onSkipTurn,
     this.onMinigameTimeout,
+    this.onAloneChanged,
     MinigameReferee? referee,
     this.interval = const Duration(seconds: 2),
     this.heartbeat = const Duration(minutes: 1),
@@ -47,6 +48,10 @@ class RoomGuard {
   /// Solo en la partida: cómo pedirle al motor que cierre el minijuego (o
   /// infle por quien no juega) cuando se acaba el tiempo.
   final Future<void> Function(MinigameTimeout action)? onMinigameTimeout;
+
+  /// Solo en la partida: avisa cuando este jugador se queda como el único
+  /// (true) o cuando alguien vuelve y deja de estarlo (false).
+  final void Function(bool alone)? onAloneChanged;
   final MinigameReferee _referee;
 
   final Duration interval;
@@ -67,6 +72,15 @@ class RoomGuard {
   DateTime? _skippedAt;
   static const retrySkip = Duration(seconds: 10);
 
+  /// Cuándo se vio por primera vez el turno que se está esperando (hora del
+  /// servidor). Sirve para saltarlo si el jugador sigue conectado pero no
+  /// hace nada (`DisconnectionPolicy.turnTimeout`). Si cambia el anfitrión,
+  /// el nuevo empieza a contar desde que lo ve.
+  String? _waitingTurn;
+  DateTime? _waitingSince;
+
+  bool _alone = false;
+
   void start() {
     _stopPresence = presence.track(roomId, uid);
     _timer = Timer.periodic(interval, (_) => tick());
@@ -85,6 +99,7 @@ class RoomGuard {
     _busy = true;
     try {
       final now = presence.serverNow();
+      _watchAlone(room, now);
       if (policy.successorFor(room, now) == uid) {
         await rooms.claimHost(
           roomId: roomId,
@@ -107,10 +122,21 @@ class RoomGuard {
       }
       final skip = onSkipTurn;
       if (game == null || skip == null) return;
-      if (!policy.shouldSkipTurn(room, game, now)) return;
       final turn =
           '${game.round}/${game.turnIndex}/${game.phase.name}/'
           '${game.currentPlayerId}/${game.stepsLeft}';
+      if (_waitingTurn != turn) {
+        _waitingTurn = turn;
+        _waitingSince = now;
+      }
+      if (!policy.shouldSkipTurn(
+        room,
+        game,
+        now,
+        turnStartedAt: _waitingSince,
+      )) {
+        return;
+      }
       final at = _skippedAt;
       if (_skipped == turn && at != null && now.difference(at) < retrySkip) {
         return;
@@ -124,6 +150,17 @@ class RoomGuard {
     } finally {
       _busy = false;
     }
+  }
+
+  /// Avisa a la pantalla cuando este jugador se queda solo o deja de estarlo.
+  void _watchAlone(Room room, DateTime now) {
+    final game = _game;
+    final notify = onAloneChanged;
+    if (game == null || notify == null) return;
+    final alone = policy.isAlone(room, game, uid, now);
+    if (alone == _alone) return;
+    _alone = alone;
+    notify(alone);
   }
 
   void dispose() {
