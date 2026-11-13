@@ -6,9 +6,11 @@
 
 ## 1. Cuándo se abre la tienda
 
-- La tienda se abre **solo si el jugador CAE** en una casilla tienda (la 17 y la 36 en el primer mapa). Pasar por encima no hace nada.
-- También cuenta si llega a la tienda después de elegir camino en una bifurcación: lo que importa es la casilla donde termina el movimiento.
-- Al caer, la partida pasa a la fase `shopping` y el turno **no** pasa al siguiente. El jugador compra lo que quiera (si le alcanza) y toca **Terminar** para pasar el turno.
+- La tienda se abre tanto si el jugador **CAE** en una casilla tienda (la 17 y la 36 en el primer mapa) como si **PASA** por encima de ella (D-46).
+- **De paso:** el movimiento se detiene en la tienda con los pasos que le faltan guardados en `stepsLeft`. Compra lo que quiera y toca **Seguir** para terminar de avanzar; luego se aplica la casilla donde cae. Si en el camino hay otra tienda, se detiene otra vez.
+- **Al caer:** el turno **no** pasa al siguiente. El jugador compra y toca **Terminar** para pasar el turno.
+- También vale cuando llega a la tienda después de elegir camino en una bifurcación.
+- En las dos formas la partida pasa a la fase `shopping`. Si el jugador no hace nada, a los 40 s se le salta el turno (ver `disconnections.md`).
 - Mientras está en la tienda nadie más puede lanzar el dado ni comprar.
 
 ## 2. Ítems

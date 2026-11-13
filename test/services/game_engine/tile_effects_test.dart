@@ -23,15 +23,22 @@ void main() {
   });
 
   test('la especial sortea un efecto para el siguiente turno', () {
+    // El primer número del sorteo es del primer efecto (dado de 3).
     final outcome = effects.resolve(TileType.special, FakeRandomSource([1]));
     expect(outcome.coinDelta, 0);
-    expect(outcome.pendingEffect, PendingEffect.die12);
+    expect(outcome.pendingEffect, PendingEffect.die3);
   });
 
-  test('la especial puede dar cualquiera de los 5 efectos', () {
-    final random = FakeRandomSource([0, 1, 2, 3, 4]);
+  test('la especial puede dar cualquiera de los efectos', () {
+    var before = 0;
+    final numbers = <int>[];
+    for (final effect in PendingEffect.values) {
+      numbers.add(before + 1);
+      before += effect.weight;
+    }
+    final random = FakeRandomSource(numbers);
     final sorteados = [
-      for (var i = 0; i < 5; i++)
+      for (var i = 0; i < numbers.length; i++)
         effects.resolve(TileType.special, random).pendingEffect,
     ];
     expect(sorteados, PendingEffect.values);
