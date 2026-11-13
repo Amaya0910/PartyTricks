@@ -107,7 +107,7 @@ Toda la partida se guarda en Firebase y no solo en el celular del creador. Así,
 ## 10. Pendientes
 
 - [ ] Qué pasa si un jugador desconectado quiere volver a la partida.
-- [ ] Tiempo máximo por turno, por si alguien se queda inactivo.
+- [x] Tiempo máximo por turno: 40 s (D-46).
 - [ ] Reglas de seguridad de Firebase.
 - [ ] Moderación del chat.
 - [x] Si los minijuegos necesitan un motor de animación: se decide por minijuego; Flame solo si hace falta (ver `decisiones.md`, D-11).

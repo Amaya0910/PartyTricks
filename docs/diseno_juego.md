@@ -116,6 +116,7 @@ Resultados: ganador, experiencia, dinero y diamantes a la cuenta personal
 ### 5.2 Turno de un jugador
 
 - Lanza un dado del 1 al 6 (más los dados extra que haya comprado, ver sección 8).
+- Tiene **40 segundos** para decidir (lanzar, elegir camino o salir de la tienda). Si no lo hace, se le salta el turno.
 - El resultado define cuántas casillas **avanza**.
 - Los turnos siguen el orden definido al inicio.
 
@@ -135,15 +136,56 @@ Resultados: ganador, experiencia, dinero y diamantes a la cuenta personal
 | Negativa | Quita monedas |
 | Especial | Da un **efecto aleatorio para la siguiente ronda** |
 
-Efectos posibles de una casilla especial:
+Efectos posibles de una casilla especial (D-47). El efecto se sortea al caer, se ve junto al nombre del jugador y se aplica **al lanzar el dado** en su siguiente turno. Los fuertes salen menos (peso del sorteo entre paréntesis; total 110):
 
-- Dado de 3 en el siguiente turno.
-- Dado de 12 en el siguiente turno.
-- Regresa al inicio del mapa (no afecta demasiado porque el mapa es cíclico).
-- Te quita monedas.
-- Te da monedas.
+| Tipo | Efecto | Qué hace |
+|---|---|---|
+| Bueno | Dado de 12 (8) | El siguiente dado llega a 12 |
+| Bueno | Lluvia de monedas (10) | Gana monedas |
+| Bueno | Viento a favor (10) | Avanza 3 casillas más |
+| Bueno | Escudo de regalo (8) | Recibe un escudo (si le cabe en la mochila) |
+| Bueno | Ítem sorpresa (8) | Recibe un ítem al azar que le quepa |
+| Bueno | Diamante de regalo (3) | Gana 1 diamante |
+| Neutro | Regreso al inicio (8) | Vuelve a la salida (el mapa es cíclico, no pesa mucho) |
+| Neutro | Cambio de monedas (6) | Intercambia sus monedas con un rival al azar |
+| Malo | Dado de 3 (8) | El siguiente dado solo llega a 3 |
+| Malo | Dado de 2 (9) | El siguiente dado solo llega a 2 |
+| Malo | Se esfuman las monedas (10) | Pierde monedas |
+| Malo | Pierdes el turno (6) | No lanza en su siguiente turno |
+| Malo | Se te cae un ítem (8) | Pierde un ítem de la mochila al azar (si no tiene, nada) |
+| Malo | Paga la cuenta de la fiesta (8) | Le da 2 monedas a cada rival (o las que tenga) |
 
-Cantidad y distribución de casillas de cada tipo: **(por definir)**.
+Son 6 buenos, 6 malos y 2 neutros; los malos pesan algo más (49 contra 47) a propósito. Los efectos de monedas usan 5 hoy (propuesta de 6 en 6.2).
+
+Cantidad y distribución de casillas de cada tipo: ver 6.2 **(propuesto)**.
+
+### 6.2 Distribución y valores de las casillas **(propuesto, 2026-11-13)**
+
+Mapa 1 (42 casillas, hoy en `board_layout.dart`):
+
+| Tipo | Cantidad | Proporción | Efecto propuesto |
+|---|---|---|---|
+| Positiva | 21 | 50 % | **+4** monedas (hoy +3) |
+| Negativa | 14 | 33 % | **−3** monedas (hoy −3) |
+| Especial | 4 | 10 % | Efecto aleatorio; los de monedas dan o quitan **6** (hoy 5) |
+| Tienda | 2 | 5 % | Abre la tienda de la partida |
+| Salida | 1 | 2 % | Sin efecto |
+
+- Se deja más ganancia que pérdida a propósito (+4 contra −3): una partida es una carrera por diamantes y no debe sentirse como perder todo el tiempo. Sale un promedio de **+1 moneda por turno** con las casillas.
+- Un jugador nunca baja de 0 monedas.
+- Para mapas nuevos se mantiene la proporción: **~50 % positivas, ~33 % negativas, ~10 % especiales y 1 tienda por cada 15 a 20 casillas**.
+
+**Cuántas monedas gana un jugador en una partida** (simulación de 4 jugadores, caminos al azar, 20 000 partidas):
+
+| Rondas | Con las casillas de hoy (+3 / −3 / 5) | Con la propuesta (+4 / −3 / 6) |
+|---|---|---|
+| 5 | +3,0 | +5,7 |
+| 10 | +6,4 | +11,6 |
+| 15 | +9,6 | +17,5 |
+
+A eso se suman las **10 monedas** con las que empieza y las del minijuego (10 por ronda ganada; con 4 jugadores, unos 2,5 minijuegos ganados en 10 rondas, o sea +25). Una partida de 10 rondas deja a un jugador promedio con unas **47 monedas**. Los minijuegos pesan más que las casillas, y es lo que se busca: premian la habilidad y no solo el azar.
+
+**Problema que salió de la simulación (resuelto):** con 2 tiendas en 42 casillas y entrando solo al **caer**, cada jugador visitaba una tienda **0,4 veces** por partida de 10 rondas (0,6 en una de 15), y el diamante "Más comprador" era casi un sorteo. Se decidió que la tienda también se abra **al pasar por encima** (`decisiones.md`, D-46). Las visitas reales subirán y hay que volver a simular.
 
 ---
 
@@ -161,7 +203,21 @@ El juego maneja dos monedas, cada una con una versión de partida y una de cuent
 
 ## 8. Tienda de la partida
 
-Hay **dos tiendas** en el mapa. Se compra con las **monedas de partida**. Todos los precios están **(por definir)**.
+Hay **dos tiendas** en el mapa. Se compra con las **monedas de partida**. Los precios de hoy son provisionales; abajo va la propuesta.
+
+**Precios propuestos (2026-11-13).** Se parte de que un jugador llega a la primera tienda con unas 15 a 20 monedas: los ítems baratos deben alcanzar a la primera visita y los fuertes pedir ahorrar.
+
+| Ítem | Hoy | Propuesto | Por qué |
+|---|---|---|---|
+| Dado extra de 3 | 4 | 4 | Ayuda poco |
+| Dado extra de 6 | 6 | 7 | Rinde el doble que el de 3 |
+| Dado extra de 9 | 9 | 10 | Casi un turno extra |
+| Impulso | 4 | 5 | Mueve 3 casillas |
+| Trampa | 5 | 6 | Roba 5: se paga sola si alguien cae |
+| Escudo | 5 | 6 | Cubre una trampa o una casilla negativa (−3 a −5) |
+| Diamante doble | 12 | 15 | Un diamante vale la partida; debe costar ahorrar |
+
+Máximo **3 de cada ítem** en la mochila (sin cambio).
 
 | Ítem | Efecto | Estado |
 |---|---|---|
@@ -329,6 +385,7 @@ Cada nivel que sube el jugador da un premio:
 | Queda **un solo jugador** | No recibe premio y no se traslada a otra sala. Ve el mensaje **"Lo sentimos, no quedan jugadores :("** y el botón **[Regresar a menú]**, que lo lleva a la pantalla inicial |
 | Se desconecta el **creador de la sala** | **(propuesto)** la sala pasa a otro jugador para que la partida continúe |
 | Un jugador desconectado quiere volver a la partida | **(por definir)** |
+| Los demás jugadores se fueron y solo queda uno | Ve **"¡Se acabó la fiesta!"** con "Lo sentimos, no quedan jugadores :(" y el botón **Regresar a menú** (se quita solo si alguien vuelve). Sin premios |
 | Alguien se desconecta **durante un minijuego** | El minijuego no se queda esperando: al acabarse el tiempo, su jugada no cuenta (en el Globo Bomba se infla 1 por él). Si vuelve antes, puede jugar donde iba |
 | El **anfitrión** se desconecta durante un minijuego | El nuevo anfitrión sigue con el mismo minijuego: nadie pierde lo que ya jugó |
 
@@ -395,9 +452,7 @@ lib/
 
 **Contenido**
 - [ ] Lista y mecánica de los minijuegos.
-- [ ] Cantidad y distribución de casillas positivas, negativas y especiales.
-- [ ] Monedas que da cada casilla y cada minijuego.
-- [ ] Precios de los ítems de la tienda de partida y de la tienda del juego.
+- [ ] Cantidad y distribución de casillas, monedas por casilla y por minijuego, y precios de la tienda de partida: hay propuesta en 6.2 y 8, falta que el equipo la confirme.
 - [ ] Premios por subir de nivel (además de la caja sorpresa).
 - [ ] Conjunto de reacciones.
 

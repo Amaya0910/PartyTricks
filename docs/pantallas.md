@@ -65,7 +65,7 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 
 - **Cabecera del jugador:** foto de perfil, nombre de usuario, monedas y diamantes. La foto es la **cabeza de tu personaje** (con tu foto de la cara, si pusiste una) sobre el color de fondo que eliges en Ajustes. Los datos salen del perfil del jugador con la sesión iniciada.
 - **Personaje:** tu personaje animado en reposo (respira y mueve un poco la cabeza), con la piel, los ojos, la boca, la camisa, el pantalón, el cabello y el accesorio que tienes puestos, o con tu foto en toda la cara. El pantalón, los zapatos, el cabello y la nariz llegan después.
-- **Botón Jugar:** abre un menú emergente con tres opciones.
+- **Botón Jugar:** abre un menú emergente con tres opciones. Usa la misma tarjeta que los demás diálogos (fondo desenfocado, borde y cabecera azules con "¡A la party!") y botones azules con ícono y solo el título (D-47).
 
 ### Menú de Jugar
 
@@ -98,7 +98,7 @@ Archivos: `board_screen.dart`, `lib/widgets/map/` (mapa dibujado) y `board_view.
   - Al empezar se ven unas 5 casillas de ancho; al alejar del todo, el mapa llena la pantalla.
   - En una **bifurcación**, en tu turno, aparecen **dos flechas** sobre los caminos; tocas la del camino que quieres.
   - Si el mapa no carga o le faltan casillas, se muestra el tablero de cuadritos de antes para que se pueda seguir jugando.
-- Abajo, un panel con la **ronda actual**, la lista de jugadores (monedas y diamantes) y lo que toca hacer:
+- Abajo, un panel con la **ronda actual**, la lista de jugadores (monedas y diamantes; si una casilla especial le dejó un efecto, sale debajo del nombre con ✨ en verde, rojo o morado según sea bueno, malo o neutro) y lo que toca hacer:
   - **Lanzar dado** (cuando es tu turno).
   - "Toca una flecha en el mapa para elegir el camino" (cuando llegas a una bifurcación). Con el tablero de respaldo salen los botones **Seguir** y **Atajo**.
   - **Simular minijuego** (solo el creador; provisional hasta tener minijuegos).
@@ -256,7 +256,7 @@ Pantallas que se deducen del diseño del juego y que **aún no aparecen en el mo
 - [x] Tablero de juego y turnos (provisional; ver 3.2).
 - [x] Minijuegos (Para el Tiempo, Reacción y Globo Bomba; ver `decisiones.md`, D-26).
 - [x] Resultados de la partida (`results_screen.dart`).
-- [ ] Mensaje "Lo sentimos, no quedan jugadores :(" con el botón **[Regresar a menú]**.
+- [x] Mensaje "¡Se acabó la fiesta! Lo sentimos, no quedan jugadores :(" con el botón **[Regresar a menú]** (`no_players_left_view.dart`).
 - [x] Tienda de ítems: ojos, bocas, camisas, pantalones, cabellos y accesorios a la venta (ver sección 4). Faltan los demás cosméticos.
 - [x] Foto de la cara: cámara con silueta, editor y resumen (ver 5.1).
 - [x] Ajustes: cuenta, preferencias, cambio de contraseña, textos legales y bloqueados (ver sección 8).
