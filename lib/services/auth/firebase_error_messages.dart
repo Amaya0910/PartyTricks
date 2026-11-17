@@ -5,8 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 class FirebaseErrorMessages {
   const FirebaseErrorMessages._();
 
-  static const String wrongCredentials =
-      'Correo o contraseña incorrectos.';
+  static const String wrongCredentials = 'Correo o contraseña incorrectos.';
 
   static String auth(FirebaseAuthException error) {
     switch (error.code) {

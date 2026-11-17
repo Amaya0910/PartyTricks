@@ -27,7 +27,9 @@ void main() {
       silenceDebugLogsInRelease(isRelease: true);
 
       final lines = _printed(
-        () => debugPrint('Inicio de sesión: error de Firestore permission-denied'),
+        () => debugPrint(
+          'Inicio de sesión: error de Firestore permission-denied',
+        ),
       );
 
       expect(lines, isEmpty);

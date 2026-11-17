@@ -52,10 +52,7 @@ abstract class AuthService {
   /// Inicia sesión con el correo y la contraseña. Con el nombre de usuario
   /// ya no se puede: para eso había que publicar el correo (H-01). Lanza
   /// [AuthException] si los datos no son correctos.
-  Future<UserProfile> signIn({
-    required String email,
-    required String password,
-  });
+  Future<UserProfile> signIn({required String email, required String password});
 
   /// Entra con una cuenta de Google. Si el correo ya tenía cuenta con
   /// contraseña, Firebase las une en la misma cuenta.

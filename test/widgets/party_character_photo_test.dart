@@ -35,7 +35,10 @@ void main() {
   testWidgets('muestra la foto de una cuenta de Google por HTTPS', (
     tester,
   ) async {
-    await pump(tester, 'https://lh3.googleusercontent.com/a/ACg8ocJ-foto=s96-c');
+    await pump(
+      tester,
+      'https://lh3.googleusercontent.com/a/ACg8ocJ-foto=s96-c',
+    );
 
     expect(find.byType(Image), findsOneWidget);
   });

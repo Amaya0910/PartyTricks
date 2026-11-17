@@ -103,9 +103,7 @@ void main() {
   testWidgets('muestra el mensaje del servicio si el inicio falla', (
     tester,
   ) async {
-    service.nextError = const AuthException(
-      'Correo o contraseña incorrectos.',
-    );
+    service.nextError = const AuthException('Correo o contraseña incorrectos.');
     await pumpScreen(tester);
 
     await tester.enterText(field(0), 'tay@correo.com');
@@ -113,10 +111,7 @@ void main() {
     await tester.tap(find.text('Entrar a la party'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Correo o contraseña incorrectos.'),
-      findsOneWidget,
-    );
+    expect(find.text('Correo o contraseña incorrectos.'), findsOneWidget);
   });
 
   testWidgets('registrarse con datos válidos llama al servicio', (
