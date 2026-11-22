@@ -163,7 +163,7 @@
 ## D-17. Inicio de sesión con correo o nombre de usuario
 
 - **Fecha:** 2026-10-20
-- **Estado:** Aceptada para el proyecto de aula
+- **Estado:** Reemplazada por D-48 (H-01): hoy solo se entra con el correo o con Google; `usernames` ya no guarda el correo
 - **Decisión:** en el inicio de sesión se acepta el correo o el nombre de usuario (sin distinguir mayúsculas). Firebase Authentication solo entra con correo, así que al registrarse se guarda el correo dentro de `usernames/{nombre}`. Al iniciar con un nombre, se lee ese documento para obtener el correo y luego se autentica. Las cuentas creadas antes de esta decisión completan ese dato la primera vez que inician sesión con su correo.
 - **Motivo:** es lo que pide el mockup de la pantalla de acceso.
 - **Riesgo:** la búsqueda ocurre antes de tener sesión, así que `usernames` debe poder leerse sin iniciar sesión. Si las reglas permitieran listar la colección, cualquiera vería los correos de todos los jugadores, y hay jugadores menores (ver D-10).
@@ -264,7 +264,7 @@
   - **Código de amistad:** se puede copiar y recargar. Recargar reserva un código nuevo en `friendCodes` y libera el viejo en la misma transacción. Los amigos actuales se conservan; el código viejo deja de servir para agregarte.
   - **Nombre de usuario:** se puede cambiar **una vez cada 30 días** (`AccountRules.usernameCooldown`). La fecha del último cambio se guarda en `users/{uid}.usernameChangedAt`. El nombre nuevo se reserva en `usernames` y el viejo se borra en la misma transacción; el perfil público se actualiza solo (D-22).
   - **Correo y contraseña:** los dos piden la contraseña actual, porque Firebase lo exige. El correo nuevo se cambia con `verifyBeforeUpdateEmail`: el cambio se aplica cuando el jugador abre el enlace, y al iniciar sesión otra vez la app copia el correo nuevo al perfil y a `usernames`. Las cuentas que solo usan Google no tienen estas dos opciones.
-  - **Verificación del correo:** al registrarse se envía el enlace. **Se puede jugar sin verificar**: Inicio y Ajustes muestran un aviso con **Reenviar** y **Ya lo verifiqué** hasta que el correo esté verificado. Las cuentas que ya existían también lo ven. Las cuentas de Google no lo ven, porque Google ya verifica el correo.
+  - **Verificación del correo:** al registrarse se envía el enlace. **Se puede jugar sin verificar** (pero amigos, chat e invitaciones lo exigen desde D-48, H-13): Inicio y Ajustes muestran un aviso con **Reenviar** y **Ya lo verifiqué** hasta que el correo esté verificado. Las cuentas que ya existían también lo ven. Las cuentas de Google no lo ven, porque Google ya verifica el correo.
   - **Inicio con Google** (`google_sign_in` 7): botón "Continuar con Google" en la tarjeta de inicio de sesión. Si el correo ya tenía cuenta con contraseña, Firebase une las dos formas de entrar en la misma cuenta (mismo uid). Quien entra con Google por primera vez elige su nombre de usuario en una pantalla aparte (`ChooseUsernameScreen`), que crea el perfil, el nombre y el código como en el registro.
   - **Preferencias** (notificaciones, sonido, efectos de sonido): se guardan en el celular con `shared_preferences`, no en Firestore. Por ahora no hay sonidos ni notificaciones; los interruptores quedan listos para cuando existan. El idioma es solo español.
   - **Más opciones:** Acerca de, Términos y condiciones, Política de privacidad (textos en `LegalDocument`, con contacto del equipo de Party Tricks: Isabella Amaya y Brayan Vasquez), Jugadores bloqueados (con **Desbloquear**) y Cerrar sesión.
@@ -645,3 +645,26 @@
   - **Menú de Jugar:** usa `DialogCard` con fondo desenfocado, como los demás diálogos, y sus botones llevan ícono y solo el título. Sin cambios de lógica.
 - **Motivo:** las especiales daban siempre uno de 5 efectos y casi ninguno cambiaba la partida; el menú de Jugar era el único diálogo con el estilo básico de Material.
 - **Pendiente:** probar en celulares; revisar los pesos al jugar; "Cambio de monedas" y "Pierdes el turno" son los más fuertes y pueden frustrar a quien los recibe.
+
+
+## D-48. Auditoría de seguridad (OWASP Mobile Top 10) y sus correcciones
+
+- **Fecha:** 2026-11-13
+- **Estado:** Aceptada (H-01, H-03, H-04, H-05, H-06, H-08, H-09, H-10 y H-13); H-02, H-07, H-11 y H-12 siguen abiertos
+- **Decisión:** se auditó la app con el OWASP Mobile Top 10 (2024) y se corrigió con un commit por hallazgo, probando las reglas con el emulador (`rules_test/`, proyecto `demo-party-tricks`, que nunca toca el real).
+  - **H-01 (correo expuesto):** `usernames/{nombre}` guarda solo el `uid`, exige sesión y rechaza el campo `email`. **Se quita el inicio de sesión con nombre de usuario** (reemplaza a D-17): se entra con el correo o con Google. La app borra el correo de las reservas viejas cuando su dueño vuelve a entrar.
+  - **H-03 (foto de la sala):** `photoUrl` solo acepta HTTPS de `lh3.googleusercontent.com`, en las reglas de Realtime Database y en la app (`TrustedPhotoUrl`). Android prohíbe el tráfico en claro (configuración de seguridad de red).
+  - **H-04 (perfil público):** `publicProfiles/{uid}` exige el nombre reservado por ese uid, su propio código de amistad, la XP de su perfil privado y solo los campos que usa la app.
+  - **H-05 (copias de seguridad):** `allowBackup` y `fullBackupContent` en `false`; las reglas de extracción excluyen todo, también en device-transfer.
+  - **H-06 (release):** la versión release se firma con la llave del equipo (`android/key.properties`, fuera de Git; ver `key.properties.example`) y se ofusca con R8 y `--obfuscate --split-debug-info`. Gradle no arma un release sin la llave ni las banderas. Se ignoran los `.jks` y `.keystore` en todo el repositorio.
+  - **H-08 (chat, invitaciones y reportes):** cada documento acepta solo los campos que escribe la app; la vista previa y la marca de leído son siempre del propio jugador; la invitación lleva el nombre reservado por quien invita; el reporte, un motivo de la lista.
+  - **H-09 (registros):** `main` silencia `debugPrint` en release (`release_logging.dart`).
+  - **H-10 (permisos):** se quita `RECORD_AUDIO`, que agregaba el plugin de la cámara sin que la app grabara audio.
+  - **H-13 (correo verificado):** las reglas piden el claim `email_verified` para las solicitudes de amistad, el chat y las invitaciones (`verified()` en `firestore.rules`). Se puede jugar sin verificar, pero esas funciones quedan cerradas. La app refresca el token al verificar y el aviso de verificación también sale en Amigos. Las cuentas de Google ya lo traen en verdadero. Modifica a D-23.
+- **Motivo:** son los entregables de la tarea de seguridad y cierran los problemas que un jugador malintencionado podía aprovechar sin modificar la app.
+- **Abiertos (con plan en el informe):**
+  - **H-02:** los premios de la partida se pueden falsificar desde un celular modificado; la solución real es calcularlos en Cloud Functions (D-15, RNF-39).
+  - **H-07:** proteger `players` de la sala en Realtime Database contra escrituras indebidas.
+  - **H-11:** `firebase-admin` 12.7.0 en `functions/` tiene 8 vulnerabilidades moderadas; hay que actualizarlo.
+  - **H-12:** restringir las llaves de Firebase y activar App Check.
+- **Pendiente:** publicar las reglas (`firebase deploy --only firestore:rules` y `--only database`) y probar el release en un celular con la llave del equipo.

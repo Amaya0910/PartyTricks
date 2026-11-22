@@ -60,7 +60,7 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | Colección | Documento | Contenido | Para qué |
 |---|---|---|---|
 | `users` | `{uid}` | El perfil de la tabla anterior | Datos del jugador |
-| `usernames` | `{nombre en minúsculas}` | `uid` y `email` | Reservar el nombre de usuario (único) y permitir iniciar sesión con él (ver D-17) |
+| `usernames` | `{nombre en minúsculas}` | `uid` (sin correo) | Reservar el nombre de usuario (único). Exige sesión para leerlo; ya no sirve para iniciar sesión con el nombre (D-48, H-01) |
 | `friendCodes` | `{código}` | `uid` | Reservar el código de amistad (único) |
 
 El perfil y las dos reservas se crean en la misma transacción al registrarse (o al elegir el nombre después de entrar con Google). Si el nombre o el código ya existen, la transacción falla y no se guarda nada. Cambiar el nombre o el código desde Ajustes también es una transacción: reserva el nuevo, borra el viejo y actualiza el perfil.
@@ -142,7 +142,7 @@ Viven en Cloud Firestore (ver `decisiones.md`, D-22). Las fechas se guardan en m
 
 | Colección | Documento | Campos | Para qué |
 |---|---|---|---|
-| `publicProfiles` | `{uid}` | `username`, `friendCode`, `experience`, `photoUrl` (sin uso) y cómo se ve la cabeza: `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor`, `avatarColor` y `facePhoto` (solo si la foto está activa) | Lo que ven los demás (sin el correo). La app lo mantiene igual al perfil. Con los datos de la cabeza se dibuja la foto de perfil de los demás |
+| `publicProfiles` | `{uid}` | `username`, `friendCode`, `experience`, `photoUrl` (sin uso) y cómo se ve la cabeza: `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor`, `avatarColor` y `facePhoto` (solo si la foto está activa) | Lo que ven los demás (sin el correo). La app lo mantiene igual al perfil y las reglas lo validan: nombre reservado por ese uid, su código de amistad, su XP y solo estos campos (D-48, H-04). Con los datos de la cabeza se dibuja la foto de perfil de los demás |
 | `friendships` | `{id de pareja}` | `members` (los dos uid), `requestedBy`, `status` (`pending` o `accepted`), `createdAt` | Solicitud y amistad |
 | `chats` | `{id de pareja}` | `members`, `lastMessage` (copia del último mensaje), `lastReadAt` (uid → fecha) | Lista de amigos: último mensaje y sin leer |
 | `chats/{id}/messages` | automático | `senderId`, `text`, `sentAt`, `type` (`text` o `invite`) y, en invitaciones, `roomId` y `roomCode` | Mensajes |

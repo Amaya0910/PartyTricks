@@ -192,5 +192,7 @@ Una tarea está terminada cuando:
 | `feature/friends-chat` | Isabella | 🟢 Listo (amigos por solicitud, chat, invitaciones, bloquear y reportar) |
 | `feature/notifications` | Isabella | 🟡 En proceso (listas las notificaciones de mensajes e invitaciones con Aceptar y Rechazar; falta desplegar la función y probarlas en celulares, D-45) |
 | `feature/disconnections` | Brayan | 🟢 Listo |
+| `feature/requerimientos-y-casillas` | Isabella | 🟢 Unida a `develop` (PR #68: requerimientos, tienda al pasar, turno de 40 s y 14 efectos de casilla) |
+| `fix/seguridad-owasp` | Isabella | 🟢 Unida a `develop` (PR #69: hallazgos H-01 a H-13; ver D-48) |
 | `docs/documentacion-completa` | Ambos | 🟢 Rama permanente (se reutiliza en cada actualización) |
 | Minijuegos | Ambos | 🔴 Pendiente |

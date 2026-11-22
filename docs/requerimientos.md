@@ -2,7 +2,7 @@
 
 > Proyecto de aula · Programación Móvil · Flutter + Firebase
 > Equipo: **Isabella Amaya** y **Brayan Vasquez**
-> Última actualización: 2026-11-13
+> Última actualización: 2026-11-18
 > Se deriva de `diseno_juego.md`, `pantallas.md`, `arquitectura.md`, `disconnections.md`, `results_system.md`, `progreso_desarrollo.md` y del informe de seguridad (OWASP Mobile Top 10). Si alguno cambia, se actualiza este documento.
 
 ---
@@ -36,12 +36,12 @@ El estado refleja lo registrado en `docs/progreso_desarrollo.md` y en el diseño
 | ID | Requerimiento | Prioridad | Estado |
 |---|---|---|---|
 | RF-01 | El sistema debe permitir registrarse con nombre de usuario, correo y contraseña (con confirmación de la contraseña) | Alta | ✅ |
-| RF-02 | El sistema debe permitir iniciar sesión con correo y contraseña, y con una cuenta de Google | Alta | ✅ |
+| RF-02 | El sistema debe permitir iniciar sesión con correo y contraseña, y con una cuenta de Google (no con el nombre de usuario, D-48) | Alta | ✅ |
 | RF-03 | El nombre de usuario y el código de amistad deben ser únicos; la creación del perfil y la reserva de ambos deben ser atómicas | Alta | ✅ |
 | RF-04 | La contraseña debe tener mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo | Media | ✅ |
 | RF-05 | El jugador debe poder cambiar su nombre de usuario (una vez cada 30 días), su correo y su contraseña | Media | ✅ |
 | RF-06 | El jugador debe poder generar un nuevo código de amistad y copiarlo | Baja | ✅ |
-| RF-07 | El sistema debe avisar mientras el correo no esté verificado y permitir reenviar el enlace; se puede jugar sin verificar | Media | ✅ |
+| RF-07 | El sistema debe avisar mientras el correo no esté verificado y permitir reenviar el enlace; se puede jugar sin verificar, pero amigos, chat e invitaciones lo exigen (RNF-25) | Media | ✅ |
 | RF-08 | El jugador debe poder cerrar sesión (con confirmación) | Alta | ✅ |
 | RF-09 | La app debe conservar la sesión iniciada y llevar al jugador directo a la pantalla principal | Alta | ✅ |
 | RF-10 | La app debe mostrar Acerca de, Términos y condiciones y Política de privacidad | Media | ✅ |
@@ -211,11 +211,11 @@ El estado refleja lo registrado en `docs/progreso_desarrollo.md` y en el diseño
 | RNF-22 | Los datos de la sala (`players`) deben protegerse contra escrituras indebidas (H-07) | Alta | ⬜ |
 | RNF-23 | Las dependencias del backend deben estar libres de vulnerabilidades conocidas (H-11) | Media | ⬜ |
 | RNF-24 | Las llaves de Firebase deben restringirse y activarse App Check (H-12) | Media | ⬜ |
-| RNF-25 | Se debe exigir el correo verificado para las acciones sensibles (H-13) | Media | ⬜ |
+| RNF-25 | Se debe exigir el correo verificado para las acciones sociales: amistades, chat e invitaciones (H-13) | Media | ✅ |
 | RNF-26 | Las fotos de la cara deben tener moderación, por el público menor de edad | Media | ⬜ |
 | RNF-27 | El jugador debe poder reportar y bloquear a otros jugadores | Media | ✅ |
 
-> Los ID H-xx son los hallazgos del informe de seguridad (OWASP Mobile Top 10, 2024). H-01, H-03, H-04, H-05, H-06, H-08, H-09 y H-10 están corregidos; los demás tienen plan de corrección en el informe.
+> Los ID H-xx son los hallazgos del informe de seguridad (OWASP Mobile Top 10, 2024). H-01, H-03, H-04, H-05, H-06, H-08, H-09, H-10 y H-13 están corregidos (ver `decisiones.md`, D-48); H-02, H-07, H-11 y H-12 siguen abiertos y tienen plan de corrección en el informe.
 
 ### 3.5 Usabilidad
 
@@ -234,7 +234,7 @@ El estado refleja lo registrado en `docs/progreso_desarrollo.md` y en el diseño
 | RNF-33 | El código debe organizarse en capas (pantallas → controladores → servicios → Firebase) y en las carpetas `controllers`, `models`, `screens`, `services` y `widgets` | Alta | ✅ |
 | RNF-34 | Las reglas del juego deben vivir en código independiente de Firebase y de la interfaz, para probarlas solas | Alta | ✅ |
 | RNF-35 | Los servicios deben entregarse por interfaz para poder reemplazarlos por versiones falsas en las pruebas (Riverpod) | Media | ✅ |
-| RNF-36 | Debe haber pruebas unitarias, de integración y de widgets (795 pruebas pasando al 2026-11-09) | Alta | ✅ |
+| RNF-36 | Debe haber pruebas unitarias, de integración y de widgets (841 pruebas de Flutter pasando al 2026-11-18, más las de `rules_test/` y `functions/`) | Alta | ✅ |
 | RNF-37 | El equipo debe trabajar con ramas por área y documentar las decisiones en `decisiones.md` | Media | ✅ |
 
 ### 3.7 Escalabilidad y portabilidad
@@ -262,7 +262,7 @@ El estado refleja lo registrado en `docs/progreso_desarrollo.md` y en el diseño
 - [ ] Confirmar la propuesta de casillas, monedas y precios (`diseno_juego.md`, secciones 6.2 y 8) y pasarla al código.
 - [ ] Moderación del chat y de las fotos de la cara (RNF-26).
 - [x] Mensaje de "no quedan jugadores" (RF-74).
-- [ ] Hallazgos abiertos del informe de seguridad (RNF-21 a RNF-25).
+- [ ] Hallazgos abiertos del informe de seguridad (RNF-21 a RNF-24).
 
 ---
 
@@ -270,7 +270,7 @@ El estado refleja lo registrado en `docs/progreso_desarrollo.md` y en el diseño
 
 | Grupo | Documento de referencia |
 |---|---|
-| RF-01 a RF-10 | `pantallas.md` (secciones 1.1 y 8), `decisiones.md` (D-16, D-17) |
+| RF-01 a RF-10 | `pantallas.md` (secciones 1.1 y 8), `decisiones.md` (D-16, D-17, D-48) |
 | RF-11 a RF-17 | `pantallas.md` (secciones 5 y 5.1), `arte_imagenes.md`, `decisiones.md` (D-29 a D-36, D-40, D-41) |
 | RF-18 a RF-25 | `pantallas.md` (sección 4), `diseno_juego.md` (secciones 7 y 8.1) |
 | RF-26 a RF-32 | `diseno_juego.md` (sección 4), `pantallas.md` (sección 3.1) |
@@ -281,4 +281,4 @@ El estado refleja lo registrado en `docs/progreso_desarrollo.md` y en el diseño
 | RF-63 a RF-69 | `pantallas.md` (sección 7), `decisiones.md` (D-45) |
 | RF-70 a RF-76 | `disconnections.md` |
 | RNF-04 a RNF-12, RNF-33 a RNF-37 | `arquitectura.md`, `disconnections.md`, `progreso_desarrollo.md` |
-| RNF-13 a RNF-27 | Informe de seguridad (OWASP), `database.rules.json`, `firestore.rules`, `rules_test/` |
+| RNF-13 a RNF-27 | Informe de seguridad (OWASP), `decisiones.md` (D-48), `database.rules.json`, `firestore.rules`, `rules_test/` |

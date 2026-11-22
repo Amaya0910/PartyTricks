@@ -35,7 +35,7 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 
 | Cara | Campos | Enlace para voltear |
 |---|---|---|
-| Inicio de sesión | Correo o nombre de usuario (sin distinguir mayúsculas) y contraseña | ¿Aun no te registras? |
+| Inicio de sesión | Correo y contraseña (con el nombre de usuario ya no, D-48) | ¿Aun no te registras? |
 | Registrarse | Nombre de usuario, correo, contraseña y repetir la contraseña | ¿Ya tienes una cuenta? |
 
 - El botón **Entrar a la party** inicia sesión o crea la cuenta. Si sale bien, la app pasa sola a `MainShellScreen`.
@@ -43,7 +43,7 @@ Archivo: `auth_screen.dart`. Es una sola tarjeta que **da la vuelta** para mostr
 - Los errores (datos inválidos, nombre en uso, contraseña incorrecta) salen en rojo dentro de la tarjeta.
 - El fondo es el mismo dibujo de las demás pantallas (`Fondo_Principal.png`), bajado para que solo se vean las nubes (se ajusta con `_hiddenFraction` en `auth_screen.dart`).
 - Los colores están en `AppColors`, en la sección "Inicio de sesión y registro".
-- Las reglas de los datos y cómo se guardan la cuenta y el perfil están en `decisiones.md`, D-16 y D-17.
+- Las reglas de los datos y cómo se guardan la cuenta y el perfil están en `decisiones.md`, D-16, D-17 y D-48.
 
 ---
 
@@ -241,7 +241,7 @@ Lista de los jugadores que bloqueaste, con su foto y nombre, y el botón **Desbl
 
 ### 8.4 Verificación del correo e inicio con Google
 
-- **Aviso de verificación:** en Inicio y en Ajustes, mientras el correo no esté verificado. Botones **Reenviar** y **Ya lo verifiqué**. Se puede jugar sin verificar.
+- **Aviso de verificación:** en Inicio y en Ajustes, mientras el correo no esté verificado. Botones **Reenviar** y **Ya lo verifiqué**. Se puede jugar sin verificar, pero amigos, chat e invitaciones lo exigen (D-48); por eso también sale en Amigos.
 - **Continuar con Google:** botón debajo de **Entrar a la party** en la tarjeta de inicio de sesión.
 - **Elige tu nombre:** la primera vez que alguien entra con Google, una tarjeta le pide el nombre de usuario (botón **Entrar a la party**) o le deja **Usar otra cuenta**.
 
