@@ -36,16 +36,15 @@ class AuthController extends Notifier<AuthFormState> {
     );
   }
 
-  /// [identifier] es el correo o el nombre de usuario.
-  Future<bool> signIn({required String identifier, required String password}) {
+  /// Se entra con el correo (o con Google), no con el nombre de usuario:
+  /// para eso había que publicar el correo (H-01).
+  Future<bool> signIn({required String email, required String password}) {
     final error =
-        AuthValidators.identifier(identifier) ??
+        AuthValidators.email(email) ??
         AuthValidators.existingPassword(password);
     if (error != null) return _reject(error);
 
-    return _run(
-      () => _service.signIn(identifier: identifier, password: password),
-    );
+    return _run(() => _service.signIn(email: email, password: password));
   }
 
   /// Entra con Google. Devuelve true si entró (aunque falte elegir el

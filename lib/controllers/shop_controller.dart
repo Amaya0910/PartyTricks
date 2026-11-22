@@ -1,7 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/shop/shop_providers.dart';
 import 'package:party_tricks/services/shop/shop_service.dart';
@@ -32,6 +36,40 @@ class ShopController extends Notifier<bool> {
   Future<void> buyMouth(MouthStyle mouth) {
     return _buy(
       (uid) => ref.read(shopServiceProvider).buyMouth(uid: uid, mouth: mouth),
+    );
+  }
+
+  /// Compra una camisa con monedas. Lanza [ShopException] con el mensaje a
+  /// mostrar.
+  Future<void> buyShirt(ShirtStyle shirt) {
+    return _buy(
+      (uid) => ref.read(shopServiceProvider).buyShirt(uid: uid, shirt: shirt),
+    );
+  }
+
+  /// Compra un pantalón con monedas. Lanza [ShopException] con el mensaje a
+  /// mostrar.
+  Future<void> buyPants(PantsStyle pants) {
+    return _buy(
+      (uid) => ref.read(shopServiceProvider).buyPants(uid: uid, pants: pants),
+    );
+  }
+
+  /// Compra un cabello con monedas. Lanza [ShopException] con el mensaje a
+  /// mostrar.
+  Future<void> buyHair(HairStyle hair) {
+    return _buy(
+      (uid) => ref.read(shopServiceProvider).buyHair(uid: uid, hair: hair),
+    );
+  }
+
+  /// Compra un accesorio con monedas. Lanza [ShopException] con el mensaje a
+  /// mostrar.
+  Future<void> buyAccessory(AccessoryStyle accessory) {
+    return _buy(
+      (uid) => ref
+          .read(shopServiceProvider)
+          .buyAccessory(uid: uid, accessory: accessory),
     );
   }
 

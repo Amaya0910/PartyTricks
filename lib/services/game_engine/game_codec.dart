@@ -174,9 +174,8 @@ class GameCodec {
       position: _int(data['position']),
       coins: _int(data['coins']),
       diamonds: _int(data['diamonds']),
-      pendingEffect: effect == null
-          ? null
-          : PendingEffect.values.byName(effect),
+      // Un efecto que esta versión no conoce se ignora en vez de romper.
+      pendingEffect: PendingEffect.values.asNameMap()[effect],
       minigamesWon: _int(data['minigamesWon']),
       // Un minijuego que esta versión no conoce se ignora en vez de romper.
       minigameTally: {

@@ -163,7 +163,7 @@
 ## D-17. Inicio de sesión con correo o nombre de usuario
 
 - **Fecha:** 2026-10-20
-- **Estado:** Aceptada para el proyecto de aula
+- **Estado:** Reemplazada por D-48 (H-01): hoy solo se entra con el correo o con Google; `usernames` ya no guarda el correo
 - **Decisión:** en el inicio de sesión se acepta el correo o el nombre de usuario (sin distinguir mayúsculas). Firebase Authentication solo entra con correo, así que al registrarse se guarda el correo dentro de `usernames/{nombre}`. Al iniciar con un nombre, se lee ese documento para obtener el correo y luego se autentica. Las cuentas creadas antes de esta decisión completan ese dato la primera vez que inician sesión con su correo.
 - **Motivo:** es lo que pide el mockup de la pantalla de acceso.
 - **Riesgo:** la búsqueda ocurre antes de tener sesión, así que `usernames` debe poder leerse sin iniciar sesión. Si las reglas permitieran listar la colección, cualquiera vería los correos de todos los jugadores, y hay jugadores menores (ver D-10).
@@ -264,7 +264,7 @@
   - **Código de amistad:** se puede copiar y recargar. Recargar reserva un código nuevo en `friendCodes` y libera el viejo en la misma transacción. Los amigos actuales se conservan; el código viejo deja de servir para agregarte.
   - **Nombre de usuario:** se puede cambiar **una vez cada 30 días** (`AccountRules.usernameCooldown`). La fecha del último cambio se guarda en `users/{uid}.usernameChangedAt`. El nombre nuevo se reserva en `usernames` y el viejo se borra en la misma transacción; el perfil público se actualiza solo (D-22).
   - **Correo y contraseña:** los dos piden la contraseña actual, porque Firebase lo exige. El correo nuevo se cambia con `verifyBeforeUpdateEmail`: el cambio se aplica cuando el jugador abre el enlace, y al iniciar sesión otra vez la app copia el correo nuevo al perfil y a `usernames`. Las cuentas que solo usan Google no tienen estas dos opciones.
-  - **Verificación del correo:** al registrarse se envía el enlace. **Se puede jugar sin verificar**: Inicio y Ajustes muestran un aviso con **Reenviar** y **Ya lo verifiqué** hasta que el correo esté verificado. Las cuentas que ya existían también lo ven. Las cuentas de Google no lo ven, porque Google ya verifica el correo.
+  - **Verificación del correo:** al registrarse se envía el enlace. **Se puede jugar sin verificar** (pero amigos, chat e invitaciones lo exigen desde D-48, H-13): Inicio y Ajustes muestran un aviso con **Reenviar** y **Ya lo verifiqué** hasta que el correo esté verificado. Las cuentas que ya existían también lo ven. Las cuentas de Google no lo ven, porque Google ya verifica el correo.
   - **Inicio con Google** (`google_sign_in` 7): botón "Continuar con Google" en la tarjeta de inicio de sesión. Si el correo ya tenía cuenta con contraseña, Firebase une las dos formas de entrar en la misma cuenta (mismo uid). Quien entra con Google por primera vez elige su nombre de usuario en una pantalla aparte (`ChooseUsernameScreen`), que crea el perfil, el nombre y el código como en el registro.
   - **Preferencias** (notificaciones, sonido, efectos de sonido): se guardan en el celular con `shared_preferences`, no en Firestore. Por ahora no hay sonidos ni notificaciones; los interruptores quedan listos para cuando existan. El idioma es solo español.
   - **Más opciones:** Acerca de, Términos y condiciones, Política de privacidad (textos en `LegalDocument`, con contacto del equipo de Party Tricks: Isabella Amaya y Brayan Vasquez), Jugadores bloqueados (con **Desbloquear**) y Cerrar sesión.
@@ -462,3 +462,209 @@
   - Decidir si se quita de Android el permiso `RECORD_AUDIO`, que declara el paquete `camera` aunque la app no graba audio.
   - El lobby y el tablero siguen con el personaje provisional, sin foto.
   - Las reglas no se probaron con el emulador.
+
+## D-33. Camisas, accesorios y caminata de lado
+
+- **Fecha:** 2026-11-07
+- **Estado:** Propuesta
+- **Decisión:**
+  - **Camisas** (`ShirtStyle`, 19) y **accesorios** (`AccessoryStyle`, 2) se compran en la Tienda con monedas y salen en los cofres, igual que los ojos y las bocas (D-29 a D-31). Cada uno tiene su pestaña en el Vestuario (**Camisa** y **Accesorios**, esta nueva) y su filtro en la Tienda.
+  - **Camisa de inicio:** la camisa 1, **azul** (id 1, gratis). La camisa 1 es blanca y se tiñe: tiene **8 colores más** en la Tienda (ids 101 a 108, 30 monedas cada uno). Las demás camisas traen su color y no se tiñen. La camisa 2 se queda como está, sin mangas.
+  - **Precios y rarezas** (los puse yo; se pueden cambiar): camisa 1 de colores, 30 (común); camisa 2, 45 (poco común); camisas 3 y 4 (fútbol), 60 (rara); camisa 5 (payaso), 75 (épica); camisas 6 y 7, 45; 8 y 9, 60; 10 y 11, 75; 12, 100 (legendaria). Accesorios: orejas de ogro, 75 (épico); gorguera de bufón, 100 (legendario). Ninguno es gratis salvo la camisa azul.
+  - **Se guardan** en el perfil: `shirt` (id; si falta, la 1), `ownedShirts`, `accessory` (id; **0 = ninguno**) y `ownedAccessories`. El perfil público también guarda `shirt` y `accessory` (el accesorio se ve en la foto de perfil).
+  - **Dibujo.** De frente, la camisa va con el cuerpo y cada manga con su brazo (gira con él, debajo de la mano). Los accesorios van con la cabeza. De lado, la camisa va con el torso y la manga (una sola para los dos brazos) con cada brazo. `camisa_5` se ve distinta yendo a la derecha o a la izquierda, así que de lado trae un dibujo para cada una; las demás se voltean junto con el cuerpo. Las carpetas nuevas están declaradas en `pubspec.yaml` (una prueba lo revisa: si falta una, el personaje se dibuja sin la camisa, en silencio).
+  - **Caminata de lado** (`WalkingCharacter`): dos piernas y dos brazos que se mueven en sentidos contrarios. Los personajes del mapa caminan así de casilla en casilla y quietos se ven de frente. Las animaciones están en `CharacterClip`; **Administración → Galería → Animaciones** las muestra todas, con el personaje del administrador tal como lo tiene puesto.
+  - Para tratar los cuatro cosméticos igual en la Tienda y los cofres existe `ShopCosmetic` (lo implementan `EyeStyle`, `MouthStyle`, `ShirtStyle` y `AccessoryStyle`). `ChestPrize` y `CosmeticPicker` ahora también reparten camisas y accesorios; las probabilidades de los cofres cambian porque hay más cosméticos que sortear.
+- **Reglas (`firestore.rules`):** `shirtPrice`, `accessoryPrice`, `isShirtPurchase`, `isAccessoryPurchase`, `addsOneShirt` y `addsOneAccessory`; el cofre puede dar uno de los cuatro, y la camisa y el accesorio puestos tienen que ser el de inicio o comprados. Los precios están también en `shirt_style.dart` y `accessory_style.dart`: **una prueba compara las dos listas**. **Hay que publicar las reglas.**
+- **Pendientes:**
+  - **Colecciones** (por ejemplo, camisas 3 y 4 de fútbol; camisas 6 a 12, primer drop de Shift's): todavía no existen. Los nombres de las camisas del drop ya dicen "Shift's".
+  - Un cofre especial solo de cosméticos.
+  - Los demás jugadores se dibujan en el mapa con el aspecto de inicio: la partida todavía no trae el aspecto de cada uno (el del perfil público ya está disponible).
+  - `camisa_5_derecha` se usa cuando el personaje mira a la derecha: si está al revés, se intercambian en `ShirtStyle.bodyAsset`.
+  - Pantalón, zapatos, cabello y nariz siguen sin arte.
+  - Las reglas no se probaron con el emulador.
+
+## D-34. Margen de 200 px arriba del lienzo del personaje
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:** el lienzo del personaje pasa de 512 × 768 a **512 × 968**: se agregaron 200 px transparentes **arriba** de todas las capas (157 PNG de `personaje/`), para tener espacio para el cabello y los sombreros. El dibujo no cambió, solo bajó 200 px.
+- **En el código:** `kCharacterTopMargin` y `kCharacterCanvas` (`character_layer.dart`). Todo lo medido en píxeles del lienzo (pivotes de `BodyPart`, articulaciones de `WalkingCharacter`, recortes de los selectores y de `HeadAvatar`, `HeadShape.zone`, línea de los pies del mapa) suma ese margen. En el mapa el cuerpo mide lo mismo que antes.
+- **Reposo de lado** (`CharacterClip.idleSide`, `SideIdle`): solo se ve en el Vestuario, con un botón para ver el personaje de lado. En las partidas, al dejar de caminar, el personaje se pone de frente con el reposo normal.
+- **Para el arte nuevo:** exportar a 512 × 968. En Krita: Imagen → Cambiar tamaño del lienzo, alto 968 y desplazamiento Y = 200 (el dibujo existente baja).
+
+## D-35. Cabellos
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - Hay **10 cabellos** (`HairStyle`). Se compran en la Tienda con monedas y salen en los cofres, igual que las camisas y los accesorios (D-33). Ninguno es gratis. Tienen pestaña propia en el Vestuario (**Cabello**) y filtro en la Tienda (**Cabellos**).
+  - **Sin cabello:** el primer espacio de la pestaña es "Ninguno", con una **X roja**. Es el estado de inicio: el campo `hair` vale 0.
+  - **Color:** los cabellos blancos (2, 6, 7 y 9) toman el color que elija el jugador (`HairColor`, los mismos 20 colores de los ojos; el primero es blanco = el dibujo original). **Todos los colores están desbloqueados**: no se compran. Los otros seis (1, 3, 4, 5, 8 y 10) traen su color y no se tiñen. Si más adelante se venden colores, habrá que guardar cuáles tiene cada jugador.
+  - **Precios y rarezas** (los puse yo; se pueden cambiar): 1, 5 y 9, 45 (poco común); 2, 3, 6 y 10, 60 (raro); 4, 7 y 8, 75 (épico).
+  - **Se guardan** en el perfil: `hair` (id; 0 = ninguno), `ownedHairs` y `hairColor` (posición del color). El perfil público también guarda `hair` y `hairColor`: el cabello se ve en la foto de perfil.
+  - **Dibujo.** `cabello_<id>.png` va **encima de la cara** (ojos y boca) y **debajo de los accesorios**, de frente y de lado. Los cabellos 1, 3 y 6 traen además `cabello_<id>_atras.png` (solo de frente), que va **detrás de la cabeza**.
+  - **Reglas (`firestore.rules`):** `hairPrice`, `isHairPurchase`, `addsOneHair`, `onlyHairsChange` y `ownedHairs` en la cartera; el cabello puesto tiene que ser 0 o comprado; el cofre puede dar uno. Una prueba compara los precios de las reglas con los del código. **Hay que publicar las reglas.**
+- **Además:** el icono de la pestaña **Accesorios** del Vestuario (`Icons.auto_awesome`; antes no tenía ninguno).
+- **Pendientes:**
+  - La foto de perfil recorta alrededor de la cabeza (`HeadAvatar._crop`): los cabellos muy altos (el 7) se ven cortados arriba.
+  - Los demás jugadores siguen dibujándose en el mapa con el aspecto de inicio.
+  - Las reglas no se probaron con el emulador.
+
+## D-36. Pantalones y la X de "ninguno"
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - Hay **1 pantalón** (`PantsStyle`, "Pantalón Dorado", 45 monedas, poco común). Se compra en la Tienda y sale en los cofres, igual que los demás cosméticos (D-33, D-35). Pestaña **Pantalón** en el Vestuario con "Ninguno" (X roja) y filtro **Pantalones** en la Tienda.
+  - Se guardan en el perfil `pants` (id; 0 = ninguno) y `ownedPants`. El pantalón no va en el perfil público: no se ve en la foto de perfil.
+  - **Dibujo.** `frente/pantalones/pantalon_<id>.png`. Va **sobre las dos piernas** y debajo de los brazos, sin moverse (en el reposo las piernas están quietas). **Todavía no tiene dibujo de lado**: al caminar por el mapa (y en el reposo de lado) el personaje se ve sin pantalón.
+  - Reglas: `pantsPrice`, `isPantsPurchase`, `addsOnePants`, `onlyPantsChange` y `ownedPants` en la cartera; el pantalón puesto tiene que ser 0 o comprado. Una prueba compara el precio de las reglas con el del código. **Hay que publicar las reglas.**
+  - **La X de "ninguno":** el espacio "Ninguno" de Accesorios, Cabello y Pantalón se muestra como una **X roja** (`NoneMark`). El primer color de las líneas de color de Ojos, Boca y Cabello (el "sin color": el dibujo original) también lleva una X roja (`ColorStrip.firstIsNone`).
+- **Pendientes:**
+  - Dibujo de lado del pantalón (muslo y rodilla, como las piernas de `lado/cuerpo/`).
+  - Las camisas 13 a 16 se agregaron en D-37.
+
+## D-37. Camisas 13 a 16, cabello atrás y vistas previas
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - **Camisas 13 a 16** (de fútbol) agregadas a `ShirtStyle` (ahora 23): 13 y 14, 60 monedas (rara); 15 y 16, 75 (épica). Los nombres ("Camiseta de Fútbol 13"...) son provisionales; se cambian en `shirt_style.dart` (el `id` no cambia). `firestore.rules`: `shirtPrice` con los cuatro precios nuevos.
+  - **Parte de atrás del cabello:** en el personaje completo es la **capa más atrás** de todas (debajo del cuerpo, para que no se vea delante del cuello) y se mueve con la cabeza. En la foto de perfil y las vistas previas, que no tienen cuerpo, sigue detrás de la cabeza.
+  - **Vistas previas** de la Tienda, los cofres y el Vestuario: la de las camisas recorta solo la camisa (sin brazos ni manos), así se ve más grande y con su detalle; la del pantalón se acercó a la cadera.
+  - Los archivos `Camisa_13.png` y `Camisa_14.png` pasaron a minúsculas (en Android los nombres distinguen mayúsculas).
+- **Pendiente:** las camisas 6 a 12 del .kra usan capas recortadas ("heredar alfa") que mi lector no replica; por eso no se volvieron a exportar y se conservan los PNG anteriores.
+
+## D-38. Peluca de Payaso (cabello multicolor)
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:** el cabello 11, **Peluca de Payaso** (`HairStyle.clownWig`), es la versión multicolor de la Nube de Rizos (cabello 2): la misma forma, de frente y de lado, con parches de 8 colores. Es **legendaria** (la mayor rareza), cuesta **300 monedas** (el resto, de 45 a 75) y no se tiñe: trae sus colores. Se compra en la Tienda y sale en los cofres como los demás; `firestore.rules`: `hairPrice` con el 11.
+- **Arte:** `frente/cabellos/cabello_11.png` y `lado/cabellos/cabello_11.png` se generaron con un programa a partir del cabello 2 (parches de color con bordes ondulados y sombra suave en el borde), no se dibujaron en Krita. Si luego se dibuja a mano, se reemplazan los dos PNG sin tocar el código.
+
+## D-39. Ícono, pantalla de arranque y nombre de la app
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - El ícono de la app sale del logo dibujado en Krita (`Logo.kra`, PT con gorro de fiesta). En iOS es el logo entero (sin transparencia); en Android el ícono adaptativo lleva el color liso del logo de fondo y el logo reducido al frente, para que el círculo no corte el gorro.
+  - La pantalla de arranque de Android es el color del logo (`#8DDDFF`) con el logo al centro; en Android 12 o más se configura aparte (`values-v31`).
+  - El nombre que se ve bajo el ícono es **Party Tricks** (`android:label` en Android y `CFBundleDisplayName` en iOS; también el título y el manifiesto web). El nombre del paquete de Dart sigue siendo `party_tricks`.
+- **Motivo:** el ícono genérico de Flutter y el nombre `party_tricks` no se veían como un producto terminado.
+- **Alternativas:** el paquete `flutter_launcher_icons` (una dependencia más para algo que se hace una vez); cambiar el nombre del paquete (rompería todos los imports sin ganar nada).
+- **Pendiente:** verlo en un celular real; si se cambia el logo hay que volver a generar los archivos (ver `arte_imagenes.md`).
+
+## D-40. Vista de espalda
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - El personaje tiene una **tercera vista, de espalda** (`CharacterView.espalda`), sin cara (no se dibujan ojos, boca ni foto). Sirve para el Vestuario y para el mapa cuando el personaje **sube** por la pantalla (un paso sube si va más arriba que a los lados, `_Walker.isGoingUp`); al bajar o ir de lado se sigue viendo de lado, y quieto, de frente.
+  - **Cuerpo:** usa las mismas capas de `frente/cuerpo/` (no hay arte nuevo). **Cabeza:** relleno y línea de la cabeza, sin cara, con el cabello encima. **Accesorios:** se ven igual que de frente, pero van **debajo del cabello**.
+  - **Cabello** (`espalda/cabellos/cabello_<id>.png`): cubre la cabeza hasta el borde de abajo (la mayoría) o hasta donde llega en la vista de lado. Los cabellos con parte de atrás (1, 3 y 6) usan esa parte; el flequillo no se usa. El borde de abajo sigue la forma del cabello de lado. **Se generaron con un programa** a partir de los dibujos de frente y de lado: si se dibujan a mano, se reemplazan los PNG.
+  - **Pantalones** (`espalda/pantalones/`): los 20 nuevos, sin bragueta ni hebilla y con bolsillos traseros. El dorado usa el de frente. **Camisas** (`espalda/camisas/`): solo las del segundo drop (D-42) tienen espalda propia (`ShirtStyle.hasBackArt`); las demás usan el dibujo de frente.
+  - **Animaciones** nuevas en `CharacterClip`: *Reposo de espalda* (como el de frente) y *Caminar de espalda* (`WalkAwayAnimation`: una pierna se levanta y luego la otra, el cuerpo sube y baja y los brazos se mecen al revés). Aparecen solas en la vista previa de animaciones.
+  - **Vestuario:** el botón de girar pasa de frente a lado a espalda.
+- **Pendiente:** dibujar a mano la espalda de las camisas y los cabellos que se ven raros; el salto (animación) no está hecho.
+
+## D-41. Veinte pantalones nuevos, con frente, lado y espalda
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - `PantsStyle` pasa de 1 a **21 pantalones** (ids 2 a 21 nuevos): jeans, bermudas cargo y tropical, deportivo, tres faldas (tutú, Bonnie y colegio de magia) y referencias a la cultura pop (Pitufo, Ogro, Pirata, Camuflado, Clyde, Fontanero, Juego del Calamar, Charro, Padrino, Disco, Mono Amarillo, Payaso y Neón). Los nombres con referencias son provisionales; se cambian en `pants_style.dart` sin tocar el `id`.
+  - **Rareza y precio:** común 30 (3), poco común 45 (6), raro 60 (6), épico 75 (4) y legendario 100 (Neón). Están en `firestore.rules` (`pantsPrice`) y una prueba los compara.
+  - **Largo** (`PantsCut`): *largo* (cadera, muslo y rodilla de lado), *corto* (cadera y muslo) y *falda* (una sola pieza fija sobre las piernas).
+  - **Capas de lado** (`lado/pantalones/pantalon_<id>_cadera|muslo|rodilla.png`): de abajo hacia arriba, el muslo y la pantorrilla del personaje, el pantalón del muslo (arranca en la cadera, sin línea arriba) y el de la rodilla (sin línea arriba, para que la unión no se note). La cadera (cintura y cinturón) va **debajo** del muslo del pantalón; la falda, **encima** de las piernas. La pierna de atrás lleva el pantalón un 14 % más oscuro.
+  - El dorado (id 1) sigue sin dibujo de lado.
+- **Arte:** los 20 se generaron con un programa (formas tomadas de las capas de las piernas), no se dibujaron en Krita. Si luego se dibujan a mano, se reemplazan los PNG sin tocar el código.
+
+## D-42. Camisetas del segundo drop de Shift's
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:** cinco camisetas nuevas (`shifts8` a `shifts12`, ids 17 a 21) con los diseños del drop 02: Shift's con el perro (blanca con letras azules, negra roja y negra azul) y "the danger of men's" (blanca y negra, rosa). Las cuatro primeras son épicas (75 monedas) y la última, legendaria (100). Traen estampado delante, la placa militar en la manga y el estampado de atrás en la vista de espalda.
+- **Arte:** los estampados se sacaron de los mockups del drop (texto, perro y silueta); las placas de las mangas se dibujaron aparte. De lado solo se ve la placa. Nombres y precios provisionales.
+- **Nota:** las camisetas llevan armas dibujadas (uzis y una pistola); conviene revisarlo antes de publicar la app en las tiendas.
+
+## D-43. Caminos del mapa en curvas suaves
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:** los caminos entre casillas dejan de ser rectas y pasan a **curvas Bézier cúbicas sin quiebres** (`RouteCurves`, `services/map/route_curves.dart`). En cada casilla, la curva que llega y la que sale comparten la misma dirección (el promedio de las dos rectas); en una bifurcación, cada desvío sale con su propia curva. El **dibujo** (`MapPathsPainter`) y la **caminata** (`_Walker`) usan los mismos tramos, y el personaje avanza a **paso parejo** por distancia, no por el parámetro de la curva. Las flechas de elegir camino apuntan hacia donde sale la curva.
+- **Ajuste:** el redondeo se cambia con `handle` en `RouteCurves.build` (0,38 por defecto).
+- **Aviso:** los archivos del mapa son del área de Brayan; hay que avisarle antes de unir la rama.
+
+## D-44. Vista previa del mapa en administración y filtros de la Tienda
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - Administración → Galería → **Mapa con personajes** (`map_preview_screen.dart`): el mapa real con de 1 a 4 personajes (el primero con el aspecto del administrador, los demás de ejemplo) y botones para avanzar casillas. Sirve para ver cómo caminan (de lado y de espalda), cómo se ven quietos y cómo van las curvas. Nada se guarda ni crea una partida.
+  - Los **filtros de la Tienda** pasan de botones que ocupaban varias líneas a **una sola fila con scroll**: texto pequeño, el elegido en azul y subrayado, y el ícono de ordenar fijo a la derecha.
+
+## D-45. Notificaciones de mensajes e invitaciones
+
+- **Fecha:** 2026-11-09
+- **Estado:** Propuesta
+- **Decisión:**
+  - La app avisa con una **notificación** cuando un amigo te escribe y cuando te invita a una party. Tocar un mensaje abre ese chat en Amigos. La invitación trae dos botones: **Aceptar** (abre la app, entra a la sala con el código y abre la sala de espera) y **Rechazar** (marca la invitación como vista y rechazada, sin abrir la app).
+  - **Cliente** (`services/notifications/`, `widgets/notification_host.dart`): `firebase_messaging` recibe los avisos y `flutter_local_notifications` los muestra con sus botones. Cada celular se registra en `fcmTokens/{token}` con el uid de su dueño. El interruptor de notificaciones de Ajustes los activa y desactiva; al cerrar sesión se borra el código. Con la app abierta, un mensaje avisa salvo que ya tengas ese chat abierto, y las invitaciones no (ya salen como aviso dentro de la app).
+  - **Servidor** (`functions/`, Cloud Functions): `notifyMessage` y `notifyInvite` mandan el aviso cuando se crea un mensaje o una invitación. A Android le llega solo datos (la app arma la notificación con sus botones aunque esté cerrada) y a iOS el aviso con su categoría. Los códigos que ya no sirven se borran.
+  - **Reglas:** `fcmTokens` (solo a nombre propio, sin lectura desde la app) y el invitado puede marcar `seen` y `declined`.
+- **Motivo:** enterarse de mensajes e invitaciones sin tener la app abierta.
+- **Pendiente:**
+  - **Desplegar** las funciones (`firebase deploy --only functions`, necesita el plan Blaze) y publicar las reglas. Sin la función, solo avisan los mensajes con la app abierta.
+  - iOS: subir la clave APNs a Firebase y activar *Push Notifications* y *Background Modes* en Xcode.
+  - Probarlo en dos celulares.
+  - Se usa `flutter_local_notifications` 22 (la 23 pide una versión del SDK de Android que no compila aquí) y `getToken` de Firebase aunque aparezca como deprecado, porque la función manda con el código FCM de siempre.
+
+## D-46. Tienda al pasar, turno de 40 s y mensaje de "no quedan jugadores"
+
+- **Fecha:** 2026-11-13
+- **Estado:** Propuesta
+- **Decisión:**
+  - **Tienda al pasar por encima:** la tienda del mapa se abre al caer en su casilla **y también al pasar** por ella. De paso, el movimiento se detiene con los pasos que faltan en `stepsLeft` (fase `shopping`); el botón dice **Seguir** y, al tocarlo, el jugador termina de avanzar y se aplica la casilla donde cae. Al caer, el botón sigue diciendo **Terminar**. Cambios en `game_engine.dart` (`_move`, `_afterStep`, `_leaveShop`); sin cambios de esquema ni de reglas.
+  - **Turno de 40 s:** a quien no decide en 40 s (lanzar, elegir camino o salir de la tienda) se le salta el turno aunque siga conectado. El conteo lo lleva el `RoomGuard` del anfitrión y se reinicia en cada decisión; `DisconnectionPolicy.turnTimeout` pasa de 30 a 40 s y también es lo que se espera a un desconectado.
+  - **Mensaje de "no quedan jugadores":** si todos los demás salieron o llevan 40 s desconectados, se muestra "¡Se acabó la fiesta!" con "Lo sentimos, no quedan jugadores :(" y el botón **Regresar a menú** (`NoPlayersLeftView`). No da premios. Si alguien vuelve antes, el mensaje se quita solo.
+- **Motivo:** con 2 tiendas en 42 casillas y entrando solo al caer, cada jugador visitaba una tienda 0,4 veces en una partida de 10 rondas (simulación), y el diamante "Más comprador" era casi un sorteo. Un jugador conectado que no hace nada trababa la partida.
+- **Pendiente:**
+  - Confirmar los valores de casillas, monedas y precios propuestos en `diseno_juego.md` (6.2 y 8) y pasarlos al código.
+  - Con la tienda de paso, las visitas suben; volver a simular y revisar los precios.
+  - Probar el turno de 40 s y la pantalla de "no quedan jugadores" con varios celulares.
+
+## D-47. Más efectos en las casillas especiales y menú de Jugar con la tarjeta de la app
+
+- **Fecha:** 2026-11-13
+- **Estado:** Propuesta
+- **Decisión:**
+  - **Efectos especiales:** pasan de 5 a **14** (6 buenos, 6 malos y 2 neutros). Nuevos: Viento a favor, Escudo de regalo, Ítem sorpresa, Diamante de regalo, Cambio de monedas, Dado de 2, Pierdes el turno, Se te cae un ítem y Paga la cuenta de la fiesta. Cada uno tiene **peso** en el sorteo (`PendingEffect.weight`), así los fuertes (diamante, perder el turno) salen menos. Los malos pesan un poco más que los buenos (49 contra 47). La lista, con sus pesos, está en `diseno_juego.md`, sección 6.1.
+  - El efecto se sortea al caer y se aplica al lanzar el dado (`GameEngine._roll` y `_applyEffect`). "Pierdes el turno" no lanza el dado y pasa el turno. Los nombres guardados de los cinco efectos de antes no cambian; un efecto que la versión no conoce se ignora al leer la partida.
+  - El panel de la partida muestra el efecto pendiente de cada jugador con su nombre (`PendingEffect.title`), en verde, rojo o morado.
+  - **Menú de Jugar:** usa `DialogCard` con fondo desenfocado, como los demás diálogos, y sus botones llevan ícono y solo el título. Sin cambios de lógica.
+- **Motivo:** las especiales daban siempre uno de 5 efectos y casi ninguno cambiaba la partida; el menú de Jugar era el único diálogo con el estilo básico de Material.
+- **Pendiente:** probar en celulares; revisar los pesos al jugar; "Cambio de monedas" y "Pierdes el turno" son los más fuertes y pueden frustrar a quien los recibe.
+
+
+## D-48. Auditoría de seguridad (OWASP Mobile Top 10) y sus correcciones
+
+- **Fecha:** 2026-11-13
+- **Estado:** Aceptada (H-01, H-03, H-04, H-05, H-06, H-08, H-09, H-10 y H-13); H-02, H-07, H-11 y H-12 siguen abiertos
+- **Decisión:** se auditó la app con el OWASP Mobile Top 10 (2024) y se corrigió con un commit por hallazgo, probando las reglas con el emulador (`rules_test/`, proyecto `demo-party-tricks`, que nunca toca el real).
+  - **H-01 (correo expuesto):** `usernames/{nombre}` guarda solo el `uid`, exige sesión y rechaza el campo `email`. **Se quita el inicio de sesión con nombre de usuario** (reemplaza a D-17): se entra con el correo o con Google. La app borra el correo de las reservas viejas cuando su dueño vuelve a entrar.
+  - **H-03 (foto de la sala):** `photoUrl` solo acepta HTTPS de `lh3.googleusercontent.com`, en las reglas de Realtime Database y en la app (`TrustedPhotoUrl`). Android prohíbe el tráfico en claro (configuración de seguridad de red).
+  - **H-04 (perfil público):** `publicProfiles/{uid}` exige el nombre reservado por ese uid, su propio código de amistad, la XP de su perfil privado y solo los campos que usa la app.
+  - **H-05 (copias de seguridad):** `allowBackup` y `fullBackupContent` en `false`; las reglas de extracción excluyen todo, también en device-transfer.
+  - **H-06 (release):** la versión release se firma con la llave del equipo (`android/key.properties`, fuera de Git; ver `key.properties.example`) y se ofusca con R8 y `--obfuscate --split-debug-info`. Gradle no arma un release sin la llave ni las banderas. Se ignoran los `.jks` y `.keystore` en todo el repositorio.
+  - **H-08 (chat, invitaciones y reportes):** cada documento acepta solo los campos que escribe la app; la vista previa y la marca de leído son siempre del propio jugador; la invitación lleva el nombre reservado por quien invita; el reporte, un motivo de la lista.
+  - **H-09 (registros):** `main` silencia `debugPrint` en release (`release_logging.dart`).
+  - **H-10 (permisos):** se quita `RECORD_AUDIO`, que agregaba el plugin de la cámara sin que la app grabara audio.
+  - **H-13 (correo verificado):** las reglas piden el claim `email_verified` para las solicitudes de amistad, el chat y las invitaciones (`verified()` en `firestore.rules`). Se puede jugar sin verificar, pero esas funciones quedan cerradas. La app refresca el token al verificar y el aviso de verificación también sale en Amigos. Las cuentas de Google ya lo traen en verdadero. Modifica a D-23.
+- **Motivo:** son los entregables de la tarea de seguridad y cierran los problemas que un jugador malintencionado podía aprovechar sin modificar la app.
+- **Abiertos (con plan en el informe):**
+  - **H-02:** los premios de la partida se pueden falsificar desde un celular modificado; la solución real es calcularlos en Cloud Functions (D-15, RNF-39).
+  - **H-07:** proteger `players` de la sala en Realtime Database contra escrituras indebidas.
+  - **H-11:** `firebase-admin` 12.7.0 en `functions/` tiene 8 vulnerabilidades moderadas; hay que actualizarlo.
+  - **H-12:** restringir las llaves de Firebase y activar App Check.
+- **Pendiente:** publicar las reglas (`firebase deploy --only firestore:rules` y `--only database`) y probar el release en un celular con la llave del equipo.

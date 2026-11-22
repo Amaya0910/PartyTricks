@@ -36,12 +36,12 @@ void main() {
   }
 
   Future<bool> signIn({
-    String identifier = 'tay@correo.com',
+    String email = 'tay@correo.com',
     String password = 'clave',
   }) {
     return container
         .read(authControllerProvider.notifier)
-        .signIn(identifier: identifier, password: password);
+        .signIn(email: email, password: password);
   }
 
   group('register', () {
@@ -117,29 +117,32 @@ void main() {
 
   group('signIn', () {
     test('con un correo llama al servicio', () async {
-      final ok = await signIn(identifier: 'tay@correo.com');
+      final ok = await signIn(email: 'tay@correo.com');
 
       expect(ok, isTrue);
       expect(service.signInCalls, 1);
-      expect(service.lastIdentifier, 'tay@correo.com');
+      expect(service.lastEmail, 'tay@correo.com');
     });
 
-    test('con un nombre de usuario llama al servicio', () async {
-      final ok = await signIn(identifier: 'Tay_01');
-
-      expect(ok, isTrue);
-      expect(service.signInCalls, 1);
-      expect(service.lastIdentifier, 'Tay_01');
-    });
-
-    test('con el identificador vacío no llama al servicio', () async {
-      final ok = await signIn(identifier: '');
+    test('con un nombre de usuario no llama al servicio (H-01)', () async {
+      final ok = await signIn(email: 'Tay_01');
 
       expect(ok, isFalse);
       expect(service.signInCalls, 0);
       expect(
         container.read(authControllerProvider).errorMessage,
-        'Escribe tu correo o nombre de usuario.',
+        'El correo no es válido.',
+      );
+    });
+
+    test('con el correo vacío no llama al servicio', () async {
+      final ok = await signIn(email: '');
+
+      expect(ok, isFalse);
+      expect(service.signInCalls, 0);
+      expect(
+        container.read(authControllerProvider).errorMessage,
+        'Escribe tu correo.',
       );
     });
 
@@ -154,7 +157,7 @@ void main() {
       'muestra el mensaje del servicio si los datos son incorrectos',
       () async {
         service.nextError = const AuthException(
-          'Correo, usuario o contraseña incorrectos.',
+          'Correo o contraseña incorrectos.',
         );
 
         final ok = await signIn();
@@ -162,7 +165,7 @@ void main() {
         expect(ok, isFalse);
         expect(
           container.read(authControllerProvider).errorMessage,
-          'Correo, usuario o contraseña incorrectos.',
+          'Correo o contraseña incorrectos.',
         );
       },
     );

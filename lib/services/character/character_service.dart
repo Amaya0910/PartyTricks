@@ -33,6 +33,22 @@ abstract class CharacterService {
   /// falla.
   Future<void> setMouthColor({required String uid, required int mouthColor});
 
+  /// Guarda el id de la camisa puesta. Lanza [CharacterException] si falla.
+  Future<void> setShirt({required String uid, required int shirt});
+
+  /// Guarda el id del accesorio puesto (0 = ninguno). Lanza
+  /// [CharacterException] si falla.
+  Future<void> setAccessory({required String uid, required int accessory});
+
+  /// Guarda el cabello puesto (su id, o 0 si no lleva) y la posición de su
+  /// color.
+  Future<void> setHair({required String uid, required int hair});
+
+  /// Guarda el pantalón puesto (su id, o 0 si no lleva).
+  Future<void> setPants({required String uid, required int pants});
+
+  Future<void> setHairColor({required String uid, required int hairColor});
+
   /// Guarda la posición del color de fondo de la foto de perfil. Lanza
   /// [CharacterException] si falla.
   Future<void> setAvatarColor({required String uid, required int avatarColor});

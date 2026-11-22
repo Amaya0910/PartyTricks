@@ -5,9 +5,10 @@ import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/auth/auth_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 
-/// Aviso para verificar el correo. Se puede jugar sin verificar; el aviso
-/// sale en Inicio y en Ajustes hasta que el jugador abra el enlace. Las
-/// cuentas de Google no lo ven (Google ya verifica el correo).
+/// Aviso para verificar el correo. Se puede jugar sin verificar, pero los
+/// amigos, el chat y las invitaciones lo exigen (H-13). El aviso sale en
+/// Inicio, Amigos y Ajustes hasta que el jugador abra el enlace. Las cuentas
+/// de Google no lo ven (Google ya verifica el correo).
 class VerifyEmailBanner extends ConsumerStatefulWidget {
   const VerifyEmailBanner({super.key});
 
@@ -56,7 +57,8 @@ class _VerifyEmailBannerState extends ConsumerState<VerifyEmailBanner> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Verifica tu correo: te enviamos un enlace a ${user.email}',
+                  'Verifica tu correo para usar amigos y chat: te enviamos un '
+                  'enlace a ${user.email}',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

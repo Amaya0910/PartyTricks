@@ -71,8 +71,9 @@ void main() {
   });
 
   test('la casilla especial cambia el dado del siguiente turno', () {
-    // Beto saca 3 (especial, sale el efecto 1 = dado de 12) y Ana saca 1.
-    final engine = engineWith([diamondFar, 3, 1, 1, 12]);
+    // Beto saca 3 (especial, sale el dado de 12: el sorteo empieza después
+    // del peso del dado de 3, 8) y Ana saca 1.
+    final engine = engineWith([diamondFar, 3, 9, 1, 12]);
     var state = engine.start(initialRolls: rolls, totalRounds: 2);
     state = engine.apply(state, const RollDice('b'));
     expect(state.players['b']!.pendingEffect, PendingEffect.die12);
@@ -150,8 +151,8 @@ void main() {
     });
 
     test('cuenta el tipo de casilla donde cae', () {
-      // Beto cae en la 2 (positiva); Ana en la 3 (especial, efecto 0).
-      final engine = engineWith([diamondFar, 2, 3, 0]);
+      // Beto cae en la 2 (positiva); Ana en la 3 (especial, sale el primer efecto).
+      final engine = engineWith([diamondFar, 2, 3, 1]);
       var state = engine.start(initialRolls: rolls, totalRounds: 2);
       state = engine.apply(state, const RollDice('b'));
       state = engine.apply(state, const RollDice('a'));

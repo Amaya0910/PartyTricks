@@ -11,4 +11,8 @@ abstract class InviteService {
 
   /// El invitado ya vio el aviso.
   Future<void> markSeen(String inviteId);
+
+  /// El invitado rechazó la invitación (por ejemplo, desde la notificación).
+  /// También queda como vista.
+  Future<void> decline(String inviteId);
 }

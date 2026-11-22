@@ -22,6 +22,14 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // Correo verificado (H-13). Las funciones sociales (amistades, chat e
+    // invitaciones) lo exigen: sin esto, una cuenta creada con un correo ajeno
+    // podría escribirle a otros jugadores. Las cuentas de Google ya llegan
+    // verificadas.
+    function verified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
     // Los ids de pareja son "uidA_uidB" (en orden alfabético).
     function inPair(pairId) {
       return signedIn() && request.auth.uid in pairId.split('_');
@@ -56,11 +64,13 @@ service cloud.firestore {
     // Cartera del perfil (D-28)
     // ---------------------------------------------------------------------
 
-    // También ownedEyes (D-29) y ownedMouths (D-30): los ojos y las bocas
-    // comprados solo cambian al comprar.
+    // También ownedEyes (D-29), ownedMouths (D-30), ownedShirts y
+    // ownedPants, ownedHairs y ownedAccessories (D-33, D-35, D-36): los cosméticos comprados solo cambian al
+    // comprar o al abrir un cofre.
     function walletKeys() {
       return ['coins', 'diamonds', 'extraDice', 'experience', 'ownedEyes',
-              'ownedMouths'];
+              'ownedMouths', 'ownedShirts', 'ownedPants', 'ownedHairs',
+              'ownedAccessories'];
     }
 
     function ownedEyesBefore() {
@@ -87,6 +97,98 @@ service cloud.firestore {
       return ownedMouthsAfter() == ownedMouthsBefore();
     }
 
+    function ownedShirtsBefore() {
+      return resource.data.get('ownedShirts', []);
+    }
+
+    function ownedShirtsAfter() {
+      return request.resource.data.get('ownedShirts', []);
+    }
+
+    function ownedShirtsUnchanged() {
+      return ownedShirtsAfter() == ownedShirtsBefore();
+    }
+
+    function ownedAccessoriesBefore() {
+      return resource.data.get('ownedAccessories', []);
+    }
+
+    function ownedAccessoriesAfter() {
+      return request.resource.data.get('ownedAccessories', []);
+    }
+
+    function ownedAccessoriesUnchanged() {
+      return ownedAccessoriesAfter() == ownedAccessoriesBefore();
+    }
+
+    function ownedPantsBefore() {
+      return resource.data.get('ownedPants', []);
+    }
+
+    function ownedPantsAfter() {
+      return request.resource.data.get('ownedPants', []);
+    }
+
+    function ownedPantsUnchanged() {
+      return ownedPantsAfter() == ownedPantsBefore();
+    }
+
+    function ownedHairsBefore() {
+      return resource.data.get('ownedHairs', []);
+    }
+
+    function ownedHairsAfter() {
+      return request.resource.data.get('ownedHairs', []);
+    }
+
+    function ownedHairsUnchanged() {
+      return ownedHairsAfter() == ownedHairsBefore();
+    }
+
+    // Ninguna de las listas de cosméticos cambia.
+    function noCosmeticChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedShirtsUnchanged() && ownedPantsUnchanged()
+        && ownedHairsUnchanged() && ownedAccessoriesUnchanged();
+    }
+
+    // Solo cambia una de las listas: las otras quedan igual.
+    function onlyEyesChange() {
+      return ownedMouthsUnchanged() && ownedShirtsUnchanged()
+        && ownedPantsUnchanged() && ownedHairsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyMouthsChange() {
+      return ownedEyesUnchanged() && ownedShirtsUnchanged()
+        && ownedPantsUnchanged() && ownedHairsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyShirtsChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedPantsUnchanged() && ownedHairsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyPantsChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedShirtsUnchanged() && ownedHairsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyHairsChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedShirtsUnchanged() && ownedPantsUnchanged()
+        && ownedAccessoriesUnchanged();
+    }
+
+    function onlyAccessoriesChange() {
+      return ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ownedShirtsUnchanged() && ownedPantsUnchanged()
+        && ownedHairsUnchanged();
+    }
+
     // Cuánto cambia [key] con esta escritura (lo que falta cuenta como 0).
     function delta(key) {
       return request.resource.data.get(key, 0) - resource.data.get(key, 0);
@@ -103,7 +205,11 @@ service cloud.firestore {
         && request.resource.data.get('extraDice', 0) == 0
         && request.resource.data.get('experience', 0) == 0
         && request.resource.data.get('ownedEyes', []).size() == 0
-        && request.resource.data.get('ownedMouths', []).size() == 0;
+        && request.resource.data.get('ownedMouths', []).size() == 0
+        && request.resource.data.get('ownedShirts', []).size() == 0
+        && request.resource.data.get('ownedPants', []).size() == 0
+        && request.resource.data.get('ownedHairs', []).size() == 0
+        && request.resource.data.get('ownedAccessories', []).size() == 0;
     }
 
     // Compra de un cofre (D-18). Los precios (50, 100 y 150) y el premio de
@@ -115,13 +221,17 @@ service cloud.firestore {
       return (spent == 50 || spent == 100 || spent == 150)
         && request.resource.data.diamonds >= 0
         && delta('experience') == 0
-        && ((ownedEyesUnchanged() && ownedMouthsUnchanged()
+        && ((noCosmeticChange()
             && ((delta('coins') == 0 && delta('extraDice') == 0)
               || (delta('coins') == 100 && delta('extraDice') == 0)
               || (delta('coins') == 0 && delta('extraDice') == 1)))
           || (delta('coins') == 0 && delta('extraDice') == 0
-            && ((addsOneEyes() && ownedMouthsUnchanged())
-              || (addsOneMouth() && ownedEyesUnchanged()))));
+            && ((addsOneEyes() && onlyEyesChange())
+              || (addsOneMouth() && onlyMouthsChange())
+              || (addsOneShirt() && onlyShirtsChange())
+              || (addsOnePants() && onlyPantsChange())
+              || (addsOneHair() && onlyHairsChange())
+              || (addsOneAccessory() && onlyAccessoriesChange()))));
     }
 
     // El cofre puede regalar un cosmético (D-31): se agrega exactamente uno
@@ -142,6 +252,39 @@ service cloud.firestore {
         && mouthPrice(added[0]) > 0;
     }
 
+    function addsOneShirt() {
+      let added = ownedShirtsAfter().removeAll(ownedShirtsBefore());
+      return ownedShirtsAfter().hasAll(ownedShirtsBefore())
+        && added.size() == 1
+        && ownedShirtsAfter().size() == ownedShirtsBefore().size() + 1
+        && shirtPrice(added[0]) > 0;
+    }
+
+    function addsOnePants() {
+      let added = ownedPantsAfter().removeAll(ownedPantsBefore());
+      return ownedPantsAfter().hasAll(ownedPantsBefore())
+        && added.size() == 1
+        && ownedPantsAfter().size() == ownedPantsBefore().size() + 1
+        && pantsPrice(added[0]) > 0;
+    }
+
+    function addsOneHair() {
+      let added = ownedHairsAfter().removeAll(ownedHairsBefore());
+      return ownedHairsAfter().hasAll(ownedHairsBefore())
+        && added.size() == 1
+        && ownedHairsAfter().size() == ownedHairsBefore().size() + 1
+        && hairPrice(added[0]) > 0;
+    }
+
+    function addsOneAccessory() {
+      let added = ownedAccessoriesAfter().removeAll(ownedAccessoriesBefore());
+      return ownedAccessoriesAfter().hasAll(ownedAccessoriesBefore())
+        && added.size() == 1
+        && ownedAccessoriesAfter().size()
+          == ownedAccessoriesBefore().size() + 1
+        && accessoryPrice(added[0]) > 0;
+    }
+
     // Premios de una partida: en la misma transacción se crea la marca
     // stats/{uid}/matches/{id} (así se cobra una sola vez) y el perfil
     // anota ese id en lastRewardMatch. Lo que se suma tiene que ser
@@ -154,8 +297,7 @@ service cloud.firestore {
         && !exists(marker) && existsAfter(marker)
         && exists(record)
         && delta('extraDice') == 0
-        && ownedEyesUnchanged()
-        && ownedMouthsUnchanged()
+        && noCosmeticChange()
         && rewardMatches(get(record).data.players, uid);
     }
 
@@ -191,7 +333,7 @@ service cloud.firestore {
         && added.size() == 1
         && ownedEyesAfter().size() == ownedEyesBefore().size() + 1
         && eyesPrice(added[0]) > 0
-        && ownedMouthsUnchanged()
+        && onlyEyesChange()
         && delta('coins') == -eyesPrice(added[0])
         && request.resource.data.coins >= 0
         && delta('diamonds') == 0
@@ -240,7 +382,7 @@ service cloud.firestore {
         && added.size() == 1
         && ownedMouthsAfter().size() == ownedMouthsBefore().size() + 1
         && mouthPrice(added[0]) > 0
-        && ownedEyesUnchanged()
+        && onlyMouthsChange()
         && delta('coins') == -mouthPrice(added[0])
         && request.resource.data.coins >= 0
         && delta('diamonds') == 0
@@ -264,6 +406,165 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['mouth'])
         || mouthOwned();
+    }
+
+    // Precio en monedas de cada camisa de la Tienda (D-33). Son los de
+    // lib/models/shirt_style.dart: si cambian allá, hay que cambiarlos aquí.
+    // La camisa 1 (azul, la de inicio) es gratis y no se compra; sus otros
+    // colores son del 101 al 108.
+    function shirtPrice(id) {
+      return {'101': 30, '102': 30, '103': 30, '104': 30, '105': 30,
+              '106': 30, '107': 30, '108': 30, '2': 45, '3': 60, '4': 60,
+              '5': 75, '6': 45, '7': 45, '8': 60, '9': 60, '10': 75,
+              '11': 75, '12': 100, '13': 60, '14': 60, '15': 75,
+              '16': 75, '17': 75, '18': 75, '19': 75, '20': 75,
+              '21': 100}.get(string(id), 0);
+    }
+
+    // Compra de una camisa: se agrega exactamente una que no tenía (y que se
+    // vende) y se resta exactamente su precio. Nada más cambia.
+    function isShirtPurchase() {
+      let added = ownedShirtsAfter().removeAll(ownedShirtsBefore());
+      return ownedShirtsAfter().hasAll(ownedShirtsBefore())
+        && added.size() == 1
+        && ownedShirtsAfter().size() == ownedShirtsBefore().size() + 1
+        && shirtPrice(added[0]) > 0
+        && onlyShirtsChange()
+        && delta('coins') == -shirtPrice(added[0])
+        && request.resource.data.coins >= 0
+        && delta('diamonds') == 0
+        && delta('extraDice') == 0
+        && delta('experience') == 0;
+    }
+
+    // La camisa que se pone el jugador tiene que ser la de inicio o comprada.
+    function shirtOwned() {
+      return request.resource.data.shirt == 1
+        || request.resource.data.shirt in ownedShirtsAfter();
+    }
+
+    function shirtAllowedOnCreate() {
+      return !request.resource.data.keys().hasAny(['shirt']) || shirtOwned();
+    }
+
+    function shirtChangeAllowed() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['shirt'])
+        || shirtOwned();
+    }
+
+    // Precio en monedas de cada pantalón de la Tienda (D-36). Son los de
+    // lib/models/pants_style.dart: si cambian allá, hay que cambiarlos aquí.
+    // Ninguno es gratis.
+    function pantsPrice(id) {
+      return {'1': 45, '2': 30, '3': 30, '4': 30, '5': 45, '6': 45, '7': 45, '8': 45, '9': 45, '10': 45, '11': 60, '12': 60, '13': 60, '14': 60, '15': 60, '16': 60, '17': 75, '18': 75, '19': 75, '20': 75, '21': 100}.get(string(id), 0);
+    }
+
+    function isPantsPurchase() {
+      let added = ownedPantsAfter().removeAll(ownedPantsBefore());
+      return ownedPantsAfter().hasAll(ownedPantsBefore())
+        && added.size() == 1
+        && ownedPantsAfter().size() == ownedPantsBefore().size() + 1
+        && pantsPrice(added[0]) > 0
+        && onlyPantsChange()
+        && delta('coins') == -pantsPrice(added[0])
+        && request.resource.data.coins >= 0
+        && delta('diamonds') == 0
+        && delta('extraDice') == 0
+        && delta('experience') == 0;
+    }
+
+    // El pantalón que se pone el jugador es ninguno (0) o uno comprado.
+    function pantsOwned() {
+      return request.resource.data.pants == 0
+        || request.resource.data.pants in ownedPantsAfter();
+    }
+
+    function pantsAllowedOnCreate() {
+      return !request.resource.data.keys().hasAny(['pants']) || pantsOwned();
+    }
+
+    function pantsChangeAllowed() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['pants'])
+        || pantsOwned();
+    }
+
+    // Precio en monedas de cada cabello de la Tienda (D-35). Son los de
+    // lib/models/hair_style.dart: si cambian allá, hay que cambiarlos aquí.
+    // Ninguno es gratis. Los colores del cabello no se compran.
+    function hairPrice(id) {
+      return {'1': 45, '2': 60, '3': 60, '4': 75, '5': 45, '6': 60,
+              '7': 75, '8': 75, '9': 45, '10': 60, '11': 300}.get(string(id), 0);
+    }
+
+    function isHairPurchase() {
+      let added = ownedHairsAfter().removeAll(ownedHairsBefore());
+      return ownedHairsAfter().hasAll(ownedHairsBefore())
+        && added.size() == 1
+        && ownedHairsAfter().size() == ownedHairsBefore().size() + 1
+        && hairPrice(added[0]) > 0
+        && onlyHairsChange()
+        && delta('coins') == -hairPrice(added[0])
+        && request.resource.data.coins >= 0
+        && delta('diamonds') == 0
+        && delta('extraDice') == 0
+        && delta('experience') == 0;
+    }
+
+    // El cabello que se pone el jugador es ninguno (0) o uno comprado.
+    function hairOwned() {
+      return request.resource.data.hair == 0
+        || request.resource.data.hair in ownedHairsAfter();
+    }
+
+    function hairAllowedOnCreate() {
+      return !request.resource.data.keys().hasAny(['hair']) || hairOwned();
+    }
+
+    function hairChangeAllowed() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['hair'])
+        || hairOwned();
+    }
+
+    // Precio en monedas de cada accesorio de la Tienda (D-33). Son los de
+    // lib/models/accessory_style.dart: si cambian allá, hay que cambiarlos
+    // aquí. Ninguno es gratis.
+    function accessoryPrice(id) {
+      return {'1': 75, '2': 100}.get(string(id), 0);
+    }
+
+    function isAccessoryPurchase() {
+      let added = ownedAccessoriesAfter().removeAll(ownedAccessoriesBefore());
+      return ownedAccessoriesAfter().hasAll(ownedAccessoriesBefore())
+        && added.size() == 1
+        && ownedAccessoriesAfter().size()
+          == ownedAccessoriesBefore().size() + 1
+        && accessoryPrice(added[0]) > 0
+        && onlyAccessoriesChange()
+        && delta('coins') == -accessoryPrice(added[0])
+        && request.resource.data.coins >= 0
+        && delta('diamonds') == 0
+        && delta('extraDice') == 0
+        && delta('experience') == 0;
+    }
+
+    // El accesorio que se pone el jugador es ninguno (0) o uno comprado.
+    function accessoryOwned() {
+      return request.resource.data.accessory == 0
+        || request.resource.data.accessory in ownedAccessoriesAfter();
+    }
+
+    function accessoryAllowedOnCreate() {
+      return !request.resource.data.keys().hasAny(['accessory'])
+        || accessoryOwned();
+    }
+
+    function accessoryChangeAllowed() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['accessory'])
+        || accessoryOwned();
     }
 
     // Topes de lo que una partida puede dar a cada jugador. La XP máxima
@@ -311,22 +612,40 @@ service cloud.firestore {
       allow read: if isUser(uid) || isAdmin();
       allow create: if isUser(uid) && walletIsEmpty()
         && eyesAllowedOnCreate() && mouthAllowedOnCreate()
+        && shirtAllowedOnCreate() && pantsAllowedOnCreate()
+        && hairAllowedOnCreate()
+        && accessoryAllowedOnCreate()
         && facePhotoOk(request.resource.data);
       allow update: if isUser(uid) && eyesChangeAllowed()
-        && mouthChangeAllowed() && facePhotoOk(request.resource.data)
+        && mouthChangeAllowed() && shirtChangeAllowed()
+        && pantsChangeAllowed() && hairChangeAllowed() && accessoryChangeAllowed() && facePhotoOk(request.resource.data)
         && (!touchesWallet() || isAdmin() || isChestPurchase()
-            || isMatchReward(uid) || isEyesPurchase() || isMouthPurchase());
+            || isMatchReward(uid) || isEyesPurchase() || isMouthPurchase()
+            || isShirtPurchase() || isPantsPurchase() || isHairPurchase()
+            || isAccessoryPurchase());
       allow delete: if isUser(uid);
     }
 
-    // Reserva del nombre de usuario. Se lee sin sesión para poder iniciar
-    // sesión con el nombre, pero solo por nombre exacto (get), nunca la
-    // lista completa: tiene correos y hay jugadores menores.
+    // Reserva del nombre de usuario: solo guarda el uid (H-01). Antes
+    // guardaba el correo y se leía sin sesión para entrar con el nombre, así
+    // que cualquiera podía sacar el correo de un jugador. Ahora se entra con
+    // el correo o con Google, y la reserva solo se lee con sesión (para saber
+    // si un nombre está libre), nunca la lista completa.
+    //
+    // Las reservas viejas que todavía tienen el correo solo las lee su dueño,
+    // y la app le quita el correo cuando vuelve a entrar.
     match /usernames/{name} {
-      allow get: if true;
+      allow get: if signedIn()
+        && (resource == null || !('email' in resource.data)
+            || resource.data.uid == request.auth.uid);
       allow list: if false;
-      allow create: if isUser(request.resource.data.uid);
-      allow update, delete: if isUser(resource.data.uid);
+      allow create: if isUser(request.resource.data.uid)
+        && request.resource.data.keys().hasOnly(['uid']);
+      // Solo para quitarle el correo a una reserva vieja.
+      allow update: if isUser(resource.data.uid)
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isUser(resource.data.uid);
     }
 
     // Reserva del código de amistad. Se busca por código exacto para
@@ -384,10 +703,46 @@ service cloud.firestore {
     // Amigos, chat e invitaciones (D-22)
     // ---------------------------------------------------------------------
 
+    // Campos del perfil público (PublicProfile.toMap). Si se agrega uno en la
+    // app, hay que agregarlo aquí. Ya están los de las ramas en curso
+    // (camisa, accesorio y cabello).
+    function publicProfileKeys() {
+      return ['username', 'friendCode', 'experience', 'photoUrl', 'skinTone',
+              'eyes', 'eyeColor', 'mouth', 'mouthColor', 'shirt', 'accessory',
+              'hair', 'hairColor', 'avatarColor', 'facePhoto'];
+    }
+
+    // Foto de perfil: nada, o una foto de Google por HTTPS (H-03). Es la
+    // misma lista de lib/services/security/trusted_photo_url.dart.
+    function photoUrlOk(data) {
+      return !('photoUrl' in data) || data.photoUrl == null
+        || (data.photoUrl is string && data.photoUrl.size() <= 2048
+            && data.photoUrl.matches('^https://lh3[.]googleusercontent[.]com/[A-Za-z0-9_=./-]+$'));
+    }
+
+    // El perfil público lo escribe su dueño, pero no puede inventar (H-04):
+    // el nombre tiene que ser el que reservó, el código de amistad el suyo y
+    // la XP la de su perfil privado.
+    function publicProfileOk(uid, data) {
+      let reservation = /databases/$(database)/documents/usernames/$(data.username.lower());
+      let code = /databases/$(database)/documents/friendCodes/$(data.friendCode);
+      let owner = /databases/$(database)/documents/users/$(uid);
+      return data.keys().hasOnly(publicProfileKeys())
+        && data.username is string
+        && exists(reservation) && get(reservation).data.uid == uid
+        && data.friendCode is string
+        && exists(code) && get(code).data.uid == uid
+        && data.experience == get(owner).data.get('experience', 0)
+        && photoUrlOk(data)
+        && facePhotoOk(data);
+    }
+
     // Lo que ven los demás: sin correo.
     match /publicProfiles/{uid} {
       allow read: if signedIn();
-      allow write: if isUser(uid) && facePhotoOk(request.resource.data);
+      allow create, update: if isUser(uid)
+        && publicProfileOk(uid, request.resource.data);
+      allow delete: if isUser(uid);
     }
 
     // Solicitudes y amistades. "get" va por id (así se puede leer aunque
@@ -398,6 +753,7 @@ service cloud.firestore {
       allow list: if signedIn() && request.auth.uid in resource.data.members;
 
       allow create: if inPair(pairId)
+        && verified()
         && request.resource.data.requestedBy == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.members.hasAll(pairId.split('_'))
@@ -405,6 +761,7 @@ service cloud.firestore {
 
       // Aceptar: solo se puede cambiar el estado.
       allow update: if inPair(pairId)
+        && verified()
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['status']);
 
@@ -412,40 +769,118 @@ service cloud.firestore {
       allow delete: if inPair(pairId);
     }
 
+    // Código de sala: 6 letras y números sin I, O, 0 ni 1 (igual que en
+    // database.rules.json).
+    function roomCodeOk(code) {
+      return code is string && code.matches('^[A-HJ-NP-Z2-9]{6}$');
+    }
+
+    // Un mensaje tal como lo arma la app (ChatMessage.toMap), siempre a
+    // nombre propio (H-08). También es la vista previa del chat.
+    function messageOk(m) {
+      return m.keys().hasOnly(['senderId', 'text', 'sentAt', 'type', 'roomId',
+                               'roomCode'])
+        && m.senderId == request.auth.uid
+        && m.text is string && m.text.size() <= 200
+        && m.sentAt is int
+        && m.get('type', 'text') in ['text', 'invite']
+        && (!('roomId' in m) || (m.roomId is string && m.roomId.size() <= 40))
+        && (!('roomCode' in m) || roomCodeOk(m.roomCode));
+    }
+
+    // Cada uno marca como leído solo lo suyo.
+    function lastReadOk(before, data) {
+      let mine = request.auth.uid;
+      return data.lastReadAt is map
+        && data.lastReadAt.diff(before.get('lastReadAt', {})).affectedKeys()
+             .hasOnly([mine])
+        && data.lastReadAt[mine] is int;
+    }
+
+    // Resumen del chat (H-08): los miembros son la pareja, la vista previa es
+    // un mensaje propio y la marca de leído es la propia.
+    function chatSummaryOk(pairId) {
+      let data = request.resource.data;
+      let before = resource == null ? {} : resource.data;
+      let changed = data.diff(before).affectedKeys();
+      return data.keys().hasOnly(['members', 'lastMessage', 'lastReadAt'])
+        && (!changed.hasAny(['members'])
+            || (data.members is list && data.members.size() == 2
+                && data.members.hasAll(pairId.split('_'))))
+        && (!changed.hasAny(['lastMessage']) || messageOk(data.lastMessage))
+        && (!changed.hasAny(['lastReadAt']) || lastReadOk(before, data));
+    }
+
+    // El nombre en una invitación es el que reservó quien invita (H-08).
+    function inviterNameOk(name) {
+      let reservation = /databases/$(database)/documents/usernames/$(name.lower());
+      return name is string && exists(reservation)
+        && get(reservation).data.uid == request.auth.uid;
+    }
+
     match /chats/{pairId} {
-      allow get, write: if inPair(pairId);
+      allow get: if inPair(pairId);
       allow list: if signedIn() && request.auth.uid in resource.data.members;
+      allow create, update: if inPair(pairId) && verified()
+        && chatSummaryOk(pairId);
+      allow delete: if inPair(pairId);
 
       match /messages/{messageId} {
         allow read: if inPair(pairId);
-        // Solo entre amigos, a nombre propio, de máximo 200 caracteres y si
-        // el otro no te bloqueó.
+        // Solo entre amigos, a nombre propio, de máximo 200 caracteres, con
+        // los campos de la app (H-08) y si el otro no te bloqueó.
         allow create: if inPair(pairId)
-          && request.resource.data.senderId == request.auth.uid
-          && request.resource.data.text is string
-          && request.resource.data.text.size() <= 200
+          && verified()
+          && messageOk(request.resource.data)
           && areFriends(pairId)
           && !blockedBy(otherOf(pairId));
       }
     }
 
     match /invites/{inviteId} {
-      // El invitado ve sus invitaciones y solo puede marcarlas como vistas.
+      // El invitado ve sus invitaciones y solo puede marcarlas como vistas o
+      // rechazadas (el botón Rechazar de la notificación).
       allow read: if signedIn() && resource.data.toUid == request.auth.uid;
       allow update: if signedIn()
         && resource.data.toUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['seen']);
+             .hasOnly(['seen', 'declined']);
 
       // Solo a amigos que no te bloquearon.
-      allow create: if signedIn()
+      // Con los campos de la app y el nombre real de quien invita (H-08).
+      allow create: if verified()
+        && request.resource.data.keys().hasOnly(['fromUid', 'fromName', 'toUid',
+                                                 'roomId', 'roomCode', 'sentAt',
+                                                 'seen'])
         && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
         && request.resource.data.toUid != request.auth.uid
+        && inviterNameOk(request.resource.data.fromName)
+        && request.resource.data.roomId is string
+        && request.resource.data.roomId.size() <= 40
+        && roomCodeOk(request.resource.data.roomCode)
+        && request.resource.data.sentAt is int
+        && request.resource.data.seen == false
         && areFriends(
              request.auth.uid < request.resource.data.toUid
                ? request.auth.uid + '_' + request.resource.data.toUid
                : request.resource.data.toUid + '_' + request.auth.uid)
         && !blockedBy(request.resource.data.toUid);
+    }
+
+    // Notificaciones: cada celular guarda aquí su código de Firebase Cloud
+    // Messaging con el uid de su dueño. Solo se puede escribir a nombre
+    // propio y nadie lo lee desde la app: lo lee la Cloud Function que manda
+    // los avisos (las funciones no pasan por estas reglas).
+    match /fcmTokens/{token} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'platform', 'updatedAt']);
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'platform', 'updatedAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
     // Bloqueos: el id es "bloqueador_bloqueado".
@@ -460,10 +895,24 @@ service cloud.firestore {
     }
 
     // Reportes: se pueden crear, pero nadie los lee desde la app (los
-    // revisa un adulto o el docente en la consola de Firebase).
+    // revisa un adulto o el docente en la consola de Firebase). Solo con los
+    // campos de la app y un motivo de lib/models/social/report_reason.dart
+    // (H-08): si cambian allá, hay que cambiarlos aquí.
     match /reports/{reportId} {
       allow create: if signedIn()
-        && request.resource.data.reporterUid == request.auth.uid;
+        && request.resource.data.keys().hasOnly(['reporterUid', 'reportedUid',
+                                                 'reason', 'chatId',
+                                                 'createdAt'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.reportedUid is string
+        && request.resource.data.reportedUid != request.auth.uid
+        && request.resource.data.reason in ['offensiveLanguage', 'harassment',
+                                            'inappropriateContent', 'other']
+        && request.resource.data.chatId == (
+             request.auth.uid < request.resource.data.reportedUid
+               ? request.auth.uid + '_' + request.resource.data.reportedUid
+               : request.resource.data.reportedUid + '_' + request.auth.uid)
+        && request.resource.data.createdAt is int;
     }
   }
 }

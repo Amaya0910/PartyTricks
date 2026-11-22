@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:party_tricks/controllers/eyes_controller.dart';
-import 'package:party_tricks/controllers/mouth_controller.dart';
-import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/models/chest.dart';
-import 'package:party_tricks/models/eye_color.dart';
-import 'package:party_tricks/models/mouth_color.dart';
-import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
 import 'package:party_tricks/widgets/chest_visuals.dart';
-import 'package:party_tricks/widgets/eyes_picker.dart';
-import 'package:party_tricks/widgets/mouth_picker.dart';
+import 'package:party_tricks/widgets/cosmetic_preview.dart';
 import 'package:party_tricks/widgets/rarity_badge.dart';
 
 /// Ventana con lo que salió del cofre: el cosmético, las monedas, el dado
@@ -88,8 +81,7 @@ class ChestRewardDialog extends ConsumerWidget {
                 child: _PrizeTile(chest: chest, palette: palette, prize: prize),
               ),
             ),
-            if (prize.eyes?.rarity ?? prize.mouth?.rarity
-                case final rarity?) ...[
+            if (prize.cosmetic?.rarity case final rarity?) ...[
               const SizedBox(height: 12),
               Center(child: RarityBadge(rarity: rarity)),
             ],
@@ -141,7 +133,7 @@ class ChestRewardDialog extends ConsumerWidget {
     );
   }
 
-  String get _cosmeticName => prize.eyes?.title ?? prize.mouth?.title ?? '';
+  String get _cosmeticName => prize.cosmetic?.title ?? '';
 }
 
 /// Aparece creciendo un poco, con un rebote suave.
@@ -193,24 +185,8 @@ class _PrizeTile extends ConsumerWidget {
   }
 
   Widget _content(WidgetRef ref) {
-    final eyes = prize.eyes;
-    final mouth = prize.mouth;
-    if (eyes != null) {
-      return _Framed(
-        child: EyesThumbnail(
-          style: eyes,
-          color: EyeColor.colorOf(ref.watch(eyeColorProvider)),
-        ),
-      );
-    }
-    if (mouth != null) {
-      final skin = SkinTone.colorOf(ref.watch(skinToneProvider));
-      return _Framed(
-        child: MouthThumbnail(
-          style: mouth,
-          color: MouthColor.colorOf(ref.watch(mouthColorProvider)) ?? skin,
-        ),
-      );
+    if (prize.cosmetic case final cosmetic?) {
+      return _Framed(child: CosmeticPreview(cosmetic));
     }
     return switch (prize.outcome) {
       ChestOutcome.coins => _Asset(

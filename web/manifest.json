@@ -1,6 +1,6 @@
 {
-    "name": "party_tricks",
-    "short_name": "party_tricks",
+    "name": "Party Tricks",
+    "short_name": "Party Tricks",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

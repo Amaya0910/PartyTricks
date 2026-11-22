@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:party_tricks/controllers/eyes_controller.dart';
-import 'package:party_tricks/controllers/face_photo_controller.dart';
-import 'package:party_tricks/controllers/mouth_controller.dart';
+import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/controllers/room_controller.dart';
-import 'package:party_tricks/controllers/skin_tone_controller.dart';
-import 'package:party_tricks/models/eye_color.dart';
-import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/play_option.dart';
 import 'package:party_tricks/models/room.dart';
-import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/screens/lobby_screen.dart';
 import 'package:party_tricks/screens/settings_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
@@ -72,11 +66,6 @@ class HomeScreen extends ConsumerWidget {
     // El perfil del jugador con la sesión iniciada (null solo un instante,
     // mientras llega de Firebase).
     final profile = ref.watch(userProfileProvider).value;
-    final skinTone = ref.watch(skinToneProvider);
-    final eyeStyle = ref.watch(eyeStyleProvider);
-    final eyeColor = ref.watch(eyeColorProvider);
-    final mouthStyle = ref.watch(mouthStyleProvider);
-    final mouthColor = ref.watch(mouthColorProvider);
 
     return Column(
       children: [
@@ -89,18 +78,12 @@ class HomeScreen extends ConsumerWidget {
         ),
         const VerifyEmailBanner(),
         const ActiveGameBanner(),
-        // Falta agregar los cosméticos equipados (clothing).
         Expanded(
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: AnimatedCharacter(
-                skinTone: SkinTone.colorOf(skinTone),
-                eyes: eyeStyle,
-                eyeColor: EyeColor.colorOf(eyeColor),
-                mouth: mouthStyle,
-                mouthColor: MouthColor.colorOf(mouthColor),
-                facePhoto: ref.watch(facePhotoProvider),
+              child: AnimatedCharacter.fromLook(
+                ref.watch(characterLookProvider),
               ),
             ),
           ),

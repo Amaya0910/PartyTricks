@@ -1,0 +1,17 @@
+{
+  "name": "party-tricks-functions",
+  "description": "Notificaciones de Party Tricks (mensajes e invitaciones)",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "test": "node --test test/notifications.test.js",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0"
+  }
+}

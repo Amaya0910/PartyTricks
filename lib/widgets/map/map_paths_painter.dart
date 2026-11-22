@@ -1,22 +1,17 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
-import 'package:party_tricks/models/map/board_map.dart';
-import 'package:party_tricks/services/game_engine/board_layout.dart';
+import 'package:party_tricks/services/map/route_curves.dart';
 
-/// Pinta el caminito de piedra entre cada casilla y las siguientes, con la
-/// textura repetida. En las bifurcaciones salen dos caminos solos.
+/// Pinta el caminito de piedra entre cada casilla y las siguientes, en curvas
+/// suaves (no rectas), con la textura repetida. En las bifurcaciones salen dos caminos solos.
 ///
 /// Los extremos quedan debajo de las plataformas, que se dibujan encima.
 class MapPathsPainter extends CustomPainter {
-  MapPathsPainter({
-    required this.map,
-    required this.board,
-    required this.texture,
-  });
+  MapPathsPainter({required this.routes, required this.texture});
 
-  final BoardMap map;
-  final BoardLayout board;
+  /// Los tramos suaves entre casillas (los mismos que recorre el personaje).
+  final RouteCurves routes;
   final ui.Image texture;
 
   /// Cerca de la mitad del ancho de una plataforma.
@@ -33,21 +28,15 @@ class MapPathsPainter extends CustomPainter {
       )
       ..style = PaintingStyle.stroke
       ..strokeWidth = pathWidth
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
-    for (final tile in board.tiles) {
-      final from = map.tiles[tile.id]?.anchor;
-      if (from == null) continue;
-      for (final nextId in tile.next) {
-        final to = map.tiles[nextId]?.anchor;
-        if (to != null) canvas.drawLine(from, to, paint);
-      }
+    for (final curve in routes.all) {
+      canvas.drawPath(curve.path, paint);
     }
   }
 
   @override
   bool shouldRepaint(MapPathsPainter oldDelegate) =>
-      oldDelegate.map != map ||
-      oldDelegate.board != board ||
-      oldDelegate.texture != texture;
+      oldDelegate.routes != routes || oldDelegate.texture != texture;
 }

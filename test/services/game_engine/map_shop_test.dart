@@ -63,16 +63,74 @@ void main() {
       expect(state.currentPlayerId, 'b');
     });
 
-    test('al pasar por encima de una tienda no compra y pasa el turno', () {
+    test('al pasar por encima de una tienda se detiene y puede comprar', () {
       final engine = engineWith([3]);
       final state = engine.apply(
         game(beto: beto(position: 10)),
         const RollDice('b'),
       );
 
-      expect(state.players['b']!.position, 13);
-      expect(state.phase, GamePhase.rolling);
+      expect(state.players['b']!.position, 12);
+      expect(state.phase, GamePhase.shopping);
+      expect(state.stepsLeft, 1);
+      expect(state.currentPlayerId, 'b');
+    });
+
+    test(
+      'al salir de la tienda de paso sigue su camino y termina el turno',
+      () {
+        final engine = engineWith([3]);
+        var state = engine.apply(
+          game(beto: beto(position: 10)),
+          const RollDice('b'),
+        );
+        state = engine.apply(state, const BuyItem('b', ShopItem.shield));
+        state = engine.apply(state, const LeaveShop('b'));
+
+        expect(state.players['b']!.position, 13);
+        expect(state.players['b']!.itemCount(ShopItem.shield), 1);
+        expect(state.phase, GamePhase.rolling);
+        expect(state.currentPlayerId, 'a');
+        expect(state.stepsLeft, 0);
+      },
+    );
+
+    test('si le sobran pasos puede cobrar la casilla donde cae después', () {
+      // Desde la 10, 3 pasos: 11, 12 (tienda, se detiene) y 13 (positiva).
+      final engine = engineWith([3]);
+      var state = engine.apply(
+        game(beto: beto(position: 10)),
+        const RollDice('b'),
+      );
+      final before = state.players['b']!.coins;
+      state = engine.apply(state, const LeaveShop('b'));
+
+      expect(state.players['b']!.coins, before + 3);
+    });
+
+    test('al caer en la tienda al final, salir no mueve a nadie', () {
+      final engine = engineWith([2]);
+      var state = engine.apply(
+        game(beto: beto(position: 10)),
+        const RollDice('b'),
+      );
+      expect(state.stepsLeft, 0);
+      state = engine.apply(state, const LeaveShop('b'));
+
+      expect(state.players['b']!.position, 12);
       expect(state.currentPlayerId, 'a');
+    });
+
+    test('si salta a quien iba de paso por la tienda, no arrastra pasos', () {
+      final engine = engineWith([3]);
+      var state = engine.apply(
+        game(beto: beto(position: 10)),
+        const RollDice('b'),
+      );
+      state = engine.apply(state, const SkipTurn('b'));
+
+      expect(state.currentPlayerId, 'a');
+      expect(state.stepsLeft, 0);
     });
 
     test('después de una bifurcación también entra si cae en la tienda', () {

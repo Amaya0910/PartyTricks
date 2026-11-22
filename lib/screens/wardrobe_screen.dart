@@ -1,22 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:party_tricks/controllers/accessory_controller.dart';
+import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/controllers/eyes_controller.dart';
-import 'package:party_tricks/controllers/face_photo_controller.dart';
+import 'package:party_tricks/controllers/hair_controller.dart';
 import 'package:party_tricks/controllers/mouth_controller.dart';
+import 'package:party_tricks/controllers/pants_controller.dart';
+import 'package:party_tricks/controllers/shirt_controller.dart';
 import 'package:party_tricks/controllers/skin_tone_controller.dart';
 import 'package:party_tricks/controllers/wardrobe_controller.dart';
+import 'package:party_tricks/models/character_look.dart';
+import 'package:party_tricks/models/character_view.dart';
 import 'package:party_tricks/models/cosmetic_category.dart';
-import 'package:party_tricks/models/eye_color.dart';
+import 'package:party_tricks/models/hair_color.dart';
 import 'package:party_tricks/models/mouth_color.dart';
 import 'package:party_tricks/models/skin_tone.dart';
 import 'package:party_tricks/screens/face_photo_screen.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/accessory_picker.dart';
 import 'package:party_tricks/widgets/category_tab_bar.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
+import 'package:party_tricks/widgets/character/character_clips.dart';
 import 'package:party_tricks/widgets/cosmetic_slot.dart';
 import 'package:party_tricks/widgets/eyes_picker.dart';
+import 'package:party_tricks/widgets/hair_picker.dart';
 import 'package:party_tricks/widgets/mouth_picker.dart';
+import 'package:party_tricks/widgets/pants_picker.dart';
+import 'package:party_tricks/widgets/shirt_picker.dart';
 import 'package:party_tricks/widgets/skin_tone_picker.dart';
 
 /// Vestuario: el personaje arriba, las categorías en el medio y los
@@ -24,13 +35,10 @@ import 'package:party_tricks/widgets/skin_tone_picker.dart';
 class WardrobeScreen extends ConsumerWidget {
   const WardrobeScreen({super.key});
 
-  /// Provisional: cosméticos que ya tiene el jugador, por categoría.
-  /// Se reemplaza por los cosméticos desbloqueados del perfil
-  /// (feature/player-profile). Con el mapa vacío, todas las categorías
-  /// muestran su mensaje de "Aún no tienes...".
-  static const Map<CosmeticCategory, List<String>> _ownedItems = {
-    CosmeticCategory.shirt: ['Camisa 1'],
-  };
+  /// Provisional: cosméticos que ya tiene el jugador en las categorías que
+  /// todavía no tienen arte (pantalón, zapatos, cabello y nariz). Con el
+  /// mapa vacío, esas categorías muestran su mensaje de "Aún no tienes...".
+  static const Map<CosmeticCategory, List<String>> _ownedItems = {};
 
   /// Guarda un cambio del personaje y, si falla, muestra el mensaje.
   Future<void> _save(
@@ -58,6 +66,15 @@ class WardrobeScreen extends ConsumerWidget {
     final mouthColor = ref.watch(mouthColorProvider);
     final ownedMouths = ref.watch(ownedMouthsProvider);
     final skinColor = SkinTone.colorOf(skinTone);
+    final shirt = ref.watch(shirtProvider);
+    final ownedShirts = ref.watch(ownedShirtsProvider);
+    final pants = ref.watch(pantsProvider);
+    final ownedPants = ref.watch(ownedPantsProvider);
+    final hair = ref.watch(hairProvider);
+    final hairColor = ref.watch(hairColorProvider);
+    final ownedHairs = ref.watch(ownedHairsProvider);
+    final accessory = ref.watch(accessoryProvider);
+    final ownedAccessories = ref.watch(ownedAccessoriesProvider);
 
     return Column(
       children: [
@@ -67,20 +84,7 @@ class WardrobeScreen extends ConsumerWidget {
             bottom: false,
             child: Stack(
               children: [
-                // Falta agregar los cosméticos equipados (clothing).
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: AnimatedCharacter(
-                      skinTone: skinColor,
-                      eyes: eyeStyle,
-                      eyeColor: EyeColor.colorOf(eyeColor),
-                      mouth: mouthStyle,
-                      mouthColor: MouthColor.colorOf(mouthColor),
-                      facePhoto: ref.watch(facePhotoProvider),
-                    ),
-                  ),
-                ),
+                _CharacterStage(look: ref.watch(characterLookProvider)),
                 Positioned(
                   top: 12,
                   right: 12,
@@ -140,6 +144,51 @@ class WardrobeScreen extends ConsumerWidget {
                     () => ref.read(mouthControllerProvider).selectColor(index),
                   ),
                 ),
+                CosmeticCategory.shirt => ShirtPicker(
+                  styles: ownedShirts,
+                  selectedStyle: shirt,
+                  skin: skinColor,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(shirtControllerProvider).select(style),
+                  ),
+                ),
+                CosmeticCategory.pants => PantsPicker(
+                  styles: ownedPants,
+                  selectedStyle: pants,
+                  skin: skinColor,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(pantsControllerProvider).select(style),
+                  ),
+                ),
+                CosmeticCategory.hair => HairPicker(
+                  styles: ownedHairs,
+                  selectedStyle: hair,
+                  skin: skinColor,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(hairControllerProvider).select(style),
+                  ),
+                  colors: [
+                    for (var i = 0; i < HairColor.count; i++)
+                      HairColor.colorOf(i),
+                  ],
+                  selectedColor: hairColor,
+                  onColorSelected: (index) => _save(
+                    context,
+                    () => ref.read(hairControllerProvider).selectColor(index),
+                  ),
+                ),
+                CosmeticCategory.accessory => AccessoryPicker(
+                  styles: ownedAccessories,
+                  selectedStyle: accessory,
+                  skin: skinColor,
+                  onStyleSelected: (style) => _save(
+                    context,
+                    () => ref.read(accessoryControllerProvider).select(style),
+                  ),
+                ),
                 _ => _OwnedItems(
                   emptyMessage: selected.emptyMessage,
                   items: _ownedItems[selected] ?? const [],
@@ -191,6 +240,88 @@ class _OwnedItems extends StatelessWidget {
       ),
       itemBuilder: (context, index) =>
           CosmeticSlot(semanticLabel: items[index]),
+    );
+  }
+}
+
+/// Tu personaje en reposo, con un botón pequeño para verlo de frente, de lado
+/// o de espalda (cada toque pasa a la siguiente vista; el reposo de lado y de
+/// espalda solo se ven en el Vestuario).
+class _CharacterStage extends StatefulWidget {
+  const _CharacterStage({required this.look});
+
+  final CharacterLook look;
+
+  @override
+  State<_CharacterStage> createState() => _CharacterStageState();
+}
+
+class _CharacterStageState extends State<_CharacterStage>
+    with SingleTickerProviderStateMixin {
+  CharacterView _view = CharacterView.frente;
+
+  late final AnimationController _phase = AnimationController(
+    vsync: this,
+    duration: CharacterClip.idleSide.period,
+  );
+
+  @override
+  void dispose() {
+    _phase.dispose();
+    super.dispose();
+  }
+
+  /// El reposo de cada vista.
+  CharacterClip get _clip => switch (_view) {
+    CharacterView.frente => CharacterClip.idle,
+    CharacterView.lado => CharacterClip.idleSide,
+    CharacterView.espalda => CharacterClip.idleBack,
+  };
+
+  CharacterView get _next => switch (_view) {
+    CharacterView.frente => CharacterView.lado,
+    CharacterView.lado => CharacterView.espalda,
+    CharacterView.espalda => CharacterView.frente,
+  };
+
+  String get _nextLabel => switch (_next) {
+    CharacterView.frente => 'Ver de frente',
+    CharacterView.lado => 'Ver de lado',
+    CharacterView.espalda => 'Ver de espalda',
+  };
+
+  void _toggle() {
+    setState(() => _view = _next);
+    if (_view == CharacterView.frente) {
+      _phase.stop();
+    } else {
+      _phase.duration = _clip.period;
+      _phase.repeat();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: _view == CharacterView.frente
+                ? AnimatedCharacter.fromLook(widget.look)
+                : _clip.build(look: widget.look, phase: _phase),
+          ),
+        ),
+        Positioned(
+          top: 12,
+          left: 12,
+          child: IconButton.filledTonal(
+            tooltip: _nextLabel,
+            onPressed: _toggle,
+            icon: const Icon(Icons.autorenew),
+          ),
+        ),
+      ],
     );
   }
 }

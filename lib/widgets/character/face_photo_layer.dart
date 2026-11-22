@@ -3,7 +3,7 @@ import 'package:party_tricks/models/face_photo.dart';
 import 'package:party_tricks/widgets/character/character_layer.dart';
 import 'package:party_tricks/widgets/character/head_shape.dart';
 
-/// Dibuja la foto de la cara del jugador en el lienzo de 512x768. Cubre toda
+/// Dibuja la foto de la cara del jugador en el lienzo de 512x968. Cubre toda
 /// la cabeza, en lugar de los ojos y la boca: se recorta con su forma y el
 /// contorno de la cabeza se vuelve a dibujar encima.
 class FacePhotoLayer extends StatelessWidget {

@@ -11,6 +11,7 @@ import 'package:party_tricks/widgets/app_background.dart';
 import 'package:party_tricks/widgets/app_navigation_bar.dart';
 import 'package:party_tricks/widgets/app_usage_tracker.dart';
 import 'package:party_tricks/widgets/invite_listener.dart';
+import 'package:party_tricks/widgets/notification_host.dart';
 import 'package:party_tricks/widgets/public_profile_publisher.dart';
 
 /// Estructura principal: el fondo del juego, la sección activa encima
@@ -26,10 +27,13 @@ class MainShellScreen extends ConsumerWidget {
     final selected = ref.watch(navigationControllerProvider);
 
     // Mientras hay sesión iniciada: mide el tiempo y la racha, mantiene el
-    // perfil público al día y avisa de las invitaciones a una party.
+    // perfil público al día, avisa de las invitaciones a una party y manda
+    // notificaciones de los mensajes y las invitaciones.
     return AppUsageTracker(
       child: PublicProfilePublisher(
-        child: InviteListener(child: _shell(ref, selected)),
+        child: NotificationHost(
+          child: InviteListener(child: _shell(ref, selected)),
+        ),
       ),
     );
   }

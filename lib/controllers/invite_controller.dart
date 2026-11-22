@@ -77,6 +77,16 @@ class InviteController {
     }
   }
 
+  /// El jugador rechazó la invitación (desde la notificación). Si falla, la
+  /// invitación sigue pendiente y se le muestra en la app.
+  Future<void> decline(String inviteId) async {
+    try {
+      await _ref.read(inviteServiceProvider).decline(inviteId);
+    } catch (_) {
+      // Se le vuelve a mostrar en la app.
+    }
+  }
+
   /// El aviso ya se mostró. Si falla, no importa: se vuelve a mostrar.
   Future<void> markSeen(String inviteId) async {
     try {

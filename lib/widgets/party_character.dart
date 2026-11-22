@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:party_tricks/services/security/trusted_photo_url.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 
 /// El personaje de un jugador, provisional hasta tener las hojas de
@@ -97,7 +98,9 @@ class _PartyCharacterState extends State<PartyCharacter>
               painter: _CharacterPainter(color: widget.color, breath: breath),
             ),
           ),
-          if (photoUrl != null && photoUrl.isNotEmpty)
+          // La URL la escribe el propio jugador: solo se descarga si es
+          // segura (H-03).
+          if (photoUrl != null && TrustedPhotoUrl.isTrusted(photoUrl))
             Positioned.fromRect(
               rect: head.deflate(_CharacterPainter.strokeOf(size)),
               child: ClipOval(

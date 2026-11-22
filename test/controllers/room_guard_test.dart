@@ -116,6 +116,71 @@ void main() {
     expect(skipped, isEmpty);
   });
 
+  test(
+    'salta el turno de quien sigue conectado pero no juega en 40 s',
+    () async {
+      final guard = guardFor('host')
+        ..update(room: testRoom(), game: shoppingTurnOf('ana'));
+
+      await guard.tick();
+      expect(skipped, isEmpty);
+
+      presence.now = testNow.add(const Duration(seconds: 39));
+      await guard.tick();
+      expect(skipped, isEmpty, reason: 'aún le quedan 1 s');
+
+      presence.now = testNow.add(const Duration(seconds: 40));
+      await guard.tick();
+      expect(skipped, ['ana']);
+    },
+  );
+
+  test('el tiempo del turno se reinicia cuando cambia el turno', () async {
+    final guard = guardFor('host')
+      ..update(room: testRoom(), game: shoppingTurnOf('ana'));
+    await guard.tick();
+
+    presence.now = testNow.add(const Duration(seconds: 30));
+    guard.update(game: shoppingTurnOf('beto'));
+    await guard.tick();
+
+    presence.now = testNow.add(const Duration(seconds: 60));
+    await guard.tick();
+    expect(skipped, isEmpty, reason: 'Beto lleva 30 s, no 60');
+
+    presence.now = testNow.add(const Duration(seconds: 70));
+    await guard.tick();
+    expect(skipped, ['beto']);
+  });
+
+  test(
+    'avisa cuando el jugador se queda solo y cuando alguien vuelve',
+    () async {
+      final changes = <bool>[];
+      final guard = RoomGuard(
+        roomId: 'sala',
+        uid: 'host',
+        rooms: rooms,
+        presence: presence,
+        policy: const DisconnectionPolicy(),
+        onSkipTurn: (id) async => skipped.add(id),
+        onAloneChanged: changes.add,
+      );
+
+      guard.update(
+        room: testRoom(anaConnected: false, betoConnected: false),
+        game: shoppingTurnOf('host'),
+      );
+      await guard.tick();
+      await guard.tick();
+      expect(changes, [true], reason: 'se avisa una sola vez');
+
+      guard.update(room: testRoom(betoConnected: false));
+      await guard.tick();
+      expect(changes, [true, false]);
+    },
+  );
+
   test('solo el anfitrión salta turnos', () async {
     final guard = guardFor(
       'beto',

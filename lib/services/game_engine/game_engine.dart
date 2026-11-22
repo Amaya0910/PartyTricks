@@ -117,37 +117,39 @@ class GameEngine {
     );
     return switch (state.phase) {
       GamePhase.choosingBranch => _chooseBranch(marked, playerId, 0),
-      _ => _nextTurn(marked),
+      _ => _nextTurn(marked.copyWith(stepsLeft: 0)),
     };
   }
 
   GameState _roll(GameState state, String playerId) {
     _checkTurn(state, playerId, GamePhase.rolling);
-    var player = state.currentPlayer;
-    var sides = 6;
-    switch (player.pendingEffect) {
-      case PendingEffect.die3:
-        sides = 3;
-      case PendingEffect.die12:
-        sides = 12;
-      case PendingEffect.backToStart:
-        player = player.copyWith(position: BoardLayout.startId);
-      case PendingEffect.loseCoins:
-        player = player.addCoins(-tileEffects.specialCoins);
-      case PendingEffect.gainCoins:
-        player = player.addCoins(tileEffects.specialCoins);
-      case null:
-        break;
+    final effect = state.currentPlayer.pendingEffect;
+    if (effect == PendingEffect.skipTurn) {
+      // No lanza: el efecto se gasta y el turno pasa.
+      return _nextTurn(
+        state.withPlayer(
+          state.currentPlayer.copyWith(clearPendingEffect: true),
+        ),
+      );
     }
+    state = _applyEffect(state, effect);
+    var player = state.currentPlayer;
+    final sides = switch (effect) {
+      PendingEffect.die2 => 2,
+      PendingEffect.die3 => 3,
+      PendingEffect.die12 => 12,
+      _ => 6,
+    };
     final roll = random.rollDie(sides);
     // Los ítems activados se gastaron al usarlos; aquí solo hacen efecto.
     final extraDie = player.activeItems.where((item) => item.isExtraDie);
     final extraRoll = extraDie.isEmpty
         ? 0
         : random.rollDie(extraDie.first.extraDieSides);
-    final boost = player.activeItems.contains(ShopItem.movementBoost)
+    var boost = player.activeItems.contains(ShopItem.movementBoost)
         ? itemRules.boostSteps
         : 0;
+    if (effect == PendingEffect.boost) boost += itemRules.boostSteps;
     // Las estadísticas de dados solo cuentan el dado normal.
     player = player.copyWith(
       clearPendingEffect: true,
@@ -160,6 +162,79 @@ class GameEngine {
         .withPlayer(player)
         .copyWith(lastRoll: roll, lastExtraRoll: extraRoll, lastBoost: boost);
     return _move(rolled, roll + extraRoll + boost);
+  }
+
+  /// Efectos de una casilla especial que ocurren antes de lanzar: monedas,
+  /// ítems, diamante, cambios con rivales. Los que cambian el dado o los
+  /// pasos ([PendingEffect.die2], [PendingEffect.die3], [PendingEffect.die12]
+  /// y [PendingEffect.boost]) se aplican en [_roll].
+  GameState _applyEffect(GameState state, PendingEffect? effect) {
+    final player = state.currentPlayer;
+    final rivals = [
+      for (final id in state.turnOrder)
+        if (id != player.id) id,
+    ];
+    switch (effect) {
+      case PendingEffect.backToStart:
+        return state.withPlayer(player.copyWith(position: BoardLayout.startId));
+      case PendingEffect.loseCoins:
+        return state.withPlayer(player.addCoins(-tileEffects.specialCoins));
+      case PendingEffect.gainCoins:
+        return state.withPlayer(player.addCoins(tileEffects.specialCoins));
+      case PendingEffect.freeShield:
+        return _gift(state, ShopItem.shield);
+      case PendingEffect.freeItem:
+        final open = [
+          for (final item in ShopItem.values)
+            if (player.itemCount(item) < itemRules.maxPerItem) item,
+        ];
+        if (open.isEmpty) return state;
+        return _gift(state, open[random.nextInt(0, open.length - 1)]);
+      case PendingEffect.diamondGift:
+        return state.withPlayer(player.copyWith(diamonds: player.diamonds + 1));
+      case PendingEffect.coinSwap:
+        if (rivals.isEmpty) return state;
+        final rival =
+            state.players[rivals[random.nextInt(0, rivals.length - 1)]];
+        if (rival == null) return state;
+        return state
+            .withPlayer(player.copyWith(coins: rival.coins))
+            .withPlayer(rival.copyWith(coins: player.coins));
+      case PendingEffect.loseItem:
+        final owned = [
+          for (final item in ShopItem.values)
+            if (player.itemCount(item) > 0) item,
+        ];
+        if (owned.isEmpty) return state;
+        final lost = owned[random.nextInt(0, owned.length - 1)];
+        return state.withPlayer(player.addItem(lost, -1));
+      case PendingEffect.payEveryone:
+        var next = state;
+        for (final id in rivals) {
+          final payer = next.currentPlayer;
+          final rival = next.players[id];
+          if (rival == null) continue;
+          final paid = min(payer.coins, tileEffects.partyBillCoins);
+          next = next
+              .withPlayer(payer.addCoins(-paid))
+              .withPlayer(rival.addCoins(paid));
+        }
+        return next;
+      case PendingEffect.die2 ||
+          PendingEffect.die3 ||
+          PendingEffect.die12 ||
+          PendingEffect.boost ||
+          PendingEffect.skipTurn ||
+          null:
+        return state;
+    }
+  }
+
+  /// Le da un [item] al jugador del turno si le cabe en la mochila.
+  GameState _gift(GameState state, ShopItem item) {
+    final player = state.currentPlayer;
+    if (player.itemCount(item) >= itemRules.maxPerItem) return state;
+    return state.withPlayer(player.addItem(item, 1));
   }
 
   /// Por qué el jugador del turno no puede comprar [item], o null si puede.
@@ -206,8 +281,11 @@ class GameEngine {
     );
   }
 
+  /// Sale de la tienda. Si iba de paso (le quedaban pasos), sigue su camino;
+  /// si había caído en ella, el turno termina.
   GameState _leaveShop(GameState state, String playerId) {
     _checkTurn(state, playerId, GamePhase.shopping);
+    if (state.stepsLeft > 0) return _move(state, state.stepsLeft);
     return _nextTurn(state);
   }
 
@@ -241,11 +319,12 @@ class GameEngine {
           : player.copyWith(shortcutsTaken: player.shortcutsTaken + 1),
     );
     final moved = _step(counted, fork.next[branch]);
-    return _move(moved, state.stepsLeft - 1);
+    return _afterStep(moved, state.stepsLeft - 1);
   }
 
   /// Avanza casilla por casilla. Si llega a una bifurcación con pasos
-  /// pendientes, se detiene para que el jugador elija camino.
+  /// pendientes, se detiene para que el jugador elija camino; si pasa por
+  /// una tienda, se detiene para que pueda comprar y luego sigue.
   GameState _move(GameState state, int steps) {
     var current = state;
     for (var left = steps; left > 0; left--) {
@@ -257,8 +336,26 @@ class GameEngine {
         );
       }
       current = _step(current, tile.next.first);
+      if (_isPassingShop(current, left - 1)) {
+        return current.copyWith(phase: GamePhase.shopping, stepsLeft: left - 1);
+      }
     }
     return _land(current);
+  }
+
+  /// Sigue el movimiento después de dar un paso desde una bifurcación.
+  GameState _afterStep(GameState state, int stepsLeft) {
+    if (_isPassingShop(state, stepsLeft)) {
+      return state.copyWith(phase: GamePhase.shopping, stepsLeft: stepsLeft);
+    }
+    return _move(state, stepsLeft);
+  }
+
+  /// Si el jugador acaba de pisar una tienda y todavía le quedan pasos: va de
+  /// paso, y puede comprar antes de seguir.
+  bool _isPassingShop(GameState state, int stepsLeft) {
+    return stepsLeft > 0 &&
+        board.tile(state.currentPlayer.position).type == TileType.shop;
   }
 
   /// Mueve al jugador una casilla. Si pasa por el diamante, se lo lleva; si

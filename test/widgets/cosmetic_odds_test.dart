@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:party_tricks/models/accessory_style.dart';
 import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/models/eye_style.dart';
+import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/mouth_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
 import 'package:party_tricks/models/user_profile.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/shop/cosmetic_picker.dart';
@@ -15,7 +19,15 @@ void main() {
 
   test('las probabilidades suman 100 y siguen el peso de la rareza', () {
     final chances = picker.chances(ownedEyes: {}, ownedMouths: {});
-    expect(chances, hasLength(8 + 8 - 0));
+    // Todo lo que se vende: ojos, bocas, camisas y accesorios.
+    final forSale =
+        EyeStyle.values.where((s) => !s.isFree).length +
+        MouthStyle.values.where((s) => !s.isFree).length +
+        ShirtStyle.values.where((s) => !s.isFree).length +
+        PantsStyle.values.length +
+        HairStyle.values.length +
+        AccessoryStyle.values.length;
+    expect(chances, hasLength(forSale));
     final total = chances.fold<double>(0, (s, c) => s + c.percent);
     expect(total, closeTo(100, 0.0001));
 
@@ -40,6 +52,10 @@ void main() {
     final chances = picker.chances(
       ownedEyes: {for (final e in EyeStyle.values) e.number},
       ownedMouths: {for (final m in MouthStyle.values) m.number},
+      ownedShirts: {for (final s in ShirtStyle.values) s.id},
+      ownedPants: {for (final p in PantsStyle.values) p.id},
+      ownedHairs: {for (final h in HairStyle.values) h.id},
+      ownedAccessories: {for (final a in AccessoryStyle.values) a.id},
     );
     expect(chances, isEmpty);
   });

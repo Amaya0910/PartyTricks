@@ -6,6 +6,7 @@ import 'package:party_tricks/services/auth/account_service.dart';
 import 'package:party_tricks/services/auth/auth_service.dart';
 import 'package:party_tricks/services/auth/firebase_error_messages.dart';
 import 'package:party_tricks/services/auth/friend_code_generator.dart';
+import 'package:party_tricks/services/auth/username_reservation.dart';
 
 /// Se usa dentro de la transacción cuando el código nuevo ya existe.
 class _CodeTaken implements Exception {
@@ -50,10 +51,10 @@ class FirebaseAccountService implements AccountService {
     try {
       await _firestore.runTransaction((transaction) async {
         if (!sameReservation) {
-          if ((await transaction.get(newRef)).exists) {
+          if (await UsernameReservation.isTaken(transaction, newRef)) {
             throw const AuthException('Ese nombre de usuario ya está en uso.');
           }
-          transaction.set(newRef, {'uid': profile.uid, 'email': profile.email});
+          transaction.set(newRef, UsernameReservation.data(profile.uid));
           transaction.delete(oldRef);
         }
         transaction.update(_user(profile.uid), {

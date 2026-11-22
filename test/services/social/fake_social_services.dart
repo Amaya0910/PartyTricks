@@ -137,6 +137,7 @@ class FakeChatService implements ChatService {
 class FakeInviteService implements InviteService {
   final sent = <PartyInvite>[];
   final seen = <String>[];
+  final declined = <String>[];
   final _pending = StreamController<List<PartyInvite>>.broadcast();
 
   void emit(List<PartyInvite> invites) => _pending.add(invites);
@@ -149,6 +150,12 @@ class FakeInviteService implements InviteService {
 
   @override
   Future<void> markSeen(String inviteId) async => seen.add(inviteId);
+
+  @override
+  Future<void> decline(String inviteId) async {
+    declined.add(inviteId);
+    seen.add(inviteId);
+  }
 }
 
 /// Amistad aceptada entre [a] y [b], para las pruebas.

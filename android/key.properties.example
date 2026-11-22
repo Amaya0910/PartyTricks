@@ -1,0 +1,19 @@
+# H-06: copia este archivo como android/key.properties (Git lo ignora) y pon
+# los datos de la llave del equipo. La llave (.jks) va fuera del repositorio,
+# por ejemplo en la carpeta del usuario, y se comparte en privado.
+#
+# 1. Crear la llave una sola vez (keytool viene con Android Studio, en jbr/bin):
+#    keytool -genkey -v -keystore %USERPROFILE%\party-tricks-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias party-tricks
+#
+# 2. Registrar sus huellas SHA-1 y SHA-256 en la consola de Firebase
+#    (Configuración del proyecto > la app Android), o el inicio con Google no
+#    funcionará en la versión release:
+#    keytool -list -v -keystore %USERPROFILE%\party-tricks-release.jks -alias party-tricks
+#
+# 3. Compilar la versión release con el código Dart ofuscado (guarden la
+#    carpeta de símbolos de cada versión para leer los errores):
+#    flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
+storePassword=CAMBIAR
+keyPassword=CAMBIAR
+keyAlias=party-tricks
+storeFile=C:/Users/TU_USUARIO/party-tricks-release.jks

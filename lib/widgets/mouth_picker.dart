@@ -40,6 +40,7 @@ class MouthPicker extends StatelessWidget {
     return Column(
       children: [
         ColorStrip(
+          firstIsNone: true,
           colors: colors,
           selected: selectedColor,
           onSelected: onColorSelected,
@@ -79,8 +80,13 @@ class MouthThumbnail extends StatelessWidget {
   /// Color de la parte blanca (el tono de piel si no hay color elegido).
   final Color color;
 
-  /// Zona de la boca, en píxeles del lienzo (512x768).
-  static const Rect _crop = Rect.fromLTWH(176, 288, 160, 80);
+  /// Zona de la boca, en píxeles del lienzo (512x968).
+  static const Rect _crop = Rect.fromLTWH(
+    176,
+    288 + kCharacterTopMargin,
+    160,
+    80,
+  );
 
   @override
   Widget build(BuildContext context) {

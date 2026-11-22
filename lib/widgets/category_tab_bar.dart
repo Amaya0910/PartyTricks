@@ -116,4 +116,5 @@ const Map<CosmeticCategory, IconData> _icons = {
   CosmeticCategory.nose: Icons.face,
   CosmeticCategory.eyes: Icons.visibility,
   CosmeticCategory.mouth: Icons.sentiment_satisfied,
+  CosmeticCategory.accessory: Icons.auto_awesome,
 };

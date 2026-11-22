@@ -1,7 +1,7 @@
-# Party Tricks — Arquitectura (propuesta inicial)
+# Party Tricks — Arquitectura
 
 > Proyecto de aula · Programación Móvil
-> Documento para la primera presentación. Son ideas propuestas y básicas, que se afinarán durante el desarrollo.
+> Última actualización: 2026-11-18. Parte de la propuesta inicial y se ha ido ajustando con el desarrollo.
 > Complementa a `diseno_juego.md`.
 
 ---
@@ -32,7 +32,7 @@ Pantallas  →  Controladores (Riverpod)  →  Servicios  →  Firebase
 - **Servicios:** se comunican con Firebase y aplican las reglas del juego.
 - **Modelos:** representan los datos (jugador, sala, partida, etc.).
 
-Estas son las cinco carpetas base de `lib/`: `controllers`, `models`, `screens`, `services` y `widgets`.
+Estas son las cinco carpetas base de `lib/`: `controllers`, `models`, `screens`, `services` y `widgets`, más `navigation` (navegación raíz) y `theme` (colores). Fuera de `lib/` están `functions/` (Cloud Functions), `rules_test/` (pruebas de las reglas), `test/` y los archivos de reglas `firestore.rules` y `database.rules.json`.
 
 Los principios SOLID se aplican separando responsabilidades: las pantallas no hablan con Firebase directamente, y las reglas del juego viven aparte, en código que no depende de Firebase ni de la interfaz, por lo que se puede probar solo.
 
@@ -44,6 +44,7 @@ Los principios SOLID se aplican separando responsabilidades: las pantallas no ha
 |---|---|
 | Authentication | Registro e inicio de sesión con correo y contraseña (Firebase guarda la contraseña, no la base de datos del juego) |
 | Cloud Firestore | Datos permanentes: perfiles, amigos, chat, catálogo de la tienda |
+| Cloud Messaging y Cloud Functions | Notificaciones de mensajes e invitaciones: una función (`functions/`) manda el aviso y la app lo muestra con sus botones (D-45) |
 | Realtime Database | Datos de la partida en vivo: salas, turnos, posiciones y detección de desconexiones |
 | Storage | _(sin uso por ahora)_ La foto de la cara va en Firestore, reducida (D-32) |
 
@@ -55,7 +56,7 @@ Los principios SOLID se aplican separando responsabilidades: las pantallas no ha
 - Código de amistad (único).
 - Experiencia acumulada; el nivel se calcula a partir de ella.
 - Monedas y diamantes de la cuenta.
-- Cómo se ve su personaje: tono de piel, ojos y boca con sus colores, los ojos y bocas comprados, el color de fondo de la foto de perfil y, si quiere, la foto de su cara. La **foto de perfil es la cabeza del personaje**; los demás la ven gracias a `publicProfiles`.
+- Cómo se ve su personaje: tono de piel, ojos y boca con sus colores, la camisa, el cabello (y su color) y el accesorio puestos, los ojos, bocas, camisas, cabellos y accesorios comprados, el color de fondo de la foto de perfil y, si quiere, la foto de su cara. La **foto de perfil es la cabeza del personaje**; los demás la ven gracias a `publicProfiles`.
 - Lista de amigos y chats.
 
 ---
@@ -96,18 +97,31 @@ Toda la partida se guarda en Firebase y no solo en el celular del creador. Así,
 
 ---
 
-## 9. Limitaciones conocidas
+## 9. Seguridad
+
+La app se auditó con el OWASP Mobile Top 10 (2024); las correcciones y los hallazgos abiertos están en `decisiones.md`, D-48. En resumen:
+
+- **Reglas de Firebase:** `firestore.rules` y `database.rules.json` validan los campos que acepta cada documento y limitan a cada jugador a lo suyo. Se prueban con el emulador en `rules_test/` (ver su `README.md`).
+- **Correo verificado:** amistades, chat e invitaciones lo exigen en las reglas (H-13).
+- **Datos públicos:** `usernames` guarda solo el `uid`; `publicProfiles` no lleva el correo. Las fotos de perfil de Google solo se aceptan por HTTPS desde `lh3.googleusercontent.com`.
+- **Android:** sin copias de seguridad, sin tráfico en claro, sin permiso de micrófono, y versión release firmada con llave propia y ofuscada.
+- **Registros:** `debugPrint` queda en silencio en la versión release.
+
+---
+
+## 10. Limitaciones conocidas
 
 - Con el celular del creador como "servidor", un jugador con la app modificada podría hacer trampa. Para un proyecto de aula es aceptable; si el juego se publicara, el cálculo se movería a Cloud Functions de Firebase.
 - Los jugadores pueden ser menores y la foto de la cara la ven todos: es opcional y se puede quitar, pero todavía no hay moderación de imágenes (D-32). El chat debe permitir reportar y bloquear.
 
 ---
 
-## 10. Pendientes
+## 11. Pendientes
 
 - [ ] Qué pasa si un jugador desconectado quiere volver a la partida.
-- [ ] Tiempo máximo por turno, por si alguien se queda inactivo.
-- [ ] Reglas de seguridad de Firebase.
+- [x] Tiempo máximo por turno: 40 s (D-46).
+- [x] Reglas de seguridad de Firebase: escritas y probadas con el emulador; falta publicarlas con `firebase deploy`.
+- [ ] Hallazgos abiertos de la auditoría: H-02, H-07, H-11 y H-12 (D-48).
 - [ ] Moderación del chat.
 - [x] Si los minijuegos necesitan un motor de animación: se decide por minijuego; Flame solo si hace falta (ver `decisiones.md`, D-11).
 - [ ] Prueba corta de Flame con el minijuego más sencillo.

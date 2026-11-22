@@ -28,7 +28,7 @@ class FakeAuthService implements AuthService {
   String? completedUsername;
 
   /// Lo último que se mandó como correo o nombre de usuario al iniciar sesión.
-  String? lastIdentifier;
+  String? lastEmail;
 
   final StreamController<UserProfile?> _profiles =
       StreamController<UserProfile?>.broadcast();
@@ -55,11 +55,11 @@ class FakeAuthService implements AuthService {
 
   @override
   Future<UserProfile> signIn({
-    required String identifier,
+    required String email,
     required String password,
   }) async {
     signInCalls++;
-    lastIdentifier = identifier;
+    lastEmail = email;
     await _beforeResult();
     return _profileFor(email: 'jugador@correo.com', username: 'jugador');
   }

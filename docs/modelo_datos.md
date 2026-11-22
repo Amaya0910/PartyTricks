@@ -42,7 +42,16 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | `colorBoca` | `mouthColor` | Posición del color de boca (0 a 19; el 0 es "sin color" y toma el tono de piel) |
 | `bocasCompradas` | `ownedMouths` | Lista con los números de las bocas compradas o ganadas. Las gratis (1 y 3) no se guardan. Solo cambia al comprar o abrir un cofre (D-30 y D-31) |
 | `colorFondoFoto` | `avatarColor` | Posición del color de fondo de la foto de perfil (0 a 15), que se elige en Ajustes |
-| _(ropa, cabello y nariz)_ | _(por construir)_ | Cuando existan esos cosméticos |
+| `camisa` | `shirt` | Id de la camisa puesta (1 = la azul de inicio; 101 a 108, sus otros colores; 2 a 12, las demás). Si falta, la 1. Tiene que ser la de inicio o comprada |
+| `camisasCompradas` | `ownedShirts` | Lista con los ids de las camisas compradas o ganadas. La 1 no se guarda. Solo cambia al comprar o abrir un cofre (D-33) |
+| `accesorio` | `accessory` | Id del accesorio puesto, o 0 si no lleva ninguno. Si falta, ninguno. Tiene que ser comprado |
+| `accesoriosComprados` | `ownedAccessories` | Lista con los ids de los accesorios comprados o ganados. Solo cambia al comprar o abrir un cofre (D-33) |
+| `cabello` | `hair` | Id del cabello puesto, o 0 si no lleva ninguno. Si falta, ninguno. Tiene que ser comprado |
+| `cabellosComprados` | `ownedHairs` | Lista con los ids de los cabellos comprados o ganados. Solo cambia al comprar o abrir un cofre (D-35) |
+| `colorCabello` | `hairColor` | Posición del color del cabello blanco (0 = blanco). Todos los colores están desbloqueados |
+| `pantalon` | `pants` | Id del pantalón puesto, o 0 si no lleva ninguno. Si falta, ninguno. Tiene que ser comprado |
+| `pantalonesComprados` | `ownedPants` | Lista con los ids de los pantalones comprados o ganados. Solo cambia al comprar o abrir un cofre (D-36) |
+| _(zapatos y nariz)_ | _(por construir)_ | Cuando existan esos cosméticos |
 | `fotoCara` | `facePhoto` | Opcional. La foto de la cara: un JPEG de 256 × 256 en base64, de hasta 60 000 caracteres. Reemplaza a los ojos y la boca y cubre toda la cabeza (D-32) |
 | `usarFotoCara` | `useFacePhoto` | Si la foto se está usando o se prefieren los ojos y la boca. Si falta, `true` |
 
@@ -51,7 +60,7 @@ Vive en Cloud Firestore, en `users/{uid}` (ver `decisiones.md`, D-16).
 | Colección | Documento | Contenido | Para qué |
 |---|---|---|---|
 | `users` | `{uid}` | El perfil de la tabla anterior | Datos del jugador |
-| `usernames` | `{nombre en minúsculas}` | `uid` y `email` | Reservar el nombre de usuario (único) y permitir iniciar sesión con él (ver D-17) |
+| `usernames` | `{nombre en minúsculas}` | `uid` (sin correo) | Reservar el nombre de usuario (único). Exige sesión para leerlo; ya no sirve para iniciar sesión con el nombre (D-48, H-01) |
 | `friendCodes` | `{código}` | `uid` | Reservar el código de amistad (único) |
 
 El perfil y las dos reservas se crean en la misma transacción al registrarse (o al elegir el nombre después de entrar con Google). Si el nombre o el código ya existen, la transacción falla y no se guarda nada. Cambiar el nombre o el código desde Ajustes también es una transacción: reserva el nuevo, borra el viejo y actualiza el perfil.
@@ -60,13 +69,13 @@ Las preferencias de Ajustes (notificaciones, sonido, efectos e idioma) **no** va
 
 ### 2.2 Cosmético
 
-Hoy existen **ojos** (11) y **bocas** (10), definidos en código, en `lib/models/eye_style.dart` (`EyeStyle`) y `lib/models/mouth_style.dart` (`MouthStyle`). La categoría de cada cosmético del Vestuario está en `lib/models/cosmetic_category.dart` (`CosmeticCategory`). Camisa, pantalón, zapatos, cabello y nariz todavía no tienen catálogo.
+Hoy existen **ojos** (11), **bocas** (10), **camisas** (28), **pantalones** (21), **cabellos** (11) y **accesorios** (2), definidos en código, en `lib/models/eye_style.dart` (`EyeStyle`), `mouth_style.dart`, `shirt_style.dart`, `pants_style.dart`, `hair_style.dart` y `accessory_style.dart`. Todos implementan `ShopCosmetic` (`shop_cosmetic.dart`). La categoría de cada cosmético del Vestuario está en `lib/models/cosmetic_category.dart` (`CosmeticCategory`). Zapatos y nariz todavía no tienen catálogo.
 
 | Campo | Descripción |
 |---|---|
-| `number` | Número del archivo de arte y lo que se guarda en el perfil |
+| `number` (ojos y bocas) / `id` (camisas y accesorios) | Lo que se guarda en el perfil. En las camisas, el arte (`art`) puede repetirse: la camisa 1 tiene 9 colores con ids distintos |
 | `title` y `description` | Texto que se muestra en la Tienda |
-| `price` | En monedas; 0 si viene gratis con la cuenta. Los precios también están en `firestore.rules` (`eyesPrice` y `mouthPrice`) y hay que cambiarlos en los dos sitios |
+| `price` | En monedas; 0 si viene gratis con la cuenta. Los precios también están en `firestore.rules` (`eyesPrice`, `mouthPrice`, `shirtPrice`, `pantsPrice`, `hairPrice` y `accessoryPrice`) y hay que cambiarlos en los dos sitios (una prueba los compara) |
 | `rarity` | Rareza (`lib/models/rarity.dart`): decide qué tan seguido sale en los cofres |
 | `layered` y `tintable` | Si viene en dos capas de arte y si su parte blanca puede tomar color |
 
@@ -133,11 +142,12 @@ Viven en Cloud Firestore (ver `decisiones.md`, D-22). Las fechas se guardan en m
 
 | Colección | Documento | Campos | Para qué |
 |---|---|---|---|
-| `publicProfiles` | `{uid}` | `username`, `friendCode`, `experience`, `photoUrl` (sin uso) y cómo se ve la cabeza: `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor`, `avatarColor` y `facePhoto` (solo si la foto está activa) | Lo que ven los demás (sin el correo). La app lo mantiene igual al perfil. Con los datos de la cabeza se dibuja la foto de perfil de los demás |
+| `publicProfiles` | `{uid}` | `username`, `friendCode`, `experience`, `photoUrl` (sin uso) y cómo se ve la cabeza: `skinTone`, `eyes`, `eyeColor`, `mouth`, `mouthColor`, `avatarColor` y `facePhoto` (solo si la foto está activa) | Lo que ven los demás (sin el correo). La app lo mantiene igual al perfil y las reglas lo validan: nombre reservado por ese uid, su código de amistad, su XP y solo estos campos (D-48, H-04). Con los datos de la cabeza se dibuja la foto de perfil de los demás |
 | `friendships` | `{id de pareja}` | `members` (los dos uid), `requestedBy`, `status` (`pending` o `accepted`), `createdAt` | Solicitud y amistad |
 | `chats` | `{id de pareja}` | `members`, `lastMessage` (copia del último mensaje), `lastReadAt` (uid → fecha) | Lista de amigos: último mensaje y sin leer |
 | `chats/{id}/messages` | automático | `senderId`, `text`, `sentAt`, `type` (`text` o `invite`) y, en invitaciones, `roomId` y `roomCode` | Mensajes |
-| `invites` | automático | `fromUid`, `fromName`, `toUid`, `roomId`, `roomCode`, `sentAt`, `seen` | Aviso emergente de invitación |
+| `invites` | automático | `fromUid`, `fromName`, `toUid`, `roomId`, `roomCode`, `sentAt`, `seen` y, si la rechazó desde la notificación, `declined` | Aviso emergente de invitación |
+| `fcmTokens` | código del celular (FCM) | `uid` (su dueño), `platform`, `updatedAt` | A qué celulares mandar las notificaciones (D-45). Solo se escribe a nombre propio; lo lee la Cloud Function |
 | `blocks` | `{bloqueador}_{bloqueado}` | `blocker`, `blocked`, `createdAt` | Bloqueos |
 | `reports` | automático | `reporterUid`, `reportedUid`, `reason`, `chatId`, `createdAt` | Reportes para revisar |
 

@@ -53,4 +53,12 @@ class FirebaseInviteService implements InviteService {
   Future<void> markSeen(String inviteId) {
     return _paths.invites.doc(inviteId).update({'seen': true});
   }
+
+  @override
+  Future<void> decline(String inviteId) {
+    return _paths.invites.doc(inviteId).update({
+      'seen': true,
+      'declined': true,
+    });
+  }
 }

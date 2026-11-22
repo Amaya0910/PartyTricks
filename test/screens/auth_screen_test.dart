@@ -71,10 +71,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(service.signInCalls, 1);
-    expect(service.lastIdentifier, 'tay@correo.com');
+    expect(service.lastEmail, 'tay@correo.com');
   });
 
-  testWidgets('iniciar sesión con el nombre de usuario llama al servicio', (
+  testWidgets('con el nombre de usuario no deja entrar (solo correo, H-01)', (
     tester,
   ) async {
     await pumpScreen(tester);
@@ -84,8 +84,8 @@ void main() {
     await tester.tap(find.text('Entrar a la party'));
     await tester.pumpAndSettle();
 
-    expect(service.signInCalls, 1);
-    expect(service.lastIdentifier, 'Tay_01');
+    expect(find.text('El correo no es válido.'), findsOneWidget);
+    expect(service.signInCalls, 0);
   });
 
   testWidgets('con los campos vacíos muestra el error y no llama al servicio', (
@@ -96,16 +96,14 @@ void main() {
     await tester.tap(find.text('Entrar a la party'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Escribe tu correo o nombre de usuario.'), findsOneWidget);
+    expect(find.text('Escribe tu correo.'), findsOneWidget);
     expect(service.signInCalls, 0);
   });
 
   testWidgets('muestra el mensaje del servicio si el inicio falla', (
     tester,
   ) async {
-    service.nextError = const AuthException(
-      'Correo, usuario o contraseña incorrectos.',
-    );
+    service.nextError = const AuthException('Correo o contraseña incorrectos.');
     await pumpScreen(tester);
 
     await tester.enterText(field(0), 'tay@correo.com');
@@ -113,10 +111,7 @@ void main() {
     await tester.tap(find.text('Entrar a la party'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Correo, usuario o contraseña incorrectos.'),
-      findsOneWidget,
-    );
+    expect(find.text('Correo o contraseña incorrectos.'), findsOneWidget);
   });
 
   testWidgets('registrarse con datos válidos llama al servicio', (
@@ -161,12 +156,12 @@ void main() {
     await pumpScreen(tester);
     await tester.tap(find.text('Entrar a la party'));
     await tester.pumpAndSettle();
-    expect(find.text('Escribe tu correo o nombre de usuario.'), findsOneWidget);
+    expect(find.text('Escribe tu correo.'), findsOneWidget);
 
     await tester.tap(find.text('¿Aun no te registras?'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Escribe tu correo o nombre de usuario.'), findsNothing);
+    expect(find.text('Escribe tu correo.'), findsNothing);
   });
 
   testWidgets('"Continuar con Google" llama al servicio', (tester) async {
