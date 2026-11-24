@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:party_tricks/models/app_protocol.dart';
+import 'package:party_tricks/models/map/map_id.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/rooms/disconnection_policy.dart';
@@ -58,11 +59,24 @@ class FirebaseRoomService implements RoomService {
       lobbyEndsAt: now.add(Room.lobbyDuration),
       players: {uid: RoomPlayer(uid: uid, username: username, joinedAt: now)},
     );
-    await _db.ref().update({
-      'rooms/$id/meta': room.metaToMap(),
-      'rooms/$id/players/$uid': room.players[uid]!.toMap(),
-      if (settings.isPublic) '${publicLobbyFor(required)}/$id': true,
-    });
+    try {
+      await _db.ref().update({
+        'rooms/$id/meta': room.metaToMap(),
+        'rooms/$id/players/$uid': room.players[uid]!.toMap(),
+        if (settings.isPublic) '${publicLobbyFor(required)}/$id': true,
+      });
+    } on FirebaseException catch (error) {
+      // Las reglas solo dejan crear salas de mapas encendidos en
+      // `config/maps`: se pudo apagar mientras se elegía.
+      if (error.code != 'permission-denied' ||
+          settings.mapId == defaultMapId) {
+        rethrow;
+      }
+      await _releaseCode(code);
+      throw const RoomException(
+        'Ese mapa ya no está disponible. Elige otro para crear la sala.',
+      );
+    }
     return room;
   }
 
@@ -203,6 +217,16 @@ class FirebaseRoomService implements RoomService {
       if (value == null) return null;
       return Room.fromMap(roomId, value as Map<Object?, Object?>);
     });
+  }
+
+  /// Suelta un código apartado para una sala que no se llegó a crear. Las
+  /// reglas lo permiten porque la sala no existe.
+  Future<void> _releaseCode(String code) async {
+    try {
+      await _db.ref('roomCodes/$code').remove();
+    } on FirebaseException {
+      // Si no se puede, solo queda un código sin sala; no afecta a nadie.
+    }
   }
 
   /// Busca un código libre y lo aparta para la sala [roomId].

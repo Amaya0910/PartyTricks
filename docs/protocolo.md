@@ -8,7 +8,7 @@ Un número entero que dice qué entiende una versión de la app. Todo está en u
 
 | Nombre | Qué es |
 |---|---|
-| `ProtocolLevel` | Los niveles con nombre (`base = 1`, `roomProtocol = 2`, `candyMap = 3`, ...). **Los únicos números del protocolo en todo el proyecto.** |
+| `ProtocolLevel` | Los niveles con nombre (`base = 1`, `roomProtocol = 2`, `candyMap = 3`, `snowMap = 4`, ...). **Los únicos números del protocolo en todo el proyecto.** |
 | `AppProtocol.current` | El protocolo de esta versión: el nivel más alto de `ProtocolLevel`. |
 | `AppProtocol.legacy` | El de la 1.0.0 (`base`), que no escribe ningún campo de protocolo. |
 | `ProtocolFeature` | Algo de la partida que necesita un protocolo mínimo (`minProtocol`). Hoy lo implementa `MapDefinition`. |
@@ -60,6 +60,6 @@ Lo sube **quien hace el cambio incompatible**, en el mismo PR, y quien revisa el
 1. Desplegar las reglas de Firebase **antes** de publicar la app.
 2. Publicar primero una versión que **entienda** el nivel nuevo pero **todavía no lo use** por defecto (por ejemplo, con el mapa nuevo en el catálogo pero sin poder elegirlo).
 3. Esperar a que la mayoría de los jugadores actualice.
-4. Recién ahí activar lo nuevo para que las salas lo usen.
+4. Recién ahí activar lo nuevo para que las salas lo usen. Para los mapas no hace falta otra versión: se encienden desde Firebase (ver `activacion_mapas.md`).
 
 Las versiones viejas siguen jugando las salas que no lo usan. Solo dejan de poder entrar a las que sí.

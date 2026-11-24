@@ -4,6 +4,7 @@ import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/screens/map_selector_screen.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/map/map_theme.dart';
+import 'package:party_tricks/services/map/remote_map_config.dart';
 import 'package:party_tricks/widgets/map/map_preview_image.dart';
 
 import '../services/map/fake_maps.dart';
@@ -15,6 +16,7 @@ void main() {
     required Size size,
     List<MapDefinition> maps = MapCatalog.all,
     String selectedId = 'mapa_01',
+    RemoteMapConfig? remote,
   }) async {
     tester.view
       ..physicalSize = size
@@ -35,6 +37,7 @@ void main() {
                     selectedId: selectedId,
                     rounds: 10,
                     players: 3,
+                    remote: remote ?? allEnabled(maps),
                     maps: maps,
                   ),
                 ),
@@ -124,6 +127,58 @@ void main() {
     await tester.tap(find.text('Jugar en Mundo Dulce'));
     await tester.pumpAndSettle();
     expect(results, ['mapa_dulces']);
+  });
+
+  group('interruptor remoto', () {
+    final dulces = enabled(MapCatalog.mapaDulces);
+
+    testWidgets('listo y encendido en Firebase: aparece', (tester) async {
+      await openSelector(
+        tester,
+        size: const Size(360, 640),
+        maps: [MapCatalog.mapa01, dulces],
+        remote: const RemoteMapConfig(enabledIds: {'mapa_dulces'}),
+      );
+
+      expect(find.byKey(const ValueKey('map-thumb-mapa_dulces')), findsOne);
+    });
+
+    testWidgets('listo pero apagado en Firebase: no aparece', (tester) async {
+      await openSelector(
+        tester,
+        size: const Size(360, 640),
+        maps: [MapCatalog.mapa01, dulces],
+        remote: const RemoteMapConfig(),
+        selectedId: 'mapa_dulces',
+      );
+
+      expect(find.byKey(const ValueKey('map-thumb-mapa_dulces')), findsNothing);
+      expect(find.text('Jugar en Mapa 1'), findsOneWidget);
+    });
+
+    testWidgets('encendido en Firebase pero no listo: no aparece', (
+      tester,
+    ) async {
+      await openSelector(
+        tester,
+        size: const Size(360, 640),
+        remote: const RemoteMapConfig(enabledIds: {'mapa_dulces'}),
+      );
+
+      expect(find.text('Mundo Dulce'), findsNothing);
+    });
+
+    testWidgets('Firebase caído: solo mapa_01', (tester) async {
+      await openSelector(
+        tester,
+        size: const Size(360, 640),
+        maps: [MapCatalog.mapa01, dulces],
+        remote: RemoteMapConfig.unavailable,
+      );
+
+      expect(find.text('Jugar en Mapa 1'), findsOneWidget);
+      expect(find.byKey(const Key('map-list')), findsNothing);
+    });
   });
 
   testWidgets('elegir devuelve el id del mapa; volver devuelve null', (

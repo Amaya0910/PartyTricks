@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
+import 'package:party_tricks/services/map/remote_map_config.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
 import 'package:party_tricks/widgets/create_room_dialog.dart';
 
@@ -11,7 +12,10 @@ void main() {
   Future<List<RoomSettings?>> openDialog(
     WidgetTester tester, {
     List<MapDefinition> maps = MapCatalog.all,
+    RemoteMapConfig? remote,
+    ValueNotifier<RemoteMapConfig>? liveRemote,
   }) async {
+    final live = liveRemote ?? ValueNotifier(remote ?? allEnabled(maps));
     tester.view
       ..physicalSize = const Size(400, 900)
       ..devicePixelRatio = 1;
@@ -26,7 +30,11 @@ void main() {
                 onPressed: () async => results.add(
                   await showBlurredDialog<RoomSettings>(
                     context,
-                    builder: (_) => CreateRoomDialog(maps: maps),
+                    builder: (_) => ValueListenableBuilder(
+                      valueListenable: live,
+                      builder: (_, remote, _) =>
+                          CreateRoomDialog(remote: remote, maps: maps),
+                    ),
                   ),
                 ),
                 child: const Text('Abrir'),
@@ -121,5 +129,77 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(results.single!.mapId, 'mapa_01');
+  });
+
+  group('interruptor remoto', () {
+    final dulces = enabled(MapCatalog.mapaDulces);
+
+    testWidgets('Mundo Dulce encendido se puede elegir y llega a la sala', (
+      tester,
+    ) async {
+      final results = await openDialog(
+        tester,
+        maps: [MapCatalog.mapa01, dulces],
+        remote: const RemoteMapConfig(enabledIds: {'mapa_dulces'}),
+      );
+
+      await tester.tap(find.byKey(const Key('choose-map')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('map-thumb-mapa_dulces')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Jugar en Mundo Dulce'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Crear'));
+      await tester.pumpAndSettle();
+
+      expect(results.single!.mapId, 'mapa_dulces');
+    });
+
+    testWidgets('Firebase caído: solo mapa_01', (tester) async {
+      final results = await openDialog(
+        tester,
+        maps: [MapCatalog.mapa01, dulces],
+        remote: RemoteMapConfig.unavailable,
+      );
+
+      await tester.tap(find.byKey(const Key('choose-map')));
+      await tester.pumpAndSettle();
+      expect(find.text('Mundo Dulce'), findsNothing);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Crear'));
+      await tester.pumpAndSettle();
+
+      expect(results.single!.mapId, 'mapa_01');
+    });
+
+    testWidgets('si lo apagan con el diálogo abierto vuelve a mapa_01', (
+      tester,
+    ) async {
+      final live = ValueNotifier(
+        const RemoteMapConfig(enabledIds: {'mapa_dulces'}),
+      );
+      addTearDown(live.dispose);
+      final results = await openDialog(
+        tester,
+        maps: [MapCatalog.mapa01, dulces],
+        liveRemote: live,
+      );
+      await tester.tap(find.byKey(const Key('choose-map')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('map-thumb-mapa_dulces')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Jugar en Mundo Dulce'));
+      await tester.pumpAndSettle();
+      expect(find.text('Mundo Dulce'), findsOneWidget);
+
+      live.value = RemoteMapConfig.unavailable;
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mundo Dulce'), findsNothing);
+      await tester.tap(find.text('Crear'));
+      await tester.pumpAndSettle();
+      expect(results.single!.mapId, 'mapa_01');
+    });
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
+import 'package:party_tricks/services/map/remote_map_config.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/map/map_preview_image.dart';
 
@@ -12,13 +13,15 @@ import 'package:party_tricks/widgets/map/map_preview_image.dart';
 ///   lista a la derecha.
 ///
 /// Sirve para cualquier cantidad de mapas: la lista se desliza. Solo muestra
-/// los que se pueden elegir (`MapDefinition.selectable`).
+/// los que están listos (`MapDefinition.selectable`) y encendidos en
+/// Firebase ([remote]).
 class MapSelectorScreen extends StatefulWidget {
   const MapSelectorScreen({
     super.key,
     required this.selectedId,
     required this.rounds,
     required this.players,
+    required this.remote,
     this.maps = MapCatalog.all,
   });
 
@@ -29,6 +32,9 @@ class MapSelectorScreen extends StatefulWidget {
   final int players;
   final List<MapDefinition> maps;
 
+  /// Qué mapas están encendidos desde Firebase.
+  final RemoteMapConfig remote;
+
   /// Ancho desde el que se muestran el detalle y la lista lado a lado.
   static const wideLayout = 720.0;
 
@@ -37,6 +43,7 @@ class MapSelectorScreen extends StatefulWidget {
     required String selectedId,
     required int rounds,
     required int players,
+    required RemoteMapConfig remote,
     List<MapDefinition> maps = MapCatalog.all,
   }) {
     return Navigator.of(context).push(
@@ -45,6 +52,7 @@ class MapSelectorScreen extends StatefulWidget {
           selectedId: selectedId,
           rounds: rounds,
           players: players,
+          remote: remote,
           maps: maps,
         ),
       ),
@@ -56,7 +64,9 @@ class MapSelectorScreen extends StatefulWidget {
 }
 
 class _MapSelectorScreenState extends State<MapSelectorScreen> {
-  late final List<MapDefinition> _maps = MapCatalog.onlySelectable(widget.maps);
+  late final List<MapDefinition> _maps = widget.remote.availableOf(
+    widget.maps,
+  );
   late MapDefinition _selected = _maps.firstWhere(
     (map) => map.id == widget.selectedId,
     orElse: () => _maps.first,

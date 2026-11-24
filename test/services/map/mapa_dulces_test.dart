@@ -210,7 +210,7 @@ void main() {
 
     test('está registrado; el mapa por defecto sigue siendo mapa_01', () {
       expect(MapCatalog.byId('mapa_dulces'), same(map));
-      expect(MapCatalog.all, [MapCatalog.mapa01, map]);
+      expect(MapCatalog.all.take(2), [MapCatalog.mapa01, map]);
       expect(MapCatalog.defaultMap, same(MapCatalog.mapa01));
       expect(map.name, 'Mundo Dulce');
       // Oculto en el selector hasta que esté listo.
@@ -218,9 +218,9 @@ void main() {
       expect(map.tiledMap, 'assets/maps/mapa_dulces/mapa.tmj');
     });
 
-    test('pide el nivel candyMap, que es el de esta versión', () {
+    test('pide el nivel candyMap, que esta versión entiende', () {
       expect(ProtocolLevel.candyMap, greaterThan(ProtocolLevel.roomProtocol));
-      expect(AppProtocol.current, ProtocolLevel.candyMap);
+      expect(AppProtocol.current, greaterThanOrEqualTo(ProtocolLevel.candyMap));
       expect(map.minProtocol, ProtocolLevel.candyMap);
       expect(map.playableByAllVersions, isFalse);
       expect(MapCatalog.mapa01.playableByAllVersions, isTrue);
