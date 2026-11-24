@@ -38,25 +38,25 @@
    "tiles": [
     {
      "id": 1,
-     "image": "../../images/mapa/piezas/plataforma_02.png",
+     "image": "../../images/mapa/dulces/plataforma_02.png",
      "imageheight": 320,
      "imagewidth": 384
     },
     {
      "id": 0,
-     "image": "../../images/mapa/piezas/plataforma_01.png",
+     "image": "../../images/mapa/dulces/plataforma_01.png",
      "imageheight": 320,
      "imagewidth": 384
     },
     {
      "id": 3,
-     "image": "../../images/mapa/piezas/plataforma_04.png",
+     "image": "../../images/mapa/dulces/plataforma_04.png",
      "imageheight": 320,
      "imagewidth": 384
     },
     {
      "id": 2,
-     "image": "../../images/mapa/piezas/plataforma_03.png",
+     "image": "../../images/mapa/dulces/plataforma_03.png",
      "imageheight": 320,
      "imagewidth": 384
     }
@@ -80,7 +80,7 @@
    "tiles": [
     {
      "id": 0,
-     "image": "../../images/mapa/piezas/tienda.png",
+     "image": "../../images/mapa/dulces/tienda_chocolateria.png",
      "imageheight": 448,
      "imagewidth": 448
     }

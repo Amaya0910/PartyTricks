@@ -805,3 +805,19 @@
 - **Fecha:** 2026-11-24
 - **Estado:** Aceptada
 - **Decisión:** al lanzar con un dado extra, la animación del dado (`DiceRollOverlay`) muestra **dos dados**: el normal y el extra, que cae un instante después y gira al revés. Cada uno aterriza con su número y la etiqueta dice "Ana sacó 4 y 5". Los dados extra de 9 caras (7 a 9) no tienen dibujo y se ven con su número. El resultado del juego no cambia; solo es visual.
+
+## D-59. Arte provisional propio para Mundo Dulce
+
+- **Fecha:** 2026-11-24
+- **Estado:** Aceptada (provisional, hasta tener el arte final)
+- **Problema:** Mundo Dulce reutilizaba las piezas del Mapa 1 (plataformas de arbusto, tienda de madera y camino de piedra), así que fuera del color del fondo se veía casi igual.
+- **Decisión:**
+  - Piezas propias en `assets/images/mapa/dulces/`, del mismo tamaño que las del Mapa 1 (384 × 320 las plataformas y 448 × 448 la tienda), para no mover ninguna casilla del `.tmj`:
+    - `plataforma_01` a `plataforma_04`: galletas con glaseado y chispas, en fresa, chocolate, menta y limón.
+    - `tienda_chocolateria.png`: la tienda hecha una tableta de chocolate con techo de glaseado y piruletas.
+  - `assets/themes/dulces/textura_camino.png` pasa a ser un camino de caramelos, en vez de la piedra del Mapa 1 teñida.
+  - `mapa.tmj` apunta a las piezas nuevas y la `preview.png` se compuso de nuevo con ellas.
+  - Las marcas de casilla (inicio, negativa y especial) y las flechas siguen siendo las del tema clásico.
+- **Origen:** dibujadas con código (Pillow) como provisional. No son el arte final de Isabella: cuando llegue, se reemplazan los archivos con los mismos nombres y tamaños y no hace falta tocar código.
+- **Prueba:** `mapa_dulces_test.dart` (grupo "arte propio") comprueba que el mapa usa su carpeta, que las imágenes existen y que no son las del Mapa 1.
+

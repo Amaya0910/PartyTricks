@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -273,6 +274,57 @@ void main() {
         MapThemeCatalog.classic.pathOf(ThemeAsset.negativeMark),
       );
       expect(resolved.describeFallbacks(), contains('marca_negativa.png'));
+    });
+  });
+
+  group('arte propio', () {
+    // Mundo Dulce tiene que verse distinto del Mapa 1: sus plataformas y su
+    // tienda son de dulce, no los arbustos y la cabaña de madera del Mapa 1.
+    final tmj =
+        jsonDecode(File('assets/maps/mapa_dulces/mapa.tmj').readAsStringSync())
+            as Map<String, dynamic>;
+    final images = <String>{
+      for (final tileset in tmj['tilesets'] as List)
+        for (final tile in (tileset as Map<String, dynamic>)['tiles'] as List)
+          (tile as Map<String, dynamic>)['image'] as String,
+    };
+
+    test('sus plataformas y su tienda salen de su propia carpeta', () {
+      expect(images, hasLength(5));
+      for (final image in images) {
+        expect(image, contains('/mapa/dulces/'), reason: image);
+        expect(image, isNot(contains('/mapa/piezas/')), reason: image);
+      }
+    });
+
+    test('todas las imágenes existen', () {
+      for (final image in images) {
+        final path = 'assets/maps/mapa_dulces/$image';
+        expect(File(path).existsSync(), isTrue, reason: path);
+      }
+    });
+
+    test('no se parecen a las del Mapa 1 (no son la misma imagen)', () {
+      for (final name in [
+        'plataforma_01',
+        'plataforma_02',
+        'plataforma_03',
+        'plataforma_04',
+      ]) {
+        expect(
+          File('assets/images/mapa/dulces/$name.png').readAsBytesSync(),
+          isNot(File('assets/images/mapa/piezas/$name.png').readAsBytesSync()),
+          reason: name,
+        );
+      }
+      expect(
+        File('assets/themes/dulces/textura_camino.png').readAsBytesSync(),
+        isNot(
+          File(
+            'assets/images/mapa/piezas/textura_camino.png',
+          ).readAsBytesSync(),
+        ),
+      );
     });
   });
 }
