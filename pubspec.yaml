@@ -39,6 +39,7 @@ flutter:
     - assets/images/cofres/
     - assets/images/juego/
     - assets/images/mapa/piezas/
+    - assets/images/mapa/dulces/
     - assets/images/personaje/
     - assets/images/personaje/accesorios/
     - assets/images/personaje/frente/bocas/
