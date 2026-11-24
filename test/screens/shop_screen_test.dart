@@ -132,8 +132,11 @@ void main() {
   late StreamController<UserProfile> profiles;
   late ProviderContainer container;
 
-  Future<void> pump(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(420, 2400);
+  Future<void> pump(
+    WidgetTester tester, {
+    Size size = const Size(420, 2400),
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     profiles = StreamController<UserProfile>.broadcast();
@@ -357,4 +360,19 @@ void main() {
     // Quitarse el accesorio siempre se puede (ya no lleva ninguno).
     await container.read(accessoryControllerProvider).select(null);
   });
+
+  // Las demás pruebas usan una pantalla altísima; estas, tamaños reales de
+  // teléfono pequeño, horizontal y tableta. Un overflow hace fallar la prueba.
+  for (final (name, size) in [
+    ('teléfono pequeño', const Size(320, 568)),
+    ('horizontal', const Size(640, 360)),
+    ('tableta', const Size(800, 1280)),
+  ]) {
+    testWidgets('se ve sin desbordes en $name', (tester) async {
+      await pump(tester, size: size);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Tienda de Tricks'), findsOneWidget);
+    });
+  }
 }

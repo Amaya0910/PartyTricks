@@ -87,16 +87,31 @@ class ShopItemRow extends StatelessWidget {
                             color: AppColors.authText,
                           ),
                         ),
+                        // Si en una pantalla angosta no caben juntos, el precio y
+                        // la rareza se encogen en vez de salirse de la tarjeta.
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            StatPill(
-                              icon: Icons.monetization_on,
-                              color: AppColors.coin,
-                              value: price,
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: StatPill(
+                                  icon: Icons.monetization_on,
+                                  color: AppColors.coin,
+                                  value: price,
+                                ),
+                              ),
                             ),
                             if (rarity != null) ...[
-                              const Spacer(),
-                              RarityBadge(rarity: rarity!),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerRight,
+                                  child: RarityBadge(rarity: rarity!),
+                                ),
+                              ),
                             ],
                           ],
                         ),
