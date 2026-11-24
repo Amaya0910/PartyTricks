@@ -72,6 +72,19 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   /// entrar (o volver) a la partida no se anima la tirada anterior.
   Map<String, int>? _diceCounts;
 
+  /// El dado se está animando.
+  bool _diceBusy = false;
+
+  /// Alguien camina por el mapa.
+  bool _walkBusy = false;
+
+  /// El minijuego espera a que terminen el dado y la caminata, para que se
+  /// vea cómo llega cada quien a su casilla. Si por algún motivo los avisos
+  /// no llegan, pasado este tiempo el minijuego sale igual.
+  static const _maxHold = Duration(seconds: 25);
+  bool _holdExpired = false;
+  Timer? _holdTimer;
+
   /// La última tirada que se anima sobre el mapa.
   DiceRoll? _roll;
 
@@ -101,6 +114,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   void dispose() {
     _closeMinigame?.cancel();
     _stopHost?.call();
+    _holdTimer?.cancel();
     _guard?.dispose();
     super.dispose();
   }
@@ -247,7 +261,15 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     if (before == null) return;
     for (final (index, id) in game.turnOrder.indexed) {
       if ((counts[id] ?? 0) <= (before[id] ?? 0)) continue;
+      _holdExpired = false;
+      _holdTimer?.cancel();
+      _holdTimer = Timer(_maxHold, () {
+        if (mounted) setState(() => _holdExpired = true);
+      });
       setState(() {
+        // De una vez, sin esperar al aviso del dado: si el minijuego empieza
+        // con esta misma tirada, no debe aparecer ni por un cuadro.
+        _diceBusy = true;
         _roll = DiceRoll(
           serial: (_roll?.serial ?? 0) + 1,
           username: game.players[id]!.username,
@@ -292,6 +314,16 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     final mapView = game == null || me == null ? null : _mapView(game, me.uid);
     final players = game == null ? null : _minigamePlayers(game);
     final minigame = game?.minigame;
+    // El minijuego empezó en la partida, pero se espera a que terminen el
+    // dado y la caminata para mostrarlo. Sin mapa dibujado no hay caminata
+    // que esperar. El árbitro del anfitrión tampoco cuenta mientras tanto.
+    final minigameStarted =
+        game != null && game.phase == GamePhase.minigame && minigame != null;
+    final holdMinigame =
+        minigameStarted &&
+        !_holdExpired &&
+        (_diceBusy || (_walkBusy && mapView != null));
+    _guard?.minigameHeld = holdMinigame;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -308,8 +340,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          if (game.phase == GamePhase.minigame &&
-                              minigame != null)
+                          if (minigameStarted && !holdMinigame)
                             MinigameView(
                               minigame: minigame,
                               myId: me.uid,
@@ -330,7 +361,12 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                     state: game,
                                   ),
                                 ),
-                          DiceRollOverlay(roll: _roll),
+                          DiceRollOverlay(
+                            roll: _roll,
+                            onBusyChanged: (busy) {
+                              if (mounted) setState(() => _diceBusy = busy);
+                            },
+                          ),
                           MinigameResultOverlay(
                             result: game.lastMinigame,
                             players: players!,
@@ -403,6 +439,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
         myId: ref.watch(characterLookProvider),
       },
       onChooseBranch: (branch) => _send(ChooseBranch(myId, branch)),
+      onWalkingChanged: (walking) {
+        if (mounted) setState(() => _walkBusy = walking);
+      },
     );
   }
 }

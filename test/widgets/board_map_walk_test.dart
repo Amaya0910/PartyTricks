@@ -40,16 +40,18 @@ final _map = BoardMap(
 
 final _theme = LoadedMapTheme(resolveTheme(MapThemeCatalog.classic, const {}));
 
-Widget _view(GameState state) => MaterialApp(
-  home: BoardMapView(
-    map: _map,
-    board: _board,
-    theme: _theme,
-    state: state,
-    myId: 'a',
-    onChooseBranch: (_) {},
-  ),
-);
+Widget _view(GameState state, {ValueChanged<bool>? onWalkingChanged}) =>
+    MaterialApp(
+      home: BoardMapView(
+        map: _map,
+        board: _board,
+        theme: _theme,
+        state: state,
+        myId: 'a',
+        onChooseBranch: (_) {},
+        onWalkingChanged: onWalkingChanged,
+      ),
+    );
 
 /// Dónde están los pies del personaje ahora, en píxeles del mundo. El
 /// personaje de Ana está dentro de su `Positioned` (el de más afuera).
@@ -153,5 +155,41 @@ void main() {
 
     expect(lowest, greaterThan(_shortcutRow - 100));
     expect(_feet(tester), _map.tiles[24]!.anchor);
+  });
+
+  testWidgets('avisa cuando alguien empieza a caminar y cuando todos quedan '
+      'quietos', (tester) async {
+    tester.view
+      ..physicalSize = const Size(800, 800)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    GameState at(int position) => GameState(
+      players: {'a': PlayerState(id: 'a', username: 'Ana', position: position)},
+      turnOrder: const ['a'],
+      totalRounds: 5,
+      diamondTileId: 35,
+    );
+    final reports = <bool>[];
+
+    await tester.pumpWidget(_view(at(0), onWalkingChanged: reports.add));
+    await tester.pump();
+    expect(reports, isEmpty, reason: 'quieto desde el principio');
+
+    // Avanza dos casillas: camina varios pasos de 0,7 s cada uno.
+    await tester.pumpWidget(_view(at(2), onWalkingChanged: reports.add));
+    await tester.pump();
+    expect(reports, [true]);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(reports, [true], reason: 'sigue caminando');
+
+    // Se espera, con un tope, a que llegue el aviso de que quedó quieto.
+    var waited = 0;
+    while (reports.length < 2 && waited < 10000) {
+      await tester.pump(const Duration(milliseconds: 100));
+      waited += 100;
+    }
+    expect(reports, [true, false]);
+    expect(waited, greaterThan(500), reason: 'no avisó antes de terminar');
   });
 }

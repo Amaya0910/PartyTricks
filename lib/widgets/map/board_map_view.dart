@@ -46,6 +46,7 @@ class BoardMapView extends StatefulWidget {
     required this.myId,
     required this.onChooseBranch,
     this.looks = const {},
+    this.onWalkingChanged,
   });
 
   final BoardMap map;
@@ -60,6 +61,11 @@ class BoardMapView extends StatefulWidget {
   /// Cómo se ve cada jugador (por id). Al que no esté se le dibuja con el
   /// aspecto de quien no ha elegido nada.
   final Map<String, CharacterLook> looks;
+
+  /// Avisa cuando alguien empieza a caminar (true) y cuando todos quedan
+  /// quietos (false). Sirve para esperar a que termine la caminata antes de
+  /// pasar a lo que sigue (por ejemplo, el minijuego).
+  final ValueChanged<bool>? onWalkingChanged;
 
   @override
   State<BoardMapView> createState() => _BoardMapViewState();
@@ -145,6 +151,21 @@ class _BoardMapViewState extends State<BoardMapView>
 
   bool get _anyWalking => _walkers.values.any((walker) => walker.walking);
 
+  /// Lo último que se avisó, para no repetirlo.
+  bool _reportedWalking = false;
+
+  /// Avisa si alguien camina. Se hace después del cuadro: el aviso puede
+  /// salir mientras el árbol se arma y quien lo recibe cambia su estado.
+  void _reportWalking() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final walking = _anyWalking;
+      if (walking == _reportedWalking) return;
+      _reportedWalking = walking;
+      widget.onWalkingChanged?.call(walking);
+    });
+  }
+
   /// El zoom de la cámara. Se lee del eje x: `getMaxScaleOnAxis` también
   /// mira el eje z, que vale 1 en las matrices de la cámara, y con zoom
   /// menor a 1 devolvía 1 (por eso la cámara volvía a acercarse sola).
@@ -202,7 +223,10 @@ class _BoardMapViewState extends State<BoardMapView>
           controller: AnimationController(vsync: this, duration: _stepDuration),
           onHop: id == widget.myId ? _followMe : null,
           onArrive: id == widget.myId ? _collectCoin : null,
-          onIdle: () => setState(() {}), // Para mostrar las flechas.
+          onIdle: () {
+            setState(() {}); // Para mostrar las flechas.
+            _reportWalking();
+          },
         ),
       );
       walker.walkTo(
@@ -213,6 +237,7 @@ class _BoardMapViewState extends State<BoardMapView>
             : forkWalkBetween(previous, widget.state, id),
       );
     }
+    _reportWalking();
   }
 
   /// Tu personaje llegó a [tile]: si hay moneda, la hace desaparecer.

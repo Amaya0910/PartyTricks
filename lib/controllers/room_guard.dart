@@ -81,6 +81,10 @@ class RoomGuard {
 
   bool _alone = false;
 
+  /// Si la pantalla todavía no muestra el minijuego porque espera a que
+  /// terminen el dado y la caminata. Mientras tanto no se cuenta su tiempo.
+  bool minigameHeld = false;
+
   void start() {
     _stopPresence = presence.track(roomId, uid);
     _timer = Timer.periodic(interval, (_) => tick());
@@ -117,8 +121,12 @@ class RoomGuard {
       final game = _game;
       final closeMinigame = onMinigameTimeout;
       if (game != null && closeMinigame != null) {
-        final timeout = _referee.check(game, now);
-        if (timeout != null) await closeMinigame(timeout);
+        if (minigameHeld) {
+          _referee.hold();
+        } else {
+          final timeout = _referee.check(game, now);
+          if (timeout != null) await closeMinigame(timeout);
+        }
       }
       final skip = onSkipTurn;
       if (game == null || skip == null) return;
