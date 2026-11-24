@@ -15,6 +15,9 @@ abstract final class ProtocolLevel {
   /// Conoce Mundo Dulce (`mapa_dulces`) y su tema.
   static const candyMap = 3;
 
+  /// Conoce Reino Nevado (`mapa_nieve`) y su tema.
+  static const snowMap = 4;
+
   // Al agregar algo que una versión vieja no entiende (un mapa, un
   // minijuego, una acción...), se agrega aquí un nivel nuevo y se sube
   // [AppProtocol.current].
@@ -24,7 +27,7 @@ abstract final class ProtocolLevel {
 abstract final class AppProtocol {
   /// Lo que entiende esta versión. Siempre el nivel más alto de
   /// [ProtocolLevel].
-  static const current = ProtocolLevel.candyMap;
+  static const current = ProtocolLevel.snowMap;
 
   /// El de las salas y jugadores guardados sin el campo.
   static const legacy = ProtocolLevel.base;

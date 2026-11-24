@@ -6,6 +6,12 @@ import 'package:party_tricks/services/map/board_summary.dart';
 import 'package:party_tricks/services/map/boards/mapa_dulces.dart';
 import 'package:party_tricks/services/map/map_theme.dart';
 
+/// Muestra en el selector los mapas ocultos (`selectable: false`). Solo para
+/// builds internos, como el del tráiler:
+/// `flutter run --dart-define=SHOW_HIDDEN_MAPS=true`. El interruptor de
+/// Firebase (`config/maps/{id}/enabled`) sigue haciendo falta.
+const showHiddenMaps = bool.fromEnvironment('SHOW_HIDDEN_MAPS');
+
 /// Un mapa que se puede jugar: su tablero (tipos de casilla y conexiones),
 /// la carpeta con su dibujo y lo que se muestra al elegirlo.
 ///
@@ -71,10 +77,14 @@ class MapDefinition implements ProtocolFeature {
   /// clásico.
   final MapTheme theme;
 
-  /// Si se puede elegir al crear una sala. Un mapa oculto sigue en el
-  /// catálogo (las salas y partidas que lo usan cargan bien), pero no
-  /// aparece en el selector. Para habilitarlo basta con quitar
-  /// `selectable: false` de su definición.
+  /// Si el mapa está listo para publicarse en esta versión. Un mapa oculto
+  /// sigue en el catálogo (las salas y partidas que lo usan cargan bien),
+  /// pero no aparece en el selector.
+  ///
+  /// No basta con esto: además tiene que estar encendido en Firebase
+  /// (`config/maps/{id}/enabled`, ver `RemoteMapConfig`). Así se puede
+  /// lanzar o apagar sin publicar otra versión. Ver
+  /// `docs/activacion_mapas.md`.
   final bool selectable;
 
   /// Cuánto tarda un turno en este mapa. Un mapa con caminos más largos
@@ -142,7 +152,8 @@ class MapCatalog {
   /// Todos los mapas que esta versión conoce, se puedan elegir o no.
   static const all = [mapa01, mapaDulces];
 
-  /// Los que aparecen en el selector.
+  /// Los que están listos en esta versión. Para el selector falta además
+  /// el interruptor remoto (`RemoteMapConfig.availableOf`).
   static List<MapDefinition> get selectable => onlySelectable(all);
 
   static List<MapDefinition> onlySelectable(List<MapDefinition> maps) => [

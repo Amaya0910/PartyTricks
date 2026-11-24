@@ -3,6 +3,13 @@
     ".read": false,
     ".write": false,
 
+    "config": {
+      "maps": {
+        ".read": "auth != null",
+        ".write": false
+      }
+    },
+
     "roomCodes": {
       "$code": {
         ".read": "auth != null",
@@ -52,7 +59,7 @@
           "rounds": { ".validate": "newData.isNumber() && newData.val() >= 5 && newData.val() <= 25" },
           "status": { ".validate": "newData.val() === 'waiting' || newData.val() === 'playing' || newData.val() === 'closed'" },
           "lobbyEndsAt": { ".validate": "newData.isNumber()" },
-          "mapId": { ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9_]{1,32}$/)" },
+          "mapId": { ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9_]{1,32}$/) && (data.val() === newData.val() || newData.val() === 'mapa_01' || root.child('config/maps/' + newData.val() + '/enabled').val() === true)" },
           "requiredProtocol": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999" },
           "lastActiveAt": { ".validate": "newData.isNumber() && newData.val() <= now" },
           "$other": { ".validate": false }

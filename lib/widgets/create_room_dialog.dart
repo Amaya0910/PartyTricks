@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/screens/map_selector_screen.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
+import 'package:party_tricks/services/map/map_providers.dart';
+import 'package:party_tricks/services/map/remote_map_config.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/animated_mode_switch.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
@@ -11,16 +14,32 @@ import 'package:party_tricks/widgets/step_dot_slider.dart';
 /// "Alista tu party": opciones para crear una sala.
 /// Devuelve la configuración o null si se cierra.
 class CreateRoomDialog extends StatefulWidget {
-  const CreateRoomDialog({super.key, this.maps = MapCatalog.all});
+  const CreateRoomDialog({
+    super.key,
+    required this.remote,
+    this.maps = MapCatalog.all,
+  });
 
-  /// Los mapas para elegir; los ocultos no se muestran. Empieza en
+  /// Los mapas para elegir. Solo se muestran los listos
+  /// (`MapDefinition.selectable`) y encendidos en [remote]. Empieza en
   /// [MapCatalog.defaultMap].
   final List<MapDefinition> maps;
+
+  /// Qué mapas están encendidos desde Firebase. Si cambia con el diálogo
+  /// abierto, la lista se actualiza; si se apaga el mapa elegido, vuelve al
+  /// de por defecto.
+  final RemoteMapConfig remote;
 
   static Future<RoomSettings?> show(BuildContext context) {
     return showBlurredDialog<RoomSettings>(
       context,
-      builder: (_) => const CreateRoomDialog(),
+      builder: (_) => Consumer(
+        builder: (context, ref, _) => CreateRoomDialog(
+          remote:
+              ref.watch(remoteMapConfigProvider).value ??
+              RemoteMapConfig.unavailable,
+        ),
+      ),
     );
   }
 
@@ -38,11 +57,23 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
   bool _isPrivate = true;
   int _maxPlayers = _defaultPlayers;
   int _rounds = _defaultRounds;
-  late final List<MapDefinition> _maps = MapCatalog.onlySelectable(widget.maps);
-  late MapDefinition _map = _maps.firstWhere(
-    (map) => map.id == MapCatalog.defaultMap.id,
-    orElse: () => _maps.first,
-  );
+  String _mapId = MapCatalog.defaultMap.id;
+
+  List<MapDefinition> get _maps => widget.remote.availableOf(widget.maps);
+
+  /// El elegido, si sigue disponible; si no, el de por defecto (o el
+  /// primero que haya).
+  MapDefinition get _map {
+    final maps = _maps;
+    MapDefinition? find(String id) {
+      for (final map in maps) {
+        if (map.id == id) return map;
+      }
+      return null;
+    }
+
+    return find(_mapId) ?? find(MapCatalog.defaultMap.id) ?? maps.first;
+  }
 
   RoomSettings _buildSettings() {
     return RoomSettings(
@@ -59,10 +90,11 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
       selectedId: _map.id,
       rounds: _rounds,
       players: _maxPlayers,
+      remote: widget.remote,
       maps: _maps,
     );
     if (id == null || !mounted) return;
-    setState(() => _map = _maps.firstWhere((map) => map.id == id));
+    setState(() => _mapId = id);
   }
 
   void _submit() => Navigator.of(context).pop(_buildSettings());

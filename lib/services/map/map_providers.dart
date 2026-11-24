@@ -1,13 +1,31 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
 
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/models/map/board_map.dart';
+import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
+import 'package:party_tricks/services/map/map_config_service.dart';
 import 'package:party_tricks/services/map/map_theme.dart';
+import 'package:party_tricks/services/map/remote_map_config.dart';
 import 'package:party_tricks/services/map/tiled_map_parser.dart';
+
+final mapConfigServiceProvider = Provider<MapConfigService>(
+  (ref) => FirebaseMapConfigService(FirebaseDatabase.instance),
+);
+
+/// Qué mapas están encendidos desde Firebase, en vivo. Mientras carga, sin
+/// sesión o si Firebase falla vale [RemoteMapConfig.unavailable] (solo
+/// `mapa_01`). Vuelve a leer al cambiar de cuenta, porque las reglas
+/// piden sesión.
+final remoteMapConfigProvider = StreamProvider<RemoteMapConfig>((ref) {
+  final uid = ref.watch(userProfileProvider.select((p) => p.value?.uid));
+  if (uid == null) return Stream.value(RemoteMapConfig.unavailable);
+  return withFallback(ref.watch(mapConfigServiceProvider).watch());
+});
 
 /// El mapa con ese id (el `mapId` de la partida). Lanza
 /// [UnknownMapException] si esta versión de la app no lo tiene.

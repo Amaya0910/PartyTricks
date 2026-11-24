@@ -3,6 +3,7 @@ import 'dart:ui' show Color;
 import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/map/map_theme.dart';
+import 'package:party_tricks/services/map/remote_map_config.dart';
 
 import '../game_engine/test_board.dart';
 
@@ -55,3 +56,8 @@ MapDefinition enabled(MapDefinition map) => MapDefinition(
   secondsPerTurn: map.secondsPerTurn,
   recommendedPlayers: map.recommendedPlayers,
 );
+
+/// Firebase con todos los [maps] encendidos: lo único que decide es
+/// `selectable`.
+RemoteMapConfig allEnabled(List<MapDefinition> maps) =>
+    RemoteMapConfig(enabledIds: {for (final map in maps) map.id});
