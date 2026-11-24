@@ -40,9 +40,12 @@ Al **crear** una sala, `rooms/{id}/meta/mapId` tiene que ser `mapa_01` o un mapa
 
 ## Lanzar un mapa
 
-1. Publicar la versión con el mapa en el catálogo y `selectable: true`, con las reglas ya desplegadas. Como `config/maps/{id}` no existe, nadie lo ve todavía.
-2. El día del lanzamiento, en la consola de Firebase → Realtime Database, crear `config/maps/{id}/enabled = true`.
+1. Publicar la versión con el mapa en el catálogo y `selectable: true`, con las reglas ya desplegadas (`firebase deploy --only database`). Como `config/maps/{id}` no existe, nadie lo ve todavía.
+2. El día del lanzamiento, en la consola de Firebase → Realtime Database, crear `config/maps/{id}/enabled = true`. O con la línea de comandos:
+   `firebase database:set /config/maps/mapa_dulces/enabled true --project party-tricks`
 3. Revisar que aparezca en un teléfono (sale en segundos).
+
+Desde la 1.2.0, `mapa_dulces` y `mapa_nieve` están en `selectable: true`. Con dos o más mapas encendidos, "Alista tu party" ofrece además **Mapa aleatorio**, que sortea entre los encendidos (D-56).
 
 ## Apagarlo (rollback)
 

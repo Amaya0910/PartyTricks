@@ -778,3 +778,30 @@
   - La geometría está aparte, en `placeOffscreenMarker` (`lib/widgets/map/offscreen_marker.dart`), para probarla sin widgets. Se recalcula solo cuando se mueve la cámara (`AnimatedBuilder` sobre el `TransformationController`), y la distancia en casillas solo cuando cambia la partida.
 - **Error de la cámara corregido de paso:** el zoom se leía con `getMaxScaleOnAxis()`, que también mira el eje z. Ese eje vale 1 en las matrices de la cámara, así que con zoom menor a 1 la función devolvía 1. Por eso el zoom inicial previsto (unas 5 casillas de ancho) nunca se aplicaba: la cámara arrancaba en el zoom máximo de cerca. Por la misma razón, al caminar se volvía a acercar aunque el jugador hubiera alejado el zoom. Ahora se lee del eje x (`_cameraScale`).
 - **No cambia:** el protocolo, `GameState`, Firebase ni las reglas.
+
+## D-56. Los mapas nuevos salen listos y se puede pedir uno aleatorio
+
+- **Fecha:** 2026-11-24
+- **Estado:** Aceptada
+- **Decisión:**
+  - Mundo Dulce y Reino Nevado pasan a `selectable: true` (antes estaban ocultos, D-54). Siguen necesitando el interruptor de Firebase: `config/maps/mapa_dulces/enabled` y `config/maps/mapa_nieve/enabled` (ver `activacion_mapas.md`). Sin esa entrada solo se ve `mapa_01`.
+  - "Alista tu party" tiene un interruptor **Mapa aleatorio**, que solo aparece si hay dos o más mapas disponibles. Con él encendido, al crear la sala se sortea uno de los disponibles (los listos y encendidos). La sala guarda siempre un mapa concreto, así que el protocolo y la lista pública se calculan igual que si lo hubiera elegido a mano. Elegir un mapa en el selector apaga lo aleatorio.
+  - La versión sube a 1.2.0: las versiones anteriores no entran a las salas de los mapas nuevos (protocolo, D-51).
+
+## D-57. El minijuego espera a que terminen el dado y la caminata
+
+- **Fecha:** 2026-11-24
+- **Estado:** Aceptada
+- **Problema:** cuando el último jugador de la ronda lanzaba, la partida pasaba al minijuego en el mismo estado en que se movía su personaje. `BoardScreen` cambiaba el mapa por el minijuego de inmediato y la caminata no se veía.
+- **Decisión:**
+  - `BoardScreen` sigue mostrando el mapa mientras el dado (`DiceRollOverlay.onBusyChanged`) o alguien caminando (`BoardMapView.onWalkingChanged`) estén animándose, y solo entonces muestra el minijuego. El dado se marca ocupado en el mismo cambio de estado en que llega la tirada, para que el minijuego no se vea ni por un cuadro.
+  - El árbitro del anfitrión no cuenta el tiempo del minijuego mientras se espera (`MinigameReferee.hold`, `RoomGuard.minigameHeld`): si contara desde que el estado cambia, los jugadores perderían segundos de juego frente a ese reloj.
+  - Tope de seguridad de 25 s: si algún aviso no llega, el minijuego sale igual.
+  - Sin mapa dibujado (tablero de cuadritos) solo se espera al dado. Si se vuelve a abrir la partida con un minijuego en curso, sale de una vez.
+- **De paso:** `forkWalkBetween` también corta el recorrido cuando el jugador se detiene en una tienda de paso (D-46), no solo en otra bifurcación.
+
+## D-58. Dos dados cuando se lanza con dado extra
+
+- **Fecha:** 2026-11-24
+- **Estado:** Aceptada
+- **Decisión:** al lanzar con un dado extra, la animación del dado (`DiceRollOverlay`) muestra **dos dados**: el normal y el extra, que cae un instante después y gira al revés. Cada uno aterriza con su número y la etiqueta dice "Ana sacó 4 y 5". Los dados extra de 9 caras (7 a 9) no tienen dibujo y se ven con su número. El resultado del juego no cambia; solo es visual.
