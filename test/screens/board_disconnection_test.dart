@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/screens/board_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
@@ -13,6 +14,7 @@ import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/widgets/active_game_banner.dart';
+import 'package:party_tricks/widgets/minigames/minigame_view.dart';
 
 import '../services/rooms/fake_room_services.dart';
 
@@ -160,6 +162,82 @@ void main() {
     expect(move.score, inInclusiveRange(4500, 5100));
   });
 
+  group('el minijuego espera a que terminen el dado y la caminata', () {
+    const minigame = MinigameState(
+      type: MinigameType.stopwatch,
+      round: 1,
+      players: ['host', 'ana', 'beto'],
+      targetMs: 5000,
+    );
+
+    /// Ana estaba en la salida, lanza y avanza 4 casillas; con eso termina
+    /// la ronda y empieza el minijuego en la misma partida.
+    final rolling = _game.copyWith(phase: GamePhase.rolling);
+    final afterRoll = _game.copyWith(
+      players: const {
+        'host': PlayerState(id: 'host', username: 'Host'),
+        'ana': PlayerState(
+          id: 'ana',
+          username: 'Ana',
+          position: 4,
+          diceRolled: 1,
+        ),
+        'beto': PlayerState(id: 'beto', username: 'Beto'),
+      },
+      lastRoll: 4,
+      minigame: minigame,
+    );
+
+    testWidgets('se ve primero el dado y cómo camina, y luego el minijuego', (
+      tester,
+    ) async {
+      games.emit(rolling);
+      await pumpBoard(tester, me: 'ana', settle: false);
+      expect(find.byType(MinigameView), findsNothing);
+
+      games.emit(afterRoll);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Apenas lanzó: se ve el dado y el mapa, todavía no el minijuego.
+      expect(find.text('Ana sacó 4'), findsOneWidget);
+      expect(find.byType(MinigameView), findsNothing);
+
+      // Ya terminó el dado (2,4 s) pero sigue caminando (4 casillas): el
+      // minijuego todavía no sale.
+      await tester.pump(const Duration(milliseconds: 2450));
+      expect(find.text('Ana sacó 4'), findsNothing);
+      expect(find.byType(MinigameView), findsNothing);
+
+      // Cuando llega a su casilla, sale el minijuego.
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(find.byType(MinigameView), findsOneWidget);
+    });
+
+    testWidgets('si nadie lanzó (se volvió a abrir la partida), sale de '
+        'una vez', (tester) async {
+      games.emit(afterRoll);
+      await pumpBoard(tester, me: 'ana', settle: false);
+
+      expect(find.byType(MinigameView), findsOneWidget);
+    });
+
+    testWidgets('si los avisos nunca llegan, sale igual pasado el tope', (
+      tester,
+    ) async {
+      games.emit(rolling);
+      await pumpBoard(tester, me: 'ana', settle: false);
+      games.emit(afterRoll);
+      await tester.pump();
+
+      await tester.pump(const Duration(seconds: 26));
+      await tester.pump();
+
+      expect(find.byType(MinigameView), findsOneWidget);
+    });
+  });
+
   group('minijuego que ya terminó', () {
     const rules = MinigameRules();
     const ending = MinigameState(
@@ -270,5 +348,46 @@ void main() {
       expect(find.text('Tienes una partida en curso'), findsNothing);
       expect(rooms.activeGames['ana'], isNull);
     });
+  });
+
+  testWidgets('si la partida es de un mapa que no conoce, pide actualizar', (
+    tester,
+  ) async {
+    games = _FakeGameService()
+      ..emit(
+        const GameState(
+          players: {'ana': PlayerState(id: 'ana', username: 'Ana')},
+          turnOrder: ['ana'],
+          totalRounds: 5,
+          diamondTileId: 1,
+          mapId: 'mapa_99',
+        ),
+      );
+    await pumpBoard(tester, me: 'ana');
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Actualízala para jugarla'), findsOneWidget);
+    expect(find.text('Salir'), findsOneWidget);
+  });
+
+  testWidgets('si la sala pide un protocolo mayor, pide actualizar', (
+    tester,
+  ) async {
+    rooms = FakeRoomService()
+      ..put(testRoom(requiredProtocol: AppProtocol.current + 1));
+    await pumpBoard(tester, me: 'ana');
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Actualízala para jugarla'), findsOneWidget);
+  });
+
+  testWidgets('con el protocolo de esta versión se juega normal', (
+    tester,
+  ) async {
+    rooms = FakeRoomService()
+      ..put(testRoom(requiredProtocol: AppProtocol.current));
+    await pumpBoard(tester, me: 'ana');
+
+    expect(find.textContaining('Actualízala para jugarla'), findsNothing);
   });
 }

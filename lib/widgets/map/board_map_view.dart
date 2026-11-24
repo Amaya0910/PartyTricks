@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/character_look.dart';
@@ -10,11 +9,13 @@ import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/map/board_walk.dart';
 import 'package:party_tricks/services/map/coin_tracker.dart';
 import 'package:party_tricks/services/map/map_assets.dart';
+import 'package:party_tricks/services/map/map_theme.dart';
 import 'package:party_tricks/services/map/route_curves.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/character/walking_character.dart';
 import 'package:party_tricks/widgets/map/map_scenery.dart';
+import 'package:party_tricks/widgets/map/offscreen_marker.dart';
 
 /// El mapa dibujado de la partida.
 ///
@@ -30,21 +31,27 @@ import 'package:party_tricks/widgets/map/map_scenery.dart';
 ///   Se dibujan sobre la pantalla y no sobre el mapa, así que siempre se
 ///   ven completas y del mismo tamaño, sin importar el zoom.
 /// - Las trampas se ven en su casilla con el color de quien las puso.
+/// - El camino, las marcas, el diamante, las trampas y las flechas salen del
+///   [theme] del mapa.
+/// - Si el diamante queda fuera de la pantalla, un indicador en el borde
+///   apunta hacia él y dice a cuántas casillas está; al tocarlo, la cámara
+///   va hasta el diamante.
 class BoardMapView extends StatefulWidget {
   const BoardMapView({
     super.key,
     required this.map,
     required this.board,
-    required this.pathTexture,
+    required this.theme,
     required this.state,
     required this.myId,
     required this.onChooseBranch,
     this.looks = const {},
+    this.onWalkingChanged,
   });
 
   final BoardMap map;
   final BoardLayout board;
-  final ui.Image pathTexture;
+  final LoadedMapTheme theme;
   final GameState state;
   final String myId;
 
@@ -54,6 +61,11 @@ class BoardMapView extends StatefulWidget {
   /// Cómo se ve cada jugador (por id). Al que no esté se le dibuja con el
   /// aspecto de quien no ha elegido nada.
   final Map<String, CharacterLook> looks;
+
+  /// Avisa cuando alguien empieza a caminar (true) y cuando todos quedan
+  /// quietos (false). Sirve para esperar a que termine la caminata antes de
+  /// pasar a lo que sigue (por ejemplo, el minijuego).
+  final ValueChanged<bool>? onWalkingChanged;
 
   @override
   State<BoardMapView> createState() => _BoardMapViewState();
@@ -100,6 +112,13 @@ class _BoardMapViewState extends State<BoardMapView>
   static const _floatHeight = 40.0;
   static const _coinPop = Duration(milliseconds: 550);
 
+  /// Tamaño del indicador del diamante en la pantalla: una parte del lado
+  /// más corto, entre un mínimo que se vea y un máximo que no estorbe.
+  static const _indicatorShare = 0.11;
+  static const _indicatorMinSize = 40.0;
+  static const _indicatorMaxSize = 52.0;
+  static const _indicatorMargin = 12.0;
+
   final _camera = TransformationController();
 
   /// Un caminante por jugador, en el orden de turnos.
@@ -127,10 +146,30 @@ class _BoardMapViewState extends State<BoardMapView>
     map: widget.map,
     board: widget.board,
     routes: _routes,
-    pathTexture: widget.pathTexture,
+    theme: widget.theme,
   );
 
   bool get _anyWalking => _walkers.values.any((walker) => walker.walking);
+
+  /// Lo último que se avisó, para no repetirlo.
+  bool _reportedWalking = false;
+
+  /// Avisa si alguien camina. Se hace después del cuadro: el aviso puede
+  /// salir mientras el árbol se arma y quien lo recibe cambia su estado.
+  void _reportWalking() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final walking = _anyWalking;
+      if (walking == _reportedWalking) return;
+      _reportedWalking = walking;
+      widget.onWalkingChanged?.call(walking);
+    });
+  }
+
+  /// El zoom de la cámara. Se lee del eje x: `getMaxScaleOnAxis` también
+  /// mira el eje z, que vale 1 en las matrices de la cámara, y con zoom
+  /// menor a 1 devolvía 1 (por eso la cámara volvía a acercarse sola).
+  double get _cameraScale => _camera.value.entry(0, 0);
 
   Offset _anchorOf(int tileId) =>
       widget.map.tiles[tileId]?.anchor ?? widget.map.size.center(Offset.zero);
@@ -146,14 +185,14 @@ class _BoardMapViewState extends State<BoardMapView>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.map != widget.map ||
         oldWidget.board != widget.board ||
-        oldWidget.pathTexture != widget.pathTexture) {
+        oldWidget.theme != widget.theme) {
       if (oldWidget.map != widget.map || oldWidget.board != widget.board) {
         _routes = RouteCurves.build(widget.map, widget.board);
       }
       _scenery = _buildScenery();
     }
     _coins.onRound(widget.state.round);
-    _syncWalkers();
+    _syncWalkers(previous: oldWidget.state);
   }
 
   @override
@@ -168,8 +207,10 @@ class _BoardMapViewState extends State<BoardMapView>
     super.dispose();
   }
 
-  /// Crea los caminantes que faltan y les da su nueva casilla.
-  void _syncWalkers() {
+  /// Crea los caminantes que faltan y les da su nueva casilla. Con el
+  /// estado [previous], el que salía de una bifurcación camina por el
+  /// camino que eligió y no por el más corto.
+  void _syncWalkers({GameState? previous}) {
     final walk = BoardWalk(widget.board);
     for (final id in widget.state.turnOrder) {
       final position = widget.state.players[id]?.position ?? 0;
@@ -182,11 +223,21 @@ class _BoardMapViewState extends State<BoardMapView>
           controller: AnimationController(vsync: this, duration: _stepDuration),
           onHop: id == widget.myId ? _followMe : null,
           onArrive: id == widget.myId ? _collectCoin : null,
-          onIdle: () => setState(() {}), // Para mostrar las flechas.
+          onIdle: () {
+            setState(() {}); // Para mostrar las flechas.
+            _reportWalking();
+          },
         ),
       );
-      walker.walkTo(position, walk);
+      walker.walkTo(
+        position,
+        walk,
+        fork: previous == null
+            ? null
+            : forkWalkBetween(previous, widget.state, id),
+      );
     }
+    _reportWalking();
   }
 
   /// Tu personaje llegó a [tile]: si hay moneda, la hace desaparecer.
@@ -221,7 +272,7 @@ class _BoardMapViewState extends State<BoardMapView>
   /// Centra la cámara en [world] sin cambiar el zoom ni salirse del mapa.
   void _follow(Offset world) {
     if (_viewport.isEmpty) return;
-    final scale = _camera.value.getMaxScaleOnAxis();
+    final scale = _cameraScale;
     final mapSize = widget.map.size * scale;
     double clamp(double value, double view, double content) => content <= view
         ? (view - content) / 2
@@ -271,6 +322,8 @@ class _BoardMapViewState extends State<BoardMapView>
         final viewport = constraints.biggest;
         _placeCamera(viewport);
         final arrows = _arrowTargets();
+        final diamond = _diamondCenter();
+        final diamondSteps = _diamondSteps();
         return ClipRect(
           child: Stack(
             children: [
@@ -291,13 +344,10 @@ class _BoardMapViewState extends State<BoardMapView>
                           top: diamond.dy - _floatHeight - _diamondSize,
                           width: _diamondSize,
                           height: _diamondSize,
-                          child: Image.asset(
-                            MapAssets.diamond,
-                            errorBuilder: (_, _, _) => const Icon(
-                              Icons.diamond,
-                              size: _diamondSize,
-                              color: AppColors.diamond,
-                            ),
+                          child: _ThemedIcon(
+                            asset: widget.theme.resolved[ThemeAsset.diamond],
+                            icon: Icons.diamond,
+                            color: widget.theme.colors.diamond,
                           ),
                         ),
                       ..._traps(),
@@ -306,6 +356,16 @@ class _BoardMapViewState extends State<BoardMapView>
                   ),
                 ),
               ),
+              if (diamond != null)
+                // Debajo de las flechas, para no tapar la elección de camino.
+                AnimatedBuilder(
+                  animation: _camera,
+                  builder: (context, _) => Stack(
+                    children: [
+                      ?_diamondIndicator(viewport, diamond, diamondSteps),
+                    ],
+                  ),
+                ),
               if (arrows.isNotEmpty)
                 // Siguen a la cámara cuando mueves o acercas el mapa.
                 AnimatedBuilder(
@@ -374,6 +434,56 @@ class _BoardMapViewState extends State<BoardMapView>
     );
   }
 
+  /// El centro del dibujo del diamante, que flota sobre su casilla.
+  Offset? _diamondCenter() =>
+      _diamondAnchor()?.translate(0, -_floatHeight - _diamondSize / 2);
+
+  /// A cuántas casillas está el diamante de tu personaje, por el camino más
+  /// corto; null si no juegas o si estás encima.
+  int? _diamondSteps() {
+    final me = widget.state.players[widget.myId];
+    final target = widget.state.diamondTileId;
+    if (me == null || me.position == target) return null;
+    if (target < 0 || target >= widget.board.tiles.length) return null;
+    return BoardWalk(widget.board).between(me.position, target).length;
+  }
+
+  /// El indicador del diamante si está fuera de la pantalla; null si se ve.
+  Widget? _diamondIndicator(Size viewport, Offset diamond, int? steps) {
+    final size = (viewport.shortestSide * _indicatorShare)
+        .clamp(_indicatorMinSize, _indicatorMaxSize)
+        .toDouble();
+    final marker = placeOffscreenMarker(
+      target: MatrixUtils.transformPoint(_camera.value, diamond),
+      viewport: viewport,
+      size: size,
+      margin: _indicatorMargin,
+    );
+    if (marker == null) return null;
+    return Positioned(
+      key: const Key('diamond-indicator'),
+      left: marker.center.dx - size / 2,
+      top: marker.center.dy - size / 2,
+      width: size,
+      height: size,
+      child: Semantics(
+        button: true,
+        label: steps == null
+            ? 'Ver el diamante'
+            : 'Ver el diamante, a $steps casillas',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _follow(diamond),
+          child: _DiamondIndicator(
+            angle: marker.angle,
+            steps: steps,
+            theme: widget.theme,
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Las trampas puestas, con el color de quien las puso.
   List<Widget> _traps() {
     return [
@@ -383,10 +493,14 @@ class _BoardMapViewState extends State<BoardMapView>
           Positioned(
             left: anchor.dx - _trapSize / 2,
             top: anchor.dy - _trapSize / 2,
-            child: Icon(
-              Icons.dangerous,
-              size: _trapSize,
+            width: _trapSize,
+            height: _trapSize,
+            child: _ThemedIcon(
+              asset: widget.theme.resolved[ThemeAsset.trap],
+              icon: Icons.dangerous,
               color: _colorOf(ownerId),
+              // El dibujo del tema lleva un aro con el color del dueño.
+              ring: true,
             ),
           ),
     ];
@@ -472,7 +586,7 @@ class _BoardMapViewState extends State<BoardMapView>
   List<Widget> _arrows(Size viewport, List<(Offset, Offset)> targets) {
     if (viewport.isEmpty) return const [];
     final matrix = _camera.value;
-    final scale = matrix.getMaxScaleOnAxis();
+    final scale = _cameraScale;
     final size = min(
       (viewport.shortestSide * _arrowScreenShare)
           .clamp(_arrowMinSize, _arrowMaxSize)
@@ -540,10 +654,10 @@ class _BoardMapViewState extends State<BoardMapView>
           builder: (context, grow, child) =>
               Transform.scale(scale: grow, child: child),
           child: DecoratedBox(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.boardPanel,
-              boxShadow: [
+              color: widget.theme.colors.arrowBackground,
+              boxShadow: const [
                 BoxShadow(color: AppColors.characterShadow, blurRadius: 6),
               ],
             ),
@@ -551,19 +665,165 @@ class _BoardMapViewState extends State<BoardMapView>
               padding: EdgeInsets.all(size * 0.1),
               child: Transform.rotate(
                 angle: atan2(unit.dy, unit.dx),
-                child: Image.asset(
-                  MapAssets.branchArrow,
-                  errorBuilder: (_, _, _) => Icon(
-                    Icons.arrow_forward,
-                    size: size * 0.8,
-                    color: AppColors.settingsAccent,
-                  ),
+                child: _ThemedIcon(
+                  asset: widget.theme.resolved[ThemeAsset.branchArrow],
+                  icon: Icons.arrow_forward,
+                  color: widget.theme.colors.arrowIcon,
                 ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Círculo con el diamante y una punta que apunta hacia él, con el mismo
+/// estilo que las flechas de las bifurcaciones. Abajo, a cuántas casillas
+/// está.
+class _DiamondIndicator extends StatelessWidget {
+  const _DiamondIndicator({
+    required this.angle,
+    required this.steps,
+    required this.theme,
+  });
+
+  final double angle;
+  final int? steps;
+  final LoadedMapTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = this.steps;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest.shortestSide;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _PointerPainter(
+                  angle: angle,
+                  color: theme.colors.arrowBackground,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.all(size * 0.24),
+                child: _ThemedIcon(
+                  asset: theme.resolved[ThemeAsset.diamond],
+                  icon: Icons.diamond,
+                  color: theme.colors.diamond,
+                ),
+              ),
+            ),
+            if (steps != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: -size * 0.28,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colors.diamond,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$steps',
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// El fondo del indicador: un círculo con una punta hacia [angle].
+class _PointerPainter extends CustomPainter {
+  const _PointerPainter({required this.angle, required this.color});
+
+  final double angle;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final outer = size.shortestSide / 2;
+    final radius = outer * 0.8;
+    Offset at(double a, double r) => center + Offset(cos(a), sin(a)) * r;
+    final path = Path()
+      ..addOval(Rect.fromCircle(center: center, radius: radius))
+      ..addPolygon([
+        at(angle - 0.55, radius * 0.9),
+        at(angle, outer),
+        at(angle + 0.55, radius * 0.9),
+      ], true);
+    canvas.drawShadow(path, AppColors.characterShadow, 4, false);
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_PointerPainter oldDelegate) =>
+      oldDelegate.angle != angle || oldDelegate.color != color;
+}
+
+/// El dibujo del tema, o [icon] si el tema no lo tiene (o no carga).
+/// Ocupa todo el espacio que le dan.
+class _ThemedIcon extends StatelessWidget {
+  const _ThemedIcon({
+    required this.asset,
+    required this.icon,
+    required this.color,
+    this.ring = false,
+  });
+
+  final String? asset;
+  final IconData icon;
+  final Color color;
+
+  /// Si se rodea el dibujo con un aro de [color].
+  final bool ring;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = this.asset;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fallback = Icon(
+          icon,
+          size: constraints.biggest.shortestSide,
+          color: color,
+        );
+        if (asset == null) return fallback;
+        final image = Image.asset(
+          asset,
+          fit: BoxFit.contain,
+          errorBuilder: (_, _, _) => fallback,
+        );
+        if (!ring) return image;
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: 8),
+          ),
+          child: Padding(padding: const EdgeInsets.all(8), child: image),
+        );
+      },
     );
   }
 }
@@ -618,10 +878,11 @@ class _Walker {
   bool get walking => controller.isAnimating || _pending.isNotEmpty;
 
   /// Agrega las casillas hasta [target] y empieza a caminar si estaba quieto.
-  void walkTo(int target, BoardWalk walk) {
+  /// Si viene de una bifurcación, [fork] dice por dónde siguió.
+  void walkTo(int target, BoardWalk walk, {ForkWalk? fork}) {
     final last = _pending.isNotEmpty ? _pending.last : tile;
     if (target == last) return;
-    _pending.addAll(walk.between(last, target));
+    _pending.addAll(walk.between(last, target, fork: fork));
     if (!controller.isAnimating) _nextHop();
   }
 

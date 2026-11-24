@@ -71,7 +71,7 @@ class MapItemsDialog extends ConsumerWidget {
     final game = ref.watch(gameProvider(roomId)).value;
     final me = game?.players[myId];
     if (game == null || me == null) return const SizedBox.shrink();
-    final engine = ref.watch(gameEngineProvider);
+    final engine = ref.watch(gameEngineProvider(game.mapId));
     final myTurn = game.currentPlayerId == myId;
 
     String? problemFor(ShopItem item) {

@@ -96,16 +96,17 @@ Map<String, dynamic> _platform({
 void main() {
   const parser = TiledMapParser();
   const dir = 'assets/maps/mapa_01';
+  const background = '$dir/fondo.png';
 
   test('lee el tamaño del mundo y el fondo', () {
-    final map = parser.parse(_tiledMap(), mapDir: dir);
+    final map = parser.parse(_tiledMap(), mapDir: dir, background: background);
 
     expect(map.size, const Size(2880, 4320));
     expect(map.background, 'assets/maps/mapa_01/fondo.png');
   });
 
   test('las casillas usan el centro como ancla', () {
-    final map = parser.parse(_tiledMap(), mapDir: dir);
+    final map = parser.parse(_tiledMap(), mapDir: dir, background: background);
     final tile = map.tiles[0]!;
 
     expect(tile.anchor, const Offset(1000, 3000));
@@ -115,14 +116,14 @@ void main() {
   });
 
   test('respeta el volteo horizontal de Tiled', () {
-    final map = parser.parse(_tiledMap(), mapDir: dir);
+    final map = parser.parse(_tiledMap(), mapDir: dir, background: background);
 
     expect(map.tiles[1]!.sprite.flipX, isTrue);
     expect(map.tiles[1]!.anchor, const Offset(1400, 2800));
   });
 
   test('los objetos con alineación inferior se apoyan en su base', () {
-    final map = parser.parse(_tiledMap(), mapDir: dir);
+    final map = parser.parse(_tiledMap(), mapDir: dir, background: background);
     final shop = map.objects.single;
 
     expect(shop.asset, 'assets/images/mapa/piezas/tienda.png');
@@ -130,8 +131,40 @@ void main() {
     expect(shop.depth, 2900);
   });
 
+  test('la capa fondo es el fondo en trozos, no objetos', () {
+    final json = _tiledMap(
+      objetos: [
+        {'id': 50, 'gid': 2, 'x': 1000, 'y': 2900},
+      ],
+    );
+    (json['layers'] as List).insert(0, {
+      'type': 'objectgroup',
+      'name': 'fondo',
+      'objects': [
+        {'id': 60, 'gid': 2, 'x': 0, 'y': 2000, 'width': 2880, 'height': 2000},
+        {'id': 61, 'gid': 2, 'x': 0, 'y': 4000, 'width': 2880, 'height': 2000},
+      ],
+    });
+
+    final map = parser.parse(json, mapDir: dir, background: background);
+
+    expect(map.backgroundTiles, hasLength(2));
+    expect(
+      map.backgroundTiles.first.rect,
+      const Rect.fromLTWH(-1440, 0, 2880, 2000),
+    );
+    expect(map.objects, hasLength(1));
+  });
+
+  test('sin capa fondo no hay trozos y se usa el fondo completo', () {
+    final map = parser.parse(_tiledMap(), mapDir: dir, background: background);
+
+    expect(map.backgroundTiles, isEmpty);
+    expect(map.background, background);
+  });
+
   test('missingTiles dice qué casillas faltan', () {
-    final map = parser.parse(_tiledMap(), mapDir: dir);
+    final map = parser.parse(_tiledMap(), mapDir: dir, background: background);
 
     expect(map.missingTiles([0, 1, 2, 3]), [2, 3]);
   });
@@ -140,7 +173,11 @@ void main() {
     final withoutId = {'id': 99, 'gid': 1, 'x': 0, 'y': 0};
 
     expect(
-      () => parser.parse(_tiledMap(casillas: [withoutId]), mapDir: dir),
+      () => parser.parse(
+        _tiledMap(casillas: [withoutId]),
+        mapDir: dir,
+        background: background,
+      ),
       throwsA(isA<TiledMapException>()),
     );
   });
@@ -152,7 +189,11 @@ void main() {
     ];
 
     expect(
-      () => parser.parse(_tiledMap(casillas: repeated), mapDir: dir),
+      () => parser.parse(
+        _tiledMap(casillas: repeated),
+        mapDir: dir,
+        background: background,
+      ),
       throwsA(
         isA<TiledMapException>().having(
           (e) => e.message,
@@ -169,7 +210,11 @@ void main() {
     ];
 
     expect(
-      () => parser.parse(_tiledMap(tilesets: external), mapDir: dir),
+      () => parser.parse(
+        _tiledMap(tilesets: external),
+        mapDir: dir,
+        background: background,
+      ),
       throwsA(
         isA<TiledMapException>().having(
           (e) => e.message,

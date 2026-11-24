@@ -6,6 +6,7 @@ import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/models/character_look.dart';
 import 'package:party_tricks/services/social/social_providers.dart';
 import 'package:party_tricks/controllers/results_controller.dart';
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/controllers/room_guard.dart';
 import 'package:party_tricks/controllers/stats_controller.dart';
 import 'package:party_tricks/screens/results_screen.dart';
@@ -14,6 +15,8 @@ import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/game_engine/tile_effects.dart';
+import 'package:party_tricks/services/map/board_validator.dart';
+import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/map/map_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
@@ -69,6 +72,19 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   /// entrar (o volver) a la partida no se anima la tirada anterior.
   Map<String, int>? _diceCounts;
 
+  /// El dado se está animando.
+  bool _diceBusy = false;
+
+  /// Alguien camina por el mapa.
+  bool _walkBusy = false;
+
+  /// El minijuego espera a que terminen el dado y la caminata, para que se
+  /// vea cómo llega cada quien a su casilla. Si por algún motivo los avisos
+  /// no llegan, pasado este tiempo el minijuego sale igual.
+  static const _maxHold = Duration(seconds: 25);
+  bool _holdExpired = false;
+  Timer? _holdTimer;
+
   /// La última tirada que se anima sobre el mapa.
   DiceRoll? _roll;
 
@@ -98,6 +114,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   void dispose() {
     _closeMinigame?.cancel();
     _stopHost?.call();
+    _holdTimer?.cancel();
     _guard?.dispose();
     super.dispose();
   }
@@ -105,10 +122,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   /// Un minijuego que ya terminó solo espera a que todos lo vean. El árbitro
   /// lo cerraría igual, pero revisa cada dos segundos: así no se queda la
   /// pantalla quieta. Si este teléfono no es el anfitrión, no hace nada.
-  void _closeWhenSeen(MinigameState? minigame) {
+  void _closeWhenSeen(MinigameState? minigame, String mapId) {
     _closeMinigame?.cancel();
     if (minigame == null || !minigame.ending || !_isHost) return;
-    final rules = ref.read(gameEngineProvider).minigameRules;
+    final rules = ref.read(gameEngineProvider(mapId)).minigameRules;
     _closeMinigame = Timer(rules.timeLimit(minigame), () {
       _send(MinigameTimeout(minigame.round, minigame.step));
     });
@@ -207,7 +224,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
   void _onGameChanged(GameState? game) {
     if (game == null) return;
     _watchDice(game);
-    _closeWhenSeen(game.minigame);
+    _closeWhenSeen(game.minigame, game.mapId);
     _timeTracker.onPhase(game.phase);
     if (game.phase != GamePhase.finished || _statsRecorded) return;
     _statsRecorded = true;
@@ -244,7 +261,15 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     if (before == null) return;
     for (final (index, id) in game.turnOrder.indexed) {
       if ((counts[id] ?? 0) <= (before[id] ?? 0)) continue;
+      _holdExpired = false;
+      _holdTimer?.cancel();
+      _holdTimer = Timer(_maxHold, () {
+        if (mounted) setState(() => _holdExpired = true);
+      });
       setState(() {
+        // De una vez, sin esperar al aviso del dado: si el minijuego empieza
+        // con esta misma tirada, no debe aparecer ni por un cuadro.
+        _diceBusy = true;
         _roll = DiceRoll(
           serial: (_roll?.serial ?? 0) + 1,
           username: game.players[id]!.username,
@@ -270,7 +295,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     });
     // Se escucha la sala para tenerla cargada al terminar (si es pública y
     // quién es el anfitrión); si no, Riverpod la pausa y llega vacía.
-    ref.watch(roomProvider(widget.roomId));
+    final room = ref.watch(roomProvider(widget.roomId)).value;
     final game = ref.watch(gameProvider(widget.roomId)).value;
     final me = ref.watch(roomIdentityProvider).value;
     if (game != null) _diceCounts ??= _diceCountsOf(game);
@@ -280,9 +305,25 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     if (_alone && game != null && game.phase != GamePhase.finished) {
       return NoPlayersLeftView(onExit: _leave);
     }
+    // Dos defensas: el protocolo de la sala y, por si el catálogo no tiene
+    // el mapa aunque el protocolo diga que sí, el mapa de la partida.
+    final tooNew = room != null && !AppProtocol.supports(room.requiredProtocol);
+    if (tooNew || (game != null && MapCatalog.byId(game.mapId) == null)) {
+      return _UpdateRequired(onLeave: _confirmLeave);
+    }
     final mapView = game == null || me == null ? null : _mapView(game, me.uid);
     final players = game == null ? null : _minigamePlayers(game);
     final minigame = game?.minigame;
+    // El minijuego empezó en la partida, pero se espera a que terminen el
+    // dado y la caminata para mostrarlo. Sin mapa dibujado no hay caminata
+    // que esperar. El árbitro del anfitrión tampoco cuenta mientras tanto.
+    final minigameStarted =
+        game != null && game.phase == GamePhase.minigame && minigame != null;
+    final holdMinigame =
+        minigameStarted &&
+        !_holdExpired &&
+        (_diceBusy || (_walkBusy && mapView != null));
+    _guard?.minigameHeld = holdMinigame;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -299,14 +340,13 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          if (game.phase == GamePhase.minigame &&
-                              minigame != null)
+                          if (minigameStarted && !holdMinigame)
                             MinigameView(
                               minigame: minigame,
                               myId: me.uid,
                               players: players!,
                               rules: ref
-                                  .watch(gameEngineProvider)
+                                  .watch(gameEngineProvider(game.mapId))
                                   .minigameRules,
                               onPlay: (score) => _send(
                                 MinigameMove(me.uid, minigame.round, score),
@@ -317,15 +357,22 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
                                 Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: BoardView(
-                                    board: ref.watch(boardProvider),
+                                    board: ref.watch(boardProvider(game.mapId)),
                                     state: game,
                                   ),
                                 ),
-                          DiceRollOverlay(roll: _roll),
+                          DiceRollOverlay(
+                            roll: _roll,
+                            onBusyChanged: (busy) {
+                              if (mounted) setState(() => _diceBusy = busy);
+                            },
+                          ),
                           MinigameResultOverlay(
                             result: game.lastMinigame,
                             players: players!,
-                            coins: ref.watch(gameEngineProvider).minigameCoins,
+                            coins: ref
+                                .watch(gameEngineProvider(game.mapId))
+                                .minigameCoins,
                           ),
                         ],
                       ),
@@ -358,24 +405,27 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
     );
   }
 
-  /// El mapa dibujado, o null si todavía no carga o le faltan casillas. En
-  /// ese caso se muestra el tablero de cuadritos para que se pueda jugar.
+  /// El mapa dibujado, o null si todavía no carga o no coincide con el
+  /// tablero. En ese caso se muestra el tablero de cuadritos para que se
+  /// pueda jugar.
   Widget? _mapView(GameState game, String myId) {
-    final map = ref.watch(boardMapProvider);
-    final texture = ref.watch(pathTextureProvider).value;
-    final board = ref.watch(boardProvider);
+    final map = ref.watch(boardMapProvider(game.mapId));
+    final themeAsync = ref.watch(mapThemeProvider(game.mapId));
+    if (themeAsync.hasError) debugPrint('Tema: ${themeAsync.error}');
+    final theme = themeAsync.value;
+    final board = ref.watch(boardProvider(game.mapId));
     if (map.hasError) debugPrint('Mapa: ${map.error}');
     final loaded = map.value;
-    if (loaded == null || texture == null) return null;
-    final missing = loaded.missingTiles(board.tiles.map((tile) => tile.id));
-    if (missing.isNotEmpty) {
-      debugPrint('Mapa: faltan las casillas $missing');
+    if (loaded == null || theme == null) return null;
+    final problems = validateBoard(board, map: loaded);
+    if (problems.isNotEmpty) {
+      debugPrint('Mapa: ${problems.join(' ')}');
       return null;
     }
     return BoardMapView(
       map: loaded,
       board: board,
-      pathTexture: texture,
+      theme: theme,
       state: game,
       myId: myId,
       // El mío sale de mi vestuario; el de los demás, de su perfil público.
@@ -389,6 +439,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
         myId: ref.watch(characterLookProvider),
       },
       onChooseBranch: (branch) => _send(ChooseBranch(myId, branch)),
+      onWalkingChanged: (walking) {
+        if (mounted) setState(() => _walkBusy = walking);
+      },
     );
   }
 }
@@ -630,6 +683,40 @@ class _Button extends StatelessWidget {
       ),
       onPressed: onPressed,
       child: Text(label),
+    );
+  }
+}
+
+/// La partida usa algo que esta versión de la app no tiene: pide un
+/// protocolo mayor o un mapa que no está en el catálogo (la creó alguien con
+/// una versión más nueva). No se puede mostrar ni jugar.
+class _UpdateRequired extends StatelessWidget {
+  const _UpdateRequired({required this.onLeave});
+
+  final VoidCallback onLeave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.screenBackground,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Esta partida necesita una versión más nueva de la app. '
+                'Actualízala para jugarla.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 24),
+              _Button(label: 'Salir', onPressed: onLeave),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

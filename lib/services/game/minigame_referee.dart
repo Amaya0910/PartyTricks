@@ -20,6 +20,15 @@ class MinigameReferee {
   String? _waiting;
   DateTime? _since;
 
+  /// El minijuego ya empezó en la partida pero los jugadores todavía no lo
+  /// ven (siguen la tirada del dado y la caminata). Se deja de contar: el
+  /// tiempo empieza cuando se pueda jugar, no antes, para que nadie pierda
+  /// segundos de juego.
+  void hold() {
+    _waiting = null;
+    _since = null;
+  }
+
   /// La acción que hay que mandar ahora, o null si todavía no toca.
   MinigameTimeout? check(GameState game, DateTime now) {
     if (game.phase != GamePhase.minigame) {

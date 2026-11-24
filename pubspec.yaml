@@ -2,7 +2,7 @@ name: party_tricks
 description: "Party Tricks: juego 2D multijugador por turnos con minijuegos."
 publish_to: 'none'
 
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: ^3.12.2
@@ -56,6 +56,11 @@ flutter:
     - assets/images/personaje/lado/cuerpo/
     - assets/images/personaje/lado/ojos/
     - assets/maps/mapa_01/
+    - assets/maps/mapa_dulces/
+    - assets/themes/dulces/
+    - assets/images/mapa/nieve/
+    - assets/maps/mapa_nieve/
+    - assets/themes/nieve/
 
     - assets/images/personaje/lado/pantalones/
   # Tipografía del mockup.
