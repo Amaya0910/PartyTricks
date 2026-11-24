@@ -80,6 +80,9 @@ class ShopScreen extends ConsumerStatefulWidget {
 }
 
 class _ShopScreenState extends ConsumerState<ShopScreen> {
+  /// Debajo de este alto (en dp) el encabezado y la lista se desplazan juntos.
+  static const double _compactHeight = 520;
+
   ShopFilter _filter = ShopFilter.all;
   ShopSort _sort = ShopSort.recommended;
 
@@ -170,24 +173,50 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
-            child: Column(
-              children: [
-                const _Title(),
-                const _Band(label: 'COFRES'),
-                _ChestRow(onTap: (chest) => _openChest(context, chest)),
-                const Divider(height: 1, color: AppColors.screenBackground),
-                _FilterBar(
-                  selected: _filter,
-                  onSelected: (filter) => setState(() => _filter = filter),
-                  sort: _sort,
-                  onSortSelected: (sort) => setState(() => _sort = sort),
-                ),
-                Expanded(
-                  child: visible.isEmpty
-                      ? _EmptyItems(filter: _filter)
-                      : _ItemList(items: visible),
-                ),
-              ],
+            // En horizontal (pantalla baja) el encabezado no deja sitio a la
+            // lista: todo se desplaza junto en vez de desbordarse.
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxHeight < _compactHeight;
+                final header = <Widget>[
+                  const _Title(),
+                  const _Band(label: 'COFRES'),
+                  _ChestRow(onTap: (chest) => _openChest(context, chest)),
+                  const Divider(height: 1, color: AppColors.screenBackground),
+                  _FilterBar(
+                    selected: _filter,
+                    onSelected: (filter) => setState(() => _filter = filter),
+                    sort: _sort,
+                    onSortSelected: (sort) => setState(() => _sort = sort),
+                  ),
+                ];
+                if (compact) {
+                  return SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        ...header,
+                        if (visible.isEmpty)
+                          SizedBox(
+                            height: 160,
+                            child: _EmptyItems(filter: _filter),
+                          )
+                        else
+                          _ItemList(items: visible, shrinkWrap: true),
+                      ],
+                    ),
+                  );
+                }
+                return Column(
+                  children: [
+                    ...header,
+                    Expanded(
+                      child: visible.isEmpty
+                          ? _EmptyItems(filter: _filter)
+                          : _ItemList(items: visible),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -429,15 +458,21 @@ class _FilterTab extends StatelessWidget {
 
 /// Los cosméticos en venta, uno debajo de otro.
 class _ItemList extends StatelessWidget {
-  const _ItemList({required this.items});
+  const _ItemList({required this.items, this.shrinkWrap = false});
 
   final List<_ShopEntry> items;
+
+  /// Dentro de otro scroll: la lista mide lo que sus artículos y no se
+  /// desplaza por su cuenta.
+  final bool shrinkWrap;
 
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
       color: AppColors.shopListBackground,
       child: ListView.separated(
+        shrinkWrap: shrinkWrap,
+        physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
         padding: const EdgeInsets.all(12),
         itemCount: items.length,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
