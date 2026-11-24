@@ -4,6 +4,7 @@ import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/services/game_engine/board_layout.dart';
 import 'package:party_tricks/services/map/board_summary.dart';
 import 'package:party_tricks/services/map/boards/mapa_dulces.dart';
+import 'package:party_tricks/services/map/boards/mapa_nieve.dart';
 import 'package:party_tricks/services/map/map_theme.dart';
 
 /// Muestra en el selector los mapas ocultos (`selectable: false`). Solo para
@@ -149,8 +150,24 @@ class MapCatalog {
     selectable: false,
   );
 
+  static const mapaNieve = MapDefinition(
+    id: 'mapa_nieve',
+    name: 'Reino Nevado',
+    shortDescription: 'Sube la montaña nevada y arriésgate en el lago.',
+    longDescription:
+        'Subes la montaña en zigzag y bajas por el otro lado. Arriba, el '
+        'Puente de Hielo cruza el lago congelado: más corto, pero resbala. '
+        'Abajo, la Cueva de Hielo te ahorra un paso.',
+    assetDirectory: 'assets/maps/mapa_nieve',
+    buildBoard: buildSnowBoard,
+    minProtocol: ProtocolLevel.snowMap,
+    theme: MapThemeCatalog.snow,
+    // Versión tráiler: casillas definitivas, arte provisional.
+    selectable: false,
+  );
+
   /// Todos los mapas que esta versión conoce, se puedan elegir o no.
-  static const all = [mapa01, mapaDulces];
+  static const all = [mapa01, mapaDulces, mapaNieve];
 
   /// Los que están listos en esta versión. Para el selector falta además
   /// el interruptor remoto (`RemoteMapConfig.availableOf`).

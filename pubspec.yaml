@@ -38,6 +38,9 @@ flutter:
     - assets/maps/mapa_01/
     - assets/maps/mapa_dulces/
     - assets/themes/dulces/
+    - assets/images/mapa/nieve/
+    - assets/maps/mapa_nieve/
+    - assets/themes/nieve/
 
   # Tipografía del mockup.
   fonts:
