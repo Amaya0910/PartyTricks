@@ -56,6 +56,11 @@ flutter:
     - assets/images/personaje/lado/cuerpo/
     - assets/images/personaje/lado/ojos/
     - assets/maps/mapa_01/
+    - assets/maps/mapa_dulces/
+    - assets/themes/dulces/
+    - assets/images/mapa/nieve/
+    - assets/maps/mapa_nieve/
+    - assets/themes/nieve/
 
     - assets/images/personaje/lado/pantalones/
   # Tipografía del mockup.

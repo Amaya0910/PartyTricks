@@ -4,18 +4,20 @@ import 'package:party_tricks/controllers/character_look_controller.dart';
 import 'package:party_tricks/models/accessory_style.dart';
 import 'package:party_tricks/models/character_look.dart';
 import 'package:party_tricks/models/hair_style.dart';
+import 'package:party_tricks/models/map/map_id.dart';
 import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/shirt_style.dart';
 import 'package:party_tricks/screens/admin/admin_page.dart';
 import 'package:party_tricks/services/game/game_providers.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
+import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/map/map_providers.dart';
 import 'package:party_tricks/widgets/map/board_map_view.dart';
 import 'package:party_tricks/widgets/settings_section.dart';
 
 /// Vista previa del mapa con personajes, para el panel de administración.
 ///
-/// Muestra el mapa que se juega con de 1 a 4 personajes de aspectos
+/// Muestra el mapa elegido (cualquiera del catálogo) con de 1 a 4 personajes de aspectos
 /// distintos. Se les puede hacer avanzar casillas para ver cómo caminan
 /// (de lado, de espalda cuando suben), cómo se ven quietos y cómo van las
 /// curvas del camino. El primero lleva el aspecto del administrador y los
@@ -38,6 +40,9 @@ class _MapPreviewScreenState extends ConsumerState<MapPreviewScreen> {
   static const _steps = [1, 3, 6];
 
   int _count = 3;
+
+  /// El mapa que se está viendo.
+  String _mapId = defaultMapId;
 
   /// Casilla de cada jugador (por posición en la lista).
   final List<int> _positions = [0, 0, 0, 0];
@@ -74,7 +79,7 @@ class _MapPreviewScreenState extends ConsumerState<MapPreviewScreen> {
   ];
 
   void _advance(int steps) {
-    final board = ref.read(boardProvider);
+    final board = ref.read(boardProvider(_mapId));
     setState(() {
       _moves++;
       for (var i = 0; i < _count; i++) {
@@ -109,29 +114,30 @@ class _MapPreviewScreenState extends ConsumerState<MapPreviewScreen> {
       turnOrder: [for (var i = 0; i < _count; i++) _idOf(i)],
       totalRounds: 10,
       diamondTileId: 1,
+      mapId: _mapId,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final map = ref.watch(boardMapProvider);
-    final texture = ref.watch(pathTextureProvider);
-    final board = ref.watch(boardProvider);
+    final map = ref.watch(boardMapProvider(_mapId));
+    final theme = ref.watch(mapThemeProvider(_mapId));
+    final board = ref.watch(boardProvider(_mapId));
     final mine = ref.watch(characterLookProvider);
     final looks = _looks(mine);
 
     Widget preview;
-    if (map.hasError || texture.hasError) {
+    if (map.hasError || theme.hasError) {
       preview = const Center(child: Text('No se pudo cargar el mapa.'));
-    } else if (map.value == null || texture.value == null) {
+    } else if (map.value == null || theme.value == null) {
       preview = const Center(child: CircularProgressIndicator());
     } else {
       preview = BoardMapView(
-        // Se arma de nuevo si cambia la cantidad de jugadores.
-        key: ValueKey(_count),
+        // Se arma de nuevo si cambia la cantidad de jugadores o el mapa.
+        key: ValueKey('$_mapId-$_count'),
         map: map.value!,
         board: board,
-        pathTexture: texture.value!,
+        theme: theme.value!,
         state: _state(),
         myId: _idOf(0),
         onChooseBranch: (_) {},
@@ -142,6 +148,23 @@ class _MapPreviewScreenState extends ConsumerState<MapPreviewScreen> {
     return AdminPage(
       title: 'Mapa con personajes',
       children: [
+        SettingsSection(
+          title: 'Mapa a ver',
+          children: [
+            SegmentedButton<String>(
+              showSelectedIcon: false,
+              segments: [
+                for (final map in MapCatalog.all)
+                  ButtonSegment(value: map.id, label: Text(map.name)),
+              ],
+              selected: {_mapId},
+              onSelectionChanged: (value) => setState(() {
+                _mapId = value.single;
+                _reset();
+              }),
+            ),
+          ],
+        ),
         SettingsSection(
           title: 'Jugadores',
           children: [

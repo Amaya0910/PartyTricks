@@ -668,3 +668,113 @@
   - **H-11:** `firebase-admin` 12.7.0 en `functions/` tiene 8 vulnerabilidades moderadas; hay que actualizarlo.
   - **H-12:** restringir las llaves de Firebase y activar App Check.
 - **Pendiente:** publicar las reglas (`firebase deploy --only firestore:rules` y `--only database`) y probar el release en un celular con la llave del equipo.
+
+## D-49. Catálogo de mapas y validación del tablero (fase 1 de varios mapas)
+  - Cada mapa se registra como un `MapDefinition` (`id`, `name`, `description`, `assetDirectory`, `buildBoard`) en `MapCatalog`. Por ahora solo está `mapa_01`, que es el `defaultMap`. La carpeta de cada mapa guarda `mapa.tmj` y `fondo.png`; las piezas compartidas siguen en `MapAssets`. Se quita `MapAssets.firstMap`.
+  - `currentMapProvider` da el mapa que se juega (siempre `defaultMap`); `boardProvider` y `boardMapProvider` salen de él. Todavía **no** hay `mapId` en la partida ni selector, y Firebase no cambia.
+  - `validateBoard(board, map:)` revisa: ids seguidos desde 0, que la 0 sea la única salida, que todo `next` exista (sin repetidos ni a sí misma), como mucho 2 caminos por bifurcación, que desde la salida se llegue a todo, que desde cada casilla se pueda volver a la salida (sin ciclos que la eviten ni callejones) y, con el mapa, que el dibujo tenga exactamente las mismas casillas. `board_screen.dart` lo usa en lugar de `missingTiles`: si hay problemas, los imprime y muestra el tablero de respaldo.
+  - El tablero de respaldo ya no usa una cuadrícula fija de 9 × 8: `BoardGrid.of(board)` pone el camino principal en el borde y los atajos adentro (o en filas extra abajo), para cualquier cantidad de casillas.
+- **Motivo:** dejar listo el terreno para más mapas sin cambiar lo que ve el jugador, y que un mapa mal armado se detecte en las pruebas (`map_catalog_test.dart` valida cada mapa del catálogo contra su `.tmj`) y no en una partida.
+- **Alternativas:** cambiar el respaldo por una pantalla de error. Se descartó porque, en una partida multijugador, quien no ve el mapa igual tiene que poder tirar y elegir camino; si no, el resto lo marca como ausente.
+- **Pendientes:** fase 2 (`mapId` en la sala y en la partida, providers por mapa) y fase 3 (tipos y conexiones en Tiled).
+
+## D-50. `mapId` en la sala y en la partida (fase 2 de varios mapas)
+
+- **Fecha:** 2026-11-07
+- **Estado:** Propuesta
+- **Decisión:**
+  - `mapId` (por defecto `defaultMapId` = `mapa_01`, en `lib/models/map/map_id.dart`) se guarda en `RoomSettings`, en `Room` (`rooms/{id}/meta/mapId`) y en `GameState` (`rooms/{id}/game/mapId`). Las salas y partidas guardadas antes, sin el campo, se leen como `mapa_01` (`Room.fromMap`, `GameCodec.decodeState` y `GameCodec.mapIdOf`).
+  - Al arrancar, la partida copia el mapa de la sala. **Desde ahí manda el de la partida**: el anfitrión aplica cada acción con el motor del `mapId` guardado en la partida, no con uno global.
+  - `GameEngine` tiene `mapId`: las partidas que arma son de ese mapa y rechaza (`StateError`) las acciones de partidas de otro, así un motor nunca juega con un tablero que no es el suyo.
+  - Providers por mapa: `mapDefinitionProvider(mapId)`, `boardProvider(mapId)`, `boardMapProvider(mapId)` y `gameEngineProvider(mapId)`. `FirebaseGameService` recibe una función `mapId → motor`. Se quita `currentMapProvider`.
+  - Mapa desconocido (una partida creada con una versión más nueva): `MapCatalog.require` lanza `UnknownMapException`. El anfitrión descarta las acciones de esa partida y la pantalla del tablero pide actualizar la app, con un botón para salir. Con un solo mapa hoy no puede pasar.
+- **Reglas (`database.rules.json`):** `meta/mapId` es opcional (las salas viejas no lo tienen) y debe ser texto `^[a-z0-9_]{1,32}$`. En una sala que ya existe no se puede cambiar por otro valor; sí puede desaparecer, porque una versión vieja de la app que tome el lugar del anfitrión reescribe `meta` sin él (se lee como `mapa_01`). `game` no cambia.
+- **Importante al publicar:** hay que **desplegar las reglas antes** de publicar esta versión. Con las reglas de antes, `meta` rechaza campos desconocidos y no se podrían crear salas.
+- **Motivo:** guardar el mapa en la partida hace que una reconexión o un cambio de anfitrión sigan jugando el mapa correcto sin pasos extra (como los minijuegos, D-26).
+- **Pendientes:**
+  - Antes de agregar un segundo mapa, las versiones viejas de la app (que no conocen `mapId`) jugarían cualquier partida con `mapa_01`. Hace falta una versión mínima o que el anfitrión revise la versión de los jugadores.
+  - Selector o sorteo del mapa (hoy siempre `mapa_01`).
+
+## D-51. Protocolo de juego para que las versiones viejas no entren a partidas que no entienden (fase 2.5)
+  - Un **protocolo entero**, no la versión de la app. Las reglas de Realtime Database solo comparan números, y la versión de `pubspec` cambia por cosas que no afectan la compatibilidad. Todo está en `lib/models/app_protocol.dart`: los niveles con nombre (`ProtocolLevel.base = 1` para la 1.0.0 y `roomProtocol = 2` para esta versión), `AppProtocol.current` y la interfaz `ProtocolFeature`. Cuándo y cómo subirlo está en `docs/protocolo.md`.
+  - El protocolo es una **capacidad general**, no solo del mapa: cada cosa que lo necesite (hoy `MapDefinition`; más adelante minijuegos, ítems, acciones) implementa `ProtocolFeature` con su `minProtocol`, y `requiredProtocolFor` (`room_protocol.dart`) toma el mayor de lo que usa la sala. `mapa_01` es `base`, así que **todas las salas de hoy piden 1** y la 1.0.0 las sigue jugando.
+  - La sala guarda `meta/requiredProtocol` y cada jugador publica `players/{uid}/protocol` al entrar. Lo que no tiene los campos cuenta como 1.
+  - Se conserva la defensa de la fase 2 (mapa que no está en el catálogo) además del chequeo de protocolo.
+- **Lista pública por protocolo (`publicLobbyByProtocol/{n}`):** se analizaron alternativas para no tener dos listas:
+  - *Una sola lista y que las reglas no dejen entrar a la 1.0.0:* no sirve. El `joinRandomPublic` de la 1.0.0 solo atrapa `RoomException`; el "permission denied" de las reglas llega como `FirebaseException` y **corta la búsqueda**, así que la 1.0.0 no podría unirse a ninguna sala pública mientras la primera de la lista fuera nueva.
+  - *Que las reglas oculten las salas nuevas al leer la lista:* las reglas de lectura no filtran hijos; o se lee toda la lista o nada.
+  - *Claves con prefijo en la misma lista (`v3_{id}`):* la 1.0.0 las saltaría ("La sala ya no existe"), pero su `cleanAbandoned` también las borraría (para las reglas la sala `v3_{id}` no existe), y depende de detalles internos de la versión vieja.
+  - *Hacer que la sala le parezca llena a la 1.0.0:* cambia el significado de `maxPlayers` y rompe las reglas de cupo.
+  - **Elegida:** separar por protocolo. No es una lista duplicada: **cada sala está en una sola lista** (`publicLobbyFor`). La 1.0.0 solo lee `publicLobby`, que las reglas reservan para salas de protocolo 1; las versiones nuevas leen todas las que pueden jugar (`playablePublicLobbies`). Un nivel nuevo no necesita cambiar las reglas ni el código: usa su propia lista sola.
+- **Reglas (`database.rules.json`):**
+  - `players/$uid`: si la sala pide más de 1, hay que publicar un `protocol` igual o mayor. Nadie puede cambiar el `protocol` de otro jugador.
+  - `meta/requiredProtocol`: número de 1 a 999; no cambia. Puede desaparecer solo si era 1 (cuando una 1.0.0 toma el lugar del anfitrión y reescribe `meta`).
+  - `publicLobby/$roomId`: solo salas de protocolo 1. `publicLobbyByProtocol/$n/$roomId`: solo salas de protocolo mayor a 1, con las mismas reglas de anfitrión que `publicLobby`.
+- **Riesgos que quedan:**
+  - La 1.0.0 muestra un error genérico al intentar entrar por código a una sala nueva: no se puede cambiar su mensaje.
+  - Las reglas no se probaron con el emulador (en esta computadora falta Java 21).
+  - Un minijuego o ítem nuevo que toda partida pueda sortear sube el protocolo de todas las salas (ver `docs/protocolo.md`).
+
+## D-52. Selector de mapas y preparación para mapas grandes (fase 3)
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - `MapDefinition` lleva lo que muestra el selector. **Obligatorios:** `id`, `name`, `shortDescription`, `assetDirectory`, `buildBoard` y `minProtocol`. **Opcionales con valor por defecto:** `longDescription` (si no hay, se usa la corta), `secondsPerTurn` (20) y `recommendedPlayers` (2–6, lo que acepta la sala).
+  - **Lo que sale de otra parte no se escribe a mano:**
+    - El tamaño del tablero (`summary`: casillas, atajos, tiendas y `BoardSize` pequeño/mediano/grande/enorme) se calcula del tablero, así nunca queda desactualizado.
+    - La duración no es fija por mapa: depende de las rondas y los jugadores de la sala (`estimatedMinutes`: rondas × (jugadores × `secondsPerTurn` + 40 s del minijuego)). Lo que el mapa sí puede cambiar es `secondsPerTurn`.
+    - Las rutas (`mapa.tmj`, `fondo.png`, `preview.png`) salen de `assetDirectory` por convención: no hay rutas escritas a mano.
+  - **Vista previa:** `assets/maps/<id>/preview.png`, en la carpeta del mapa junto a lo demás que es solo suyo (la carpeta ya está en `pubspec.yaml`). Las pruebas exigen que exista. Si falta en tiempo de ejecución, `MapPreviewImage` muestra un recuadro con el nombre. Las miniaturas se decodifican a 240 px de ancho para no gastar memoria.
+  - **Selector:** `MapSelectorScreen`, una pantalla completa (el diálogo mide como mucho 340 px de ancho, poco para una vista previa grande y para la tablet). En el celular, el detalle arriba y los mapas en una fila que se desliza; desde 720 px de ancho, el detalle a la izquierda y la lista a la derecha. Muestra la vista previa, el nombre, la descripción, las casillas y el tamaño, los atajos, las tiendas, la duración estimada, los jugadores recomendados y si lo juegan todas las versiones o pide la app actualizada (protocolo).
+  - `CreateRoomDialog` tiene una fila "Mapa" que abre el selector y pasa `mapId` a `RoomSettings` (antes nunca se pasaba). La sala de espera muestra el nombre del mapa. Un mapa que no existe al crear la sala da `RoomException` ("Ese mapa no está disponible").
+  - **Fondo en trozos:** una capa de objetos `fondo` en Tiled reemplaza a `fondo.png` (`BoardMap.backgroundTiles`). Hace falta para los mapas de más de unas 100 casillas, porque un fondo de una sola pieza pasaría de 4096 px, el máximo que muestran muchos celulares. Las pruebas revisan que ninguna imagen de un mapa pase de ese tamaño.
+- **Escala visual (diseño, no implementado):** las constantes del mapa (personaje, camino, marcas, trampas, diamante, salto, flechas, cámara inicial) están en píxeles del mundo y van en proporción a las piezas (plataforma de 384 × 320), no al tamaño del mundo. Por eso un mapa de 150 casillas con las mismas piezas se ve igual de bien. Solo si un mapa usara piezas de otra escala haría falta `MapDefinition.pieceScale`, que multiplicaría esas constantes en un objeto `MapMetrics`.
+- **Pendientes:**
+  - Tema por mapa: la textura del camino, las marcas y la flecha son las mismas para todos los mapas. Un mapa con otra temática (dulces, nieve) necesita las suyas.
+  - El tablero de respaldo de cuadritos queda muy chico con 150 casillas (unas 13 px por celda en un celular).
+  - El nombre y la descripción de `mapa_01` son provisionales.
+
+## D-53. Temas visuales por mapa (fase 3F)
+  - `MapTheme` (`lib/services/map/map_theme.dart`) es independiente del mapa: un mapa lo referencia (`MapDefinition.theme`, por defecto `MapThemeCatalog.classic`) y varios mapas pueden compartirlo. Un tema define:
+    - su carpeta,
+    - sus colores (`MapThemeColors`: suelo, camino, fondo y dibujo de las flechas, diamante y acento del selector),
+    - el ancho del camino.
+  - Cada dibujo que pone el código es un `ThemeAsset`: textura del camino, flecha, marcas de inicio, positiva, negativa, especial, tienda y bifurcación, diamante y trampa. **Todos los temas usan los mismos nombres de archivo** (los de siempre, como `textura_camino.png`), así que las rutas se arman con la carpeta del tema. Agregar un tema no toca el render; agregar un tipo de dibujo nuevo es un valor más en `ThemeAsset` y el lugar donde se dibuja.
+  - **Carpetas:** el clásico se queda en `assets/images/mapa/piezas/`, para no mover ni renombrar los archivos de la artista. Los nuevos van en `assets/themes/<id>/`, aparte de los mapas, porque un tema se puede reutilizar. Cada carpeta va en `pubspec.yaml`.
+  - **Respaldos:** `mapThemeProvider(mapId)` busca los dibujos del tema **una sola vez**, contra el `AssetManifest` (`resolveTheme`).
+    - Lo que falta se toma del clásico. Si tampoco está, el código usa su respaldo: íconos para el diamante, la trampa y la flecha, y el color del tema para el camino.
+    - Se avisa en **una sola línea** de log por tema, no una por casilla.
+    - Si la textura no se puede decodificar, el camino se pinta del color del tema.
+  - Ya no hay dependencias visuales globales en el mapa: se quitaron `MapAssets` y `pathTextureProvider`. `MapScenery`, `MapPathsPainter` y `BoardMapView` reciben el tema cargado (`LoadedMapTheme`), y el selector usa el color de acento del mapa elegido.
+- **Validación:** `validateTheme` detecta archivos con nombre de dibujo del tema pero mal escritos (por ejemplo `marca_especal.png`, que la app nunca usaría). Las pruebas revisan, para cada tema registrado: su carpeta en `pubspec.yaml`, los nombres de sus archivos, que ningún dibujo pase de 4096 px y que el clásico tenga lo básico.
+- **Fuera de alcance:** el tablero de respaldo de cuadritos y los colores de los jugadores no cambian con el tema (los jugadores tienen que reconocerse igual en todos los mapas).
+
+## D-54. Mundo Dulce en el código (fase 1)
+  - Nuevo nivel `ProtocolLevel.candyMap = 3`, y `AppProtocol.current` pasa a ese nivel. `mapa_dulces` pide `candyMap`: sus salas van en `publicLobbyByProtocol/3` y las versiones anteriores no pueden entrar. Las salas de `mapa_01` siguen pidiendo 1, así que la 1.0.0 las sigue jugando.
+  - El tablero es `buildCandyBoard()` (`lib/services/map/boards/mapa_dulces.dart`), con el diseño aprobado en el documento de producción:
+    - 60 casillas: 35 positivas, 14 negativas, 7 especiales, 3 tiendas y la salida.
+    - Bifurcaciones `{4: 32, 11: 49, 37: 54}`, reencuentros `{48: 27, 53: 20, 59: 45}` y tiendas `{3, 16, 41}`.
+    - Vueltas de 32, 29, 27 y 26 pasos.
+  - Los tableros de los mapas nuevos van en `lib/services/map/boards/`, uno por archivo. `buildDefaultBoard()` (el de `mapa_01`) se queda donde está para no tocar el motor.
+  - Tema `MapThemeCatalog.candy` (`assets/themes/dulces/`) con colores propios (suelo, camino y acento del selector). Por ahora solo trae una textura del camino provisional; lo demás lo toma del clásico y lo avisa en el log.
+  - `MapCatalog.mapaDulces` está registrado pero **oculto** (`selectable: false`). `MapDefinition.selectable` (por defecto `true`) decide si un mapa aparece en el selector y en "Alista tu party". `MapCatalog.all`, `byId` y `require` siguen viendo todos los mapas, así que una sala o partida de un mapa oculto carga bien. **El mapa por defecto sigue siendo `mapa_01`**, y tiene que poder elegirse (lo revisan las pruebas).
+  - Para habilitar Mundo Dulce basta con quitar `selectable: false`. Antes hacen falta: el arte final, el `.tmj` definitivo, las reglas de Firebase desplegadas y suficientes jugadores con esta versión del protocolo. El ocultamiento es solo en la app; las reglas no impiden que una app modificada cree una sala con ese mapa.
+  - Se cambian los cortes de `BoardSize`: pequeño hasta 50 casillas, mediano hasta 80, grande hasta 120 y enorme desde ahí. Con los de antes, Mundo Dulce (60) salía "pequeño", lo contrario de lo que busca el diseño.
+- **Assets provisionales** (en `assets/maps/mapa_dulces/` y `assets/themes/dulces/`; no son el arte final):
+  - `mapa.tmj`: las 60 casillas con las piezas del Mapa 1 y la geometría validada, en un mundo de 2880 × 6400 (lóbulos redondeados, plaza en zigzag suave y bifurcaciones a 180°, 79° y 76°). Conexiones de 328 a 440 px, sin plataformas encimadas. La propiedad del mapa `provisional` lo marca como tal.
+  - `fondo.png` liso (1440 × 3200), `preview.png` compuesta con esas piezas (480 × 1067) y `textura_camino.png` (la clásica teñida).
+- **Medidas que cambian respecto del documento original:** el mundo es de 2880 × **6400** y no de 6208, para dejar lugar arriba al edificio de la Chocolatería (casilla 16, en el borde superior). El fondo pasa a 1440 × 3200 y la vista previa a 480 × 1067. El documento de producción ya está actualizado.
+- **Pendientes:** el arte de Isabella (tema, plataformas, tiendas, decoraciones, fondo y vista previa) y el `.tmj` definitivo de level design.
+
+## D-55. Indicador del diamante fuera de pantalla
+
+- **Fecha:** 2026-11-08
+- **Estado:** Propuesta
+- **Decisión:**
+  - Si el diamante queda fuera de la vista, `BoardMapView` muestra un indicador en el borde, sobre la línea que va del centro de la pantalla al diamante, a 12 px del borde. Es un círculo con el estilo de las flechas de bifurcación (fondo de panel y sombra), con el diamante del tema adentro (su dibujo, o el ícono si no lo tiene) y una punta que apunta hacia él. Abajo dice a cuántas casillas está, contando desde tu personaje por el camino más corto. Si el diamante se ve, no hay indicador.
+  - El tamaño en pantalla no depende del zoom: un 11 % del lado corto de la vista, entre 40 y 52 px. Por lejos que esté el diamante, el indicador se queda en el borde con el mismo tamaño; solo cambia el número.
+  - Al tocarlo, la cámara va hasta el diamante sin cambiar el zoom. Va en una capa debajo de las flechas de bifurcación, para no tapar la elección de camino.
+  - La geometría está aparte, en `placeOffscreenMarker` (`lib/widgets/map/offscreen_marker.dart`), para probarla sin widgets. Se recalcula solo cuando se mueve la cámara (`AnimatedBuilder` sobre el `TransformationController`), y la distancia en casillas solo cuando cambia la partida.
+- **Error de la cámara corregido de paso:** el zoom se leía con `getMaxScaleOnAxis()`, que también mira el eje z. Ese eje vale 1 en las matrices de la cámara, así que con zoom menor a 1 la función devolvía 1. Por eso el zoom inicial previsto (unas 5 casillas de ancho) nunca se aplicaba: la cámara arrancaba en el zoom máximo de cerca. Por la misma razón, al caminar se volvía a acercar aunque el jugador hubiera alejado el zoom. Ahora se lee del eje x (`_cameraScale`).
+- **No cambia:** el protocolo, `GameState`, Firebase ni las reglas.

@@ -1,0 +1,1356 @@
+{
+ "backgroundcolor": "#f9d6e3",
+ "compressionlevel": -1,
+ "height": 200,
+ "infinite": false,
+ "nextlayerid": 4,
+ "nextobjectid": 64,
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "tiledversion": "1.12.2",
+ "tileheight": 32,
+ "tilewidth": 32,
+ "type": "map",
+ "version": "1.10",
+ "width": 90,
+ "properties": [
+  {
+   "name": "provisional",
+   "type": "string",
+   "value": "Distribución provisional con las piezas del Mapa 1. Reemplazar por el mapa de level design."
+  }
+ ],
+ "tilesets": [
+  {
+   "columns": 0,
+   "firstgid": 1,
+   "grid": {
+    "height": 1,
+    "orientation": "orthogonal",
+    "width": 1
+   },
+   "margin": 0,
+   "name": "casillas",
+   "objectalignment": "center",
+   "spacing": 0,
+   "tilecount": 4,
+   "tileheight": 320,
+   "tiles": [
+    {
+     "id": 1,
+     "image": "../../images/mapa/piezas/plataforma_02.png",
+     "imageheight": 320,
+     "imagewidth": 384
+    },
+    {
+     "id": 0,
+     "image": "../../images/mapa/piezas/plataforma_01.png",
+     "imageheight": 320,
+     "imagewidth": 384
+    },
+    {
+     "id": 3,
+     "image": "../../images/mapa/piezas/plataforma_04.png",
+     "imageheight": 320,
+     "imagewidth": 384
+    },
+    {
+     "id": 2,
+     "image": "../../images/mapa/piezas/plataforma_03.png",
+     "imageheight": 320,
+     "imagewidth": 384
+    }
+   ],
+   "tilewidth": 384
+  },
+  {
+   "columns": 0,
+   "firstgid": 5,
+   "grid": {
+    "height": 1,
+    "orientation": "orthogonal",
+    "width": 1
+   },
+   "margin": 0,
+   "name": "objetos",
+   "objectalignment": "bottom",
+   "spacing": 0,
+   "tilecount": 1,
+   "tileheight": 448,
+   "tiles": [
+    {
+     "id": 0,
+     "image": "../../images/mapa/piezas/tienda.png",
+     "imageheight": 448,
+     "imagewidth": 448
+    }
+   ],
+   "tilewidth": 448
+  }
+ ],
+ "layers": [
+  {
+   "draworder": "topdown",
+   "id": 2,
+   "name": "casillas",
+   "objects": [
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 1,
+     "name": "casilla 0",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 0
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1331,
+     "y": 3935
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 2,
+     "name": "casilla 1",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 1
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1114,
+     "y": 3648
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 3,
+     "name": "casilla 2",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 2
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 897,
+     "y": 3935
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 4,
+     "name": "casilla 3",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 3
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 680,
+     "y": 3648
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 5,
+     "name": "casilla 4",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 4
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 3648
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 6,
+     "name": "casilla 5",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 5
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 3284
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 7,
+     "name": "casilla 6",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 6
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 2926
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 8,
+     "name": "casilla 7",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 7
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 2562
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 9,
+     "name": "casilla 8",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 8
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 2205
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 10,
+     "name": "casilla 9",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 9
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 1847
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 11,
+     "name": "casilla 10",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 10
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 1483
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 12,
+     "name": "casilla 11",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 11
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 1126
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 13,
+     "name": "casilla 12",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 12
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 386,
+     "y": 780
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 14,
+     "name": "casilla 13",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 13
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 684,
+     "y": 602
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 15,
+     "name": "casilla 14",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 14
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1044,
+     "y": 600
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 16,
+     "name": "casilla 15",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 15
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1404,
+     "y": 600
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 17,
+     "name": "casilla 16",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 16
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1764,
+     "y": 600
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 18,
+     "name": "casilla 17",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 17
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2124,
+     "y": 600
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 19,
+     "name": "casilla 18",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 18
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2449,
+     "y": 724
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 20,
+     "name": "casilla 19",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 19
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 1059
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 21,
+     "name": "casilla 20",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 20
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 1418
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 22,
+     "name": "casilla 21",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 21
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 1778
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 23,
+     "name": "casilla 22",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 22
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 2137
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 24,
+     "name": "casilla 23",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 23
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 2497
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 25,
+     "name": "casilla 24",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 24
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 2856
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 26,
+     "name": "casilla 25",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 25
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 3216
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 27,
+     "name": "casilla 26",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 26
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 3575
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 28,
+     "name": "casilla 27",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 27
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 3935
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 29,
+     "name": "casilla 28",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 28
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2199,
+     "y": 3935
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 30,
+     "name": "casilla 29",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 29
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1982,
+     "y": 3648
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 31,
+     "name": "casilla 30",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 30
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1765,
+     "y": 3935
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 32,
+     "name": "casilla 31",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 31
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1548,
+     "y": 3648
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 33,
+     "name": "casilla 32",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 32
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 4009
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 34,
+     "name": "casilla 33",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 33
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 4370
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 35,
+     "name": "casilla 34",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 34
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 4732
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 36,
+     "name": "casilla 35",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 35
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 5093
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 37,
+     "name": "casilla 36",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 36
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 320,
+     "y": 5449
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 38,
+     "name": "casilla 37",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 37
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 340,
+     "y": 5807
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 39,
+     "name": "casilla 38",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 38
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 580,
+     "y": 6058
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 40,
+     "name": "casilla 39",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 39
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 940,
+     "y": 6083
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 41,
+     "name": "casilla 40",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 40
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1300,
+     "y": 6083
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 42,
+     "name": "casilla 41",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 41
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1660,
+     "y": 6083
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 43,
+     "name": "casilla 42",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 42
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2020,
+     "y": 6083
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 44,
+     "name": "casilla 43",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 43
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2366,
+     "y": 6026
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 45,
+     "name": "casilla 44",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 44
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2557,
+     "y": 5735
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 46,
+     "name": "casilla 45",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 45
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 5373
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 47,
+     "name": "casilla 46",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 46
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 5014
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 48,
+     "name": "casilla 47",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 47
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 4652
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 49,
+     "name": "casilla 48",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 48
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2560,
+     "y": 4293
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 50,
+     "name": "casilla 49",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 49
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 760,
+     "y": 1126
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 51,
+     "name": "casilla 50",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 50
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1091,
+     "y": 1243
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 52,
+     "name": "casilla 51",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 51
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1427,
+     "y": 1331
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 53,
+     "name": "casilla 52",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 52
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1772,
+     "y": 1389
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 54,
+     "name": "casilla 53",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 53
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2120,
+     "y": 1418
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 55,
+     "name": "casilla 54",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 54
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 721,
+     "y": 5587
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 56,
+     "name": "casilla 55",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 55
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 932,
+     "y": 5332
+    },
+    {
+     "gid": 1,
+     "height": 320,
+     "id": 57,
+     "name": "casilla 56",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 56
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1205,
+     "y": 5148
+    },
+    {
+     "gid": 4,
+     "height": 320,
+     "id": 58,
+     "name": "casilla 57",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 57
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1529,
+     "y": 5099
+    },
+    {
+     "gid": 3,
+     "height": 320,
+     "id": 59,
+     "name": "casilla 58",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 58
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 1844,
+     "y": 5194
+    },
+    {
+     "gid": 2,
+     "height": 320,
+     "id": 60,
+     "name": "casilla 59",
+     "opacity": 1,
+     "properties": [
+      {
+       "name": "casilla",
+       "type": "int",
+       "value": 59
+      }
+     ],
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 384,
+     "x": 2120,
+     "y": 5373
+    }
+   ],
+   "opacity": 1,
+   "type": "objectgroup",
+   "visible": true,
+   "x": 0,
+   "y": 0
+  },
+  {
+   "draworder": "topdown",
+   "id": 3,
+   "name": "objetos",
+   "objects": [
+    {
+     "gid": 5,
+     "height": 448,
+     "id": 61,
+     "name": "tienda 3",
+     "opacity": 1,
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 448,
+     "x": 680,
+     "y": 3608
+    },
+    {
+     "gid": 5,
+     "height": 448,
+     "id": 62,
+     "name": "tienda 16",
+     "opacity": 1,
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 448,
+     "x": 1764,
+     "y": 560
+    },
+    {
+     "gid": 5,
+     "height": 448,
+     "id": 63,
+     "name": "tienda 41",
+     "opacity": 1,
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 448,
+     "x": 1660,
+     "y": 6043
+    }
+   ],
+   "opacity": 1,
+   "type": "objectgroup",
+   "visible": true,
+   "x": 0,
+   "y": 0
+  }
+ ]
+}

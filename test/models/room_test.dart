@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/room.dart';
 
 final start = DateTime(2026, 10, 17, 12);
@@ -62,5 +63,78 @@ void main() {
     expect(read.lobbyEndsAt, room.lobbyEndsAt);
     expect(read.players.keys, ['u0', 'u1']);
     expect(read.players['u1']!.username, 'Jugador 1');
+  });
+
+  group('protocolo', () {
+    test('se guarda en meta y en cada jugador, y se lee igual', () {
+      final room = Room(
+        id: 'sala1',
+        code: 'ABC234',
+        isPublic: false,
+        hostUid: 'u0',
+        maxPlayers: 4,
+        rounds: 10,
+        status: RoomStatus.waiting,
+        lobbyEndsAt: start,
+        requiredProtocol: 3,
+      );
+      final player = RoomPlayer(uid: 'u0', username: 'Ana', joinedAt: start);
+
+      expect(room.metaToMap()['requiredProtocol'], 3);
+      expect(player.toMap()['protocol'], AppProtocol.current);
+      final read = Room.fromMap('sala1', {
+        'meta': room.metaToMap(),
+        'players': {'u0': player.toMap()},
+      });
+      expect(read.requiredProtocol, 3);
+      expect(read.players['u0']!.protocol, AppProtocol.current);
+    });
+
+    test('lo guardado por la 1.0.0 cuenta como su protocolo', () {
+      final meta = roomWith(2).metaToMap()..remove('requiredProtocol');
+      final player = RoomPlayer(
+        uid: 'u0',
+        username: 'Ana',
+        joinedAt: start,
+      ).toMap()..remove('protocol');
+
+      final read = Room.fromMap('sala1', {
+        'meta': meta,
+        'players': {'u0': player},
+      });
+      expect(read.requiredProtocol, AppProtocol.legacy);
+      expect(read.players['u0']!.protocol, AppProtocol.legacy);
+    });
+  });
+
+  group('mapId', () {
+    test('por defecto la sala es del primer mapa', () {
+      expect(RoomSettings(isPublic: true).mapId, 'mapa_01');
+      expect(roomWith(2).mapId, 'mapa_01');
+    });
+
+    test('se guarda en meta y se lee igual', () {
+      final room = Room(
+        id: 'sala1',
+        code: 'ABC234',
+        isPublic: false,
+        hostUid: 'u0',
+        maxPlayers: 4,
+        rounds: 10,
+        status: RoomStatus.waiting,
+        lobbyEndsAt: start,
+        mapId: 'mapa_02',
+      );
+      final meta = room.metaToMap();
+
+      expect(meta['mapId'], 'mapa_02');
+      expect(Room.fromMap('sala1', {'meta': meta}).mapId, 'mapa_02');
+    });
+
+    test('una sala guardada antes de los mapas se lee como mapa_01', () {
+      final meta = roomWith(2).metaToMap()..remove('mapId');
+
+      expect(Room.fromMap('sala1', {'meta': meta}).mapId, 'mapa_01');
+    });
   });
 }

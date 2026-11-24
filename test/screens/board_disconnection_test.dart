@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:party_tricks/models/app_protocol.dart';
 import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/screens/board_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
@@ -270,5 +271,46 @@ void main() {
       expect(find.text('Tienes una partida en curso'), findsNothing);
       expect(rooms.activeGames['ana'], isNull);
     });
+  });
+
+  testWidgets('si la partida es de un mapa que no conoce, pide actualizar', (
+    tester,
+  ) async {
+    games = _FakeGameService()
+      ..emit(
+        const GameState(
+          players: {'ana': PlayerState(id: 'ana', username: 'Ana')},
+          turnOrder: ['ana'],
+          totalRounds: 5,
+          diamondTileId: 1,
+          mapId: 'mapa_99',
+        ),
+      );
+    await pumpBoard(tester, me: 'ana');
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Actualízala para jugarla'), findsOneWidget);
+    expect(find.text('Salir'), findsOneWidget);
+  });
+
+  testWidgets('si la sala pide un protocolo mayor, pide actualizar', (
+    tester,
+  ) async {
+    rooms = FakeRoomService()
+      ..put(testRoom(requiredProtocol: AppProtocol.current + 1));
+    await pumpBoard(tester, me: 'ana');
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Actualízala para jugarla'), findsOneWidget);
+  });
+
+  testWidgets('con el protocolo de esta versión se juega normal', (
+    tester,
+  ) async {
+    rooms = FakeRoomService()
+      ..put(testRoom(requiredProtocol: AppProtocol.current));
+    await pumpBoard(tester, me: 'ana');
+
+    expect(find.textContaining('Actualízala para jugarla'), findsNothing);
   });
 }
