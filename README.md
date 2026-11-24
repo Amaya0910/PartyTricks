@@ -75,10 +75,20 @@ firebase deploy --only database
 Se firma con la llave del equipo, que **no** está en Git. Copia `android/key.properties.example` como `android/key.properties`, llénalo y compila con el código ofuscado (Gradle falla a propósito si falta la llave o las banderas):
 
 ```bash
-flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
+flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/app/outputs/symbols
 ```
 
+`--split-per-abi` saca un APK por arquitectura (unos 27 MB el de `arm64-v8a`, el de casi todos los celulares) en lugar de uno solo de unos 64 MB.
+
 Guarda la carpeta de símbolos de cada versión para leer los errores. Las huellas SHA de la llave deben estar registradas en Firebase para que funcione el inicio con Google.
+
+### Publicar una versión
+
+1. Sube `version` en `pubspec.yaml` (`1.1.0+2`: el número después del `+` es el código de compilación y siempre aumenta) y escribe las notas en `docs/releases/`.
+2. Une `develop` a `main` con un PR.
+3. Desde `main` actualizado, compila los APK (comando de arriba).
+4. Crea la etiqueta: `git tag -a v1.1.0 -m "Party Tricks 1.1.0"` y `git push origin v1.1.0`.
+5. En GitHub: Releases > Draft a new release, elige la etiqueta, pega las notas y adjunta los APK.
 
 ## Estructura del repositorio
 
