@@ -115,6 +115,11 @@ class AppColors {
   static const Color candyPath = Color(0xFFE2A66B);
   static const Color candyAccent = Color(0xFFE0457B);
 
+  /// Tema de Reino Nevado, con el mismo uso que los de Mundo Dulce.
+  static const Color snowGround = Color(0xFFEAF4FB);
+  static const Color snowPath = Color(0xFF9EC5E0);
+  static const Color snowAccent = Color(0xFF3A8DDE);
+
   // ---------------------------------------------------------------------------
   // Resultados
   // ---------------------------------------------------------------------------

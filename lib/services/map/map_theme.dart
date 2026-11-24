@@ -127,7 +127,19 @@ class MapThemeCatalog {
     ),
   );
 
-  static const all = [classic, candy];
+  /// Nieve y hielo: el de Reino Nevado. Por ahora solo trae el camino; las
+  /// marcas se toman del clásico.
+  static const snow = MapTheme(
+    id: 'nieve',
+    directory: '$themesDirectory/nieve',
+    colors: MapThemeColors(
+      ground: AppColors.snowGround,
+      path: AppColors.snowPath,
+      accent: AppColors.snowAccent,
+    ),
+  );
+
+  static const all = [classic, candy, snow];
 
   /// Donde van los temas nuevos: `assets/themes/<id>/`.
   static const themesDirectory = 'assets/themes';
