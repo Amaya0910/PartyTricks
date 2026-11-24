@@ -319,4 +319,43 @@ void main() {
     expect(room.players['beto']!.connected, isTrue);
     expect(testRoom().metaToMap().containsKey('lastActiveAt'), isFalse);
   });
+
+  group('salas a las que se puede entrar en una partida aleatoria', () {
+    test('con alguien conectado, sí', () {
+      expect(policy.isJoinable(testRoom(), testNow), isTrue);
+    });
+
+    test('si todos se cayeron hace rato (sala fantasma), no', () {
+      final ghost = testRoom(
+        host: hostAway(const Duration(minutes: 30)),
+        anaConnected: false,
+        betoConnected: false,
+      );
+      expect(policy.isJoinable(ghost, testNow), isFalse);
+    });
+
+    test('si alguien se cayó hace segundos, todavía puede volver', () {
+      final room = testRoom(
+        host: hostAway(const Duration(seconds: 3)),
+        anaConnected: false,
+        betoConnected: false,
+      );
+      // Ana y Beto llevan una hora fuera, pero el anfitrión acaba de caerse.
+      expect(policy.isJoinable(room, testNow), isTrue);
+    });
+
+    test('una sala sin jugadores no sirve', () {
+      final empty = Room(
+        id: 'x',
+        code: 'ABC234',
+        isPublic: true,
+        hostUid: 'host',
+        maxPlayers: 4,
+        rounds: 5,
+        status: RoomStatus.waiting,
+        lobbyEndsAt: testNow,
+      );
+      expect(policy.isJoinable(empty, testNow), isFalse);
+    });
+  });
 }

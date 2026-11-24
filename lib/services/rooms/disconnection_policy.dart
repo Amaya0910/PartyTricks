@@ -97,6 +97,20 @@ class DisconnectionPolicy {
     return others.every((id) => isGone(room, id, now, turnTimeout));
   }
 
+  /// Si todavía vale la pena entrar a la sala [room] desde "Partida
+  /// aleatoria": hay alguien conectado o alguien que se cayó hace muy poco
+  /// (puede volver). Una sala donde todos están desconectados desde hace
+  /// rato es un fantasma: sigue en la lista pública hasta que pasan
+  /// [minAbandonedAfter], pero nadie va a jugar en ella.
+  bool isJoinable(Room room, DateTime now) {
+    final wait = hostTimeout < minHostTimeout ? minHostTimeout : hostTimeout;
+    return room.players.values.any((p) {
+      if (p.connected) return true;
+      final seen = p.lastSeen;
+      return seen != null && now.difference(seen) < wait;
+    });
+  }
+
   /// Si la sala quedó abandonada: nadie conectado y sin señales del
   /// anfitrión (o, si nunca dio, desde que se acabó la espera).
   bool isAbandoned(Room room, DateTime now) {
