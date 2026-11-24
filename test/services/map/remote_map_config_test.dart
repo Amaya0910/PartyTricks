@@ -72,17 +72,34 @@ void main() {
       expect(config.isEnabled('mapa_del_futuro'), isTrue);
       // Esta versión no lo tiene, así que no aparece.
       expect(config.availableOf(ready), ready);
-      expect(config.availableOf(MapCatalog.all), [MapCatalog.mapa01]);
+      // El de Mundo Dulce sí está en el catálogo y está encendido.
+      expect(config.availableOf(MapCatalog.all), [
+        MapCatalog.mapa01,
+        MapCatalog.mapaDulces,
+      ]);
     });
   });
 
   group('las dos condiciones', () {
     test('selectable: false no se muestra aunque esté encendido', () {
-      const config = RemoteMapConfig(enabledIds: {'mapa_dulces'});
+      const config = RemoteMapConfig(enabledIds: {'mapa_oculto'});
 
-      expect(MapCatalog.mapaDulces.selectable, isFalse);
+      expect(hiddenMap.selectable, isFalse);
+      expect(config.isAvailable(hiddenMap), isFalse);
+      expect(config.isAvailable(enabled(hiddenMap)), isTrue);
+    });
+
+    test('un mapa listo no se muestra mientras Firebase no lo encienda', () {
+      const config = RemoteMapConfig();
+
+      expect(MapCatalog.mapaDulces.selectable, isTrue);
       expect(config.isAvailable(MapCatalog.mapaDulces), isFalse);
-      expect(config.isAvailable(dulces), isTrue);
+      expect(
+        const RemoteMapConfig(
+          enabledIds: {'mapa_dulces'},
+        ).isAvailable(MapCatalog.mapaDulces),
+        isTrue,
+      );
     });
 
     test('mapa_01 siempre está encendido', () {

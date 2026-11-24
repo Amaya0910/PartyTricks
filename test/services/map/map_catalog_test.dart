@@ -98,10 +98,12 @@ void main() {
       expect(MapCatalog.selectable, contains(MapCatalog.defaultMap));
     });
 
-    test('Mundo Dulce está en el catálogo pero no en el selector', () {
-      expect(MapCatalog.mapaDulces.selectable, isFalse);
+    test('Mundo Dulce y Reino Nevado están listos para el selector', () {
+      expect(MapCatalog.mapaDulces.selectable, isTrue);
+      expect(MapCatalog.mapaNieve.selectable, isTrue);
       expect(MapCatalog.all, contains(MapCatalog.mapaDulces));
-      expect(MapCatalog.selectable, isNot(contains(MapCatalog.mapaDulces)));
+      expect(MapCatalog.selectable, contains(MapCatalog.mapaDulces));
+      expect(MapCatalog.selectable, contains(MapCatalog.mapaNieve));
       // Las salas y partidas que lo usan lo siguen encontrando.
       expect(MapCatalog.byId('mapa_dulces'), same(MapCatalog.mapaDulces));
       expect(MapCatalog.require('mapa_dulces'), same(MapCatalog.mapaDulces));

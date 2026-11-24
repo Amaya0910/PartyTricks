@@ -77,8 +77,13 @@ void main() {
     expect(find.byKey(const Key('map-list')), findsNothing);
   });
 
-  testWidgets('con el catálogo real, Mundo Dulce no aparece', (tester) async {
-    await openSelector(tester, size: const Size(360, 640));
+  testWidgets('con el catálogo real y Firebase sin encenderlos, solo se ve '
+      'Mapa 1', (tester) async {
+    await openSelector(
+      tester,
+      size: const Size(360, 640),
+      remote: RemoteMapConfig.unavailable,
+    );
 
     expect(find.text('Mapa 1'), findsOneWidget);
     expect(find.text('Mundo Dulce'), findsNothing);
@@ -162,10 +167,26 @@ void main() {
       await openSelector(
         tester,
         size: const Size(360, 640),
-        remote: const RemoteMapConfig(enabledIds: {'mapa_dulces'}),
+        maps: [MapCatalog.mapa01, hiddenMap],
+        remote: const RemoteMapConfig(enabledIds: {'mapa_oculto'}),
       );
 
-      expect(find.text('Mundo Dulce'), findsNothing);
+      expect(find.text('Oculto'), findsNothing);
+    });
+
+    testWidgets('con el catálogo real, los tres mapas aparecen cuando Firebase '
+        'enciende los nuevos', (tester) async {
+      await openSelector(
+        tester,
+        size: const Size(360, 640),
+        remote: const RemoteMapConfig(
+          enabledIds: {'mapa_dulces', 'mapa_nieve'},
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('map-thumb-mapa_01')), findsOne);
+      expect(find.byKey(const ValueKey('map-thumb-mapa_dulces')), findsOne);
+      expect(find.byKey(const ValueKey('map-thumb-mapa_nieve')), findsOne);
     });
 
     testWidgets('Firebase caído: solo mapa_01', (tester) async {

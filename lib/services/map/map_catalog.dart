@@ -145,9 +145,10 @@ class MapCatalog {
     // Las versiones anteriores no lo conocen: no pueden entrar a sus salas.
     minProtocol: ProtocolLevel.candyMap,
     theme: MapThemeCatalog.candy,
-    // Oculto hasta tener el arte final, el .tmj definitivo, las reglas
-    // desplegadas y suficientes jugadores con esta versión.
-    selectable: false,
+    // Listo para elegirse. Además tiene que estar encendido en Firebase
+    // (`config/maps/mapa_dulces/enabled`): ese es el interruptor para
+    // lanzarlo o apagarlo sin publicar otra versión.
+    selectable: true,
   );
 
   static const mapaNieve = MapDefinition(
@@ -162,8 +163,9 @@ class MapCatalog {
     buildBoard: buildSnowBoard,
     minProtocol: ProtocolLevel.snowMap,
     theme: MapThemeCatalog.snow,
-    // Versión tráiler: casillas definitivas, arte provisional.
-    selectable: false,
+    // Listo para elegirse, con el arte provisional del tráiler. Se enciende
+    // en Firebase (`config/maps/mapa_nieve/enabled`).
+    selectable: true,
   );
 
   /// Todos los mapas que esta versión conoce, se puedan elegir o no.

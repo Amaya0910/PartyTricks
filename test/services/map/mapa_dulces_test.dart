@@ -221,8 +221,8 @@ void main() {
       expect(MapCatalog.all.take(2), [MapCatalog.mapa01, map]);
       expect(MapCatalog.defaultMap, same(MapCatalog.mapa01));
       expect(map.name, 'Mundo Dulce');
-      // Oculto en el selector hasta que esté listo.
-      expect(map.selectable, isFalse);
+      // Listo para el selector; falta encenderlo en Firebase.
+      expect(map.selectable, isTrue);
       expect(map.tiledMap, 'assets/maps/mapa_dulces/mapa.tmj');
     });
 

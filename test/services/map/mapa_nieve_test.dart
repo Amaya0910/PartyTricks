@@ -80,11 +80,11 @@ void main() {
   group('catálogo', () {
     const map = MapCatalog.mapaNieve;
 
-    test('está registrado, oculto, con su tema y su protocolo', () {
+    test('está registrado, listo, con su tema y su protocolo', () {
       expect(MapCatalog.byId('mapa_nieve'), same(map));
       expect(MapCatalog.defaultMap, same(MapCatalog.mapa01));
       expect(map.name, 'Reino Nevado');
-      expect(map.selectable, isFalse);
+      expect(map.selectable, isTrue);
       expect(map.theme, same(MapThemeCatalog.snow));
       expect(map.minProtocol, ProtocolLevel.snowMap);
       expect(AppProtocol.current, ProtocolLevel.snowMap);

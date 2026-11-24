@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:party_tricks/models/room.dart';
@@ -14,6 +16,7 @@ void main() {
     List<MapDefinition> maps = MapCatalog.all,
     RemoteMapConfig? remote,
     ValueNotifier<RemoteMapConfig>? liveRemote,
+    Random? random,
   }) async {
     final live = liveRemote ?? ValueNotifier(remote ?? allEnabled(maps));
     tester.view
@@ -32,8 +35,11 @@ void main() {
                     context,
                     builder: (_) => ValueListenableBuilder(
                       valueListenable: live,
-                      builder: (_, remote, _) =>
-                          CreateRoomDialog(remote: remote, maps: maps),
+                      builder: (_, remote, _) => CreateRoomDialog(
+                        remote: remote,
+                        maps: maps,
+                        random: random,
+                      ),
                     ),
                   ),
                 ),
@@ -88,10 +94,12 @@ void main() {
     expect(settings.rounds, 10);
   });
 
-  testWidgets('con el catálogo real no se puede elegir Mundo Dulce', (
-    tester,
-  ) async {
-    final results = await openDialog(tester);
+  testWidgets('con el catálogo real y Firebase sin encenderlos, solo se ve '
+      'Mapa 1', (tester) async {
+    final results = await openDialog(
+      tester,
+      remote: RemoteMapConfig.unavailable,
+    );
 
     await tester.tap(find.byKey(const Key('choose-map')));
     await tester.pumpAndSettle();
@@ -129,6 +137,74 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(results.single!.mapId, 'mapa_01');
+  });
+
+  group('mapa aleatorio', () {
+    testWidgets('con el interruptor, la sala sale con uno de los mapas '
+        'disponibles', (tester) async {
+      final results = await openDialog(
+        tester,
+        maps: fakeMaps(3),
+        random: _FixedRandom(2),
+      );
+
+      await tester.tap(find.byKey(const Key('random-map')));
+      await tester.pumpAndSettle();
+      expect(find.text('Aleatorio'), findsOneWidget);
+      await tester.tap(find.text('Crear'));
+      await tester.pumpAndSettle();
+
+      // El sorteo da la posición 2 de [Mapa 1, Prueba 2, Prueba 3].
+      expect(results.single!.mapId, 'mapa_prueba_3');
+    });
+
+    testWidgets('sin el interruptor se juega el mapa elegido, no uno al azar', (
+      tester,
+    ) async {
+      final results = await openDialog(
+        tester,
+        maps: fakeMaps(3),
+        random: _FixedRandom(2),
+      );
+
+      await tester.tap(find.text('Crear'));
+      await tester.pumpAndSettle();
+
+      expect(results.single!.mapId, 'mapa_01');
+    });
+
+    testWidgets('elegir un mapa a mano apaga lo aleatorio', (tester) async {
+      final results = await openDialog(
+        tester,
+        maps: fakeMaps(3),
+        random: _FixedRandom(2),
+      );
+
+      await tester.tap(find.byKey(const Key('random-map')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('choose-map')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('map-thumb-mapa_prueba_2')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Jugar en Prueba 2'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Aleatorio'), findsNothing);
+      expect(
+        tester.widget<Switch>(find.byKey(const Key('random-map'))).value,
+        isFalse,
+      );
+      await tester.tap(find.text('Crear'));
+      await tester.pumpAndSettle();
+
+      expect(results.single!.mapId, 'mapa_prueba_2');
+    });
+
+    testWidgets('con un solo mapa disponible no se ofrece', (tester) async {
+      await openDialog(tester, remote: RemoteMapConfig.unavailable);
+
+      expect(find.byKey(const Key('random-map')), findsNothing);
+    });
   });
 
   group('interruptor remoto', () {
@@ -202,4 +278,20 @@ void main() {
       expect(results.single!.mapId, 'mapa_01');
     });
   });
+}
+
+/// Un `Random` que siempre da el mismo número.
+class _FixedRandom implements Random {
+  _FixedRandom(this.value);
+
+  final int value;
+
+  @override
+  int nextInt(int max) => value;
+
+  @override
+  bool nextBool() => false;
+
+  @override
+  double nextDouble() => 0;
 }
