@@ -1,4 +1,6 @@
 import 'package:party_tricks/models/accessory_style.dart';
+import 'package:party_tricks/models/character_look.dart';
+import 'package:party_tricks/models/pants_style.dart';
 import 'package:party_tricks/models/hair_color.dart';
 import 'package:party_tricks/models/hair_style.dart';
 import 'package:party_tricks/models/avatar_color.dart';
@@ -30,6 +32,7 @@ class PublicProfile {
     this.mouthColor = MouthColor.defaultIndex,
     this.shirt = ShirtStyle.defaultStyle,
     this.accessory,
+    this.pants,
     this.hair,
     this.hairColor = HairColor.defaultIndex,
     this.avatarColor = AvatarColor.defaultIndex,
@@ -57,6 +60,9 @@ class PublicProfile {
   /// Camisa y accesorio puestos (el accesorio se ve en la foto de perfil).
   final ShirtStyle shirt;
   final AccessoryStyle? accessory;
+
+  /// Pantalón puesto (null = ninguno).
+  final PantsStyle? pants;
 
   /// Cabello puesto (null = ninguno) y la posición de su color en HairColor.
   final HairStyle? hair;
@@ -87,6 +93,7 @@ class PublicProfile {
       ),
       shirt: ShirtStyle.fromId((map['shirt'] as num?)?.toInt()),
       accessory: AccessoryStyle.fromId((map['accessory'] as num?)?.toInt()),
+      pants: PantsStyle.fromId((map['pants'] as num?)?.toInt()),
       hair: HairStyle.fromId((map['hair'] as num?)?.toInt()),
       hairColor: HairColor.clamp(
         (map['hairColor'] as num?)?.toInt() ?? HairColor.defaultIndex,
@@ -110,11 +117,28 @@ class PublicProfile {
     'mouthColor': mouthColor,
     'shirt': shirt.id,
     'accessory': accessory?.id ?? 0,
+    'pants': pants?.id ?? 0,
     'hair': hair?.id ?? 0,
     'hairColor': hairColor,
     'avatarColor': avatarColor,
     'facePhoto': facePhoto?.base64,
   };
+
+  /// El personaje completo del jugador, listo para dibujarlo (por ejemplo en
+  /// el mapa de la partida, donde los demás ven su aspecto real).
+  CharacterLook get look => CharacterLook(
+    skinTone: SkinTone.colorOf(skinTone),
+    eyes: eyes,
+    eyeColor: EyeColor.colorOf(eyeColor),
+    mouth: mouth,
+    mouthColor: MouthColor.colorOf(mouthColor),
+    shirt: shirt,
+    pants: pants,
+    accessory: accessory,
+    hair: hair,
+    hairColor: hairColor,
+    facePhoto: facePhoto,
+  );
 
   /// Si guardar [other] cambiaría algo (para no escribir de más).
   bool sameAs(PublicProfile other) {
@@ -130,6 +154,7 @@ class PublicProfile {
         mouthColor == other.mouthColor &&
         shirt == other.shirt &&
         accessory == other.accessory &&
+        pants == other.pants &&
         hair == other.hair &&
         hairColor == other.hairColor &&
         avatarColor == other.avatarColor &&

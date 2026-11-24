@@ -26,6 +26,7 @@ class PublicProfileController {
       mouthColor: profile.mouthColor,
       shirt: profile.shirt,
       accessory: profile.accessory,
+      pants: profile.pants,
       hair: profile.hair,
       hairColor: profile.hairColor,
       avatarColor: profile.avatarColor,
