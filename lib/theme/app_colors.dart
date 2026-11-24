@@ -87,6 +87,12 @@ class AppColors {
   static const Color authShadow = Color(0x6663A9DB);
 
   // ---------------------------------------------------------------------------
+  // Marcadores de posición (hasta tener el arte final)
+  // ---------------------------------------------------------------------------
+
+  static const Color placeholderIcon = Color(0xB3FFFFFF);
+
+  // ---------------------------------------------------------------------------
   // Tablero (provisional hasta tener el dibujo del tablero)
   // ---------------------------------------------------------------------------
 
@@ -99,6 +105,20 @@ class AppColors {
 
   /// Trampa puesta en el tablero de cuadritos.
   static const Color trap = Color(0xFF424242);
+
+  /// Camino del mapa dibujado si su textura no carga.
+  static const Color mapPath = Color(0xFFB8AFA3);
+
+  /// Tema de Mundo Dulce: suelo si el fondo no carga, camino sin textura y
+  /// color del mapa en el selector.
+  static const Color candyGround = Color(0xFFF9D6E3);
+  static const Color candyPath = Color(0xFFE2A66B);
+  static const Color candyAccent = Color(0xFFE0457B);
+
+  /// Tema de Reino Nevado, con el mismo uso que los de Mundo Dulce.
+  static const Color snowGround = Color(0xFFEAF4FB);
+  static const Color snowPath = Color(0xFF9EC5E0);
+  static const Color snowAccent = Color(0xFF3A8DDE);
 
   // ---------------------------------------------------------------------------
   // Resultados

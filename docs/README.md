@@ -16,6 +16,7 @@ Este es el índice de la documentación. Cada documento tiene un propósito; si 
 | [`results_system.md`](results_system.md) | Pantalla de resultados, XP y qué se guarda al terminar la partida |
 | [`disconnections.md`](disconnections.md) | Presencia, cambio de anfitrión, reconexión y limpieza de salas |
 | [`arte_imagenes.md`](arte_imagenes.md) | Imágenes y capas del personaje, mapa, ícono y cómo se exportan |
+| [`protocolo.md`](protocolo.md) | Protocolo de juego: qué versiones pueden jugar juntas y cuándo subirlo |
 | [`decisiones.md`](decisiones.md) | Decisiones técnicas y por qué se tomaron (incluye la auditoría de seguridad, D-48) |
 | [`progreso_desarrollo.md`](progreso_desarrollo.md) | Registro de cada bloque de trabajo y su estado |
 | [`roles_y_ramas.md`](roles_y_ramas.md) | Roles del equipo, ramas de Git y reglas de trabajo |

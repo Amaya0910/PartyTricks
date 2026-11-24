@@ -2,7 +2,7 @@
 
 Pruebas automáticas de `firestore.rules` y `database.rules.json` con el
 emulador local de Firebase. Salieron de la auditoría de seguridad (OWASP Mobile
-Top 10): cada archivo prueba un hallazgo (`h01_…`, `h03_…`, `h04_…`, `h08_…`, `h13_…`).
+Top 10): cada archivo prueba un hallazgo (`h01_…`, `h03_…`, `h04_…`, `h08_…`, `h13_…`). `mapas_protocolo.test.mjs` prueba las reglas de varios mapas y del protocolo de versiones: que las versiones viejas sigan jugando, que un mapa nuevo solo se use si está encendido en `config/maps` y que una versión que no lo entiende no entre a sus salas.
 
 Cada archivo tiene dos tipos de prueba:
 

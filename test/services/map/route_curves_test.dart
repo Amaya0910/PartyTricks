@@ -138,7 +138,11 @@ void main() {
     final json =
         jsonDecode(File('assets/maps/mapa_01/mapa.tmj').readAsStringSync())
             as Map<String, dynamic>;
-    final map = TiledMapParser().parse(json, mapDir: 'assets/maps/mapa_01');
+    final map = TiledMapParser().parse(
+      json,
+      mapDir: 'assets/maps/mapa_01',
+      background: 'assets/maps/mapa_01/fondo.png',
+    );
     final board = buildDefaultBoard();
     final routes = RouteCurves.build(map, board);
 

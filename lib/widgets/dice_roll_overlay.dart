@@ -36,10 +36,14 @@ class DiceRoll {
 /// Solo es para verse: el número ya lo decidió el juego. No tapa los toques
 /// del mapa y se quita solo al terminar.
 class DiceRollOverlay extends StatefulWidget {
-  const DiceRollOverlay({super.key, required this.roll});
+  const DiceRollOverlay({super.key, required this.roll, this.onBusyChanged});
 
   /// La última tirada, o null si todavía no hay.
   final DiceRoll? roll;
+
+  /// Avisa cuando el dado empieza a animarse (true) y cuando termina
+  /// (false). Sirve para esperar a que acabe antes de mostrar lo que sigue.
+  final ValueChanged<bool>? onBusyChanged;
 
   @override
   State<DiceRollOverlay> createState() => _DiceRollOverlayState();
@@ -60,13 +64,30 @@ class _DiceRollOverlayState extends State<DiceRollOverlay>
 
   late final AnimationController _controller;
 
+  /// Lo último que se avisó, para no repetirlo.
+  bool _reportedBusy = false;
+
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: _duration)
       ..addStatusListener((_) {
         if (mounted) setState(() {});
+        _reportBusy();
       });
+  }
+
+  /// Avisa si el dado se está animando. Se hace después del cuadro: el aviso
+  /// puede llegar mientras el árbol se arma y quien lo recibe cambia su
+  /// estado.
+  void _reportBusy() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final busy = _controller.isAnimating;
+      if (busy == _reportedBusy) return;
+      _reportedBusy = busy;
+      widget.onBusyChanged?.call(busy);
+    });
   }
 
   @override
@@ -75,6 +96,7 @@ class _DiceRollOverlayState extends State<DiceRollOverlay>
     final roll = widget.roll;
     if (roll != null && roll.serial != oldWidget.roll?.serial) {
       _controller.forward(from: 0);
+      _reportBusy();
     }
   }
 
@@ -105,31 +127,18 @@ class _DiceRollOverlayState extends State<DiceRollOverlay>
     );
   }
 
+  /// Cuánto se retrasa el dado extra respecto al normal, como parte de la
+  /// animación: así se ven caer los dos y no uno encima del otro.
+  static const _extraDelay = 0.06;
+
   Widget _frame(DiceRoll roll, double dieSize, double t) {
     final opacity = t < _fadeStart
         ? 1.0
         : 1 - (t - _fadeStart) / (1 - _fadeStart);
-    final double angle;
-    final double drop;
-    final double scale;
-    final int face;
-    if (t < _tumbleEnd) {
-      final p = t / _tumbleEnd;
-      // Gira dos vueltas frenando y termina derecho.
-      angle = (1 - Curves.easeOutCubic.transform(p)) * 4 * pi;
-      drop = (1 - Curves.bounceOut.transform(p)) * -dieSize * 1.5;
-      scale = 0.6 + 0.4 * Curves.easeOut.transform(p);
-      // Cambia de cara cada poco, como si rodara.
-      face = (p * 14).floor() * 5 % _tumbleFaces + 1;
-    } else {
-      angle = 0;
-      drop = 0;
-      face = roll.value;
-      scale = t < _popEnd
-          ? 1 + 0.25 * sin(pi * (t - _tumbleEnd) / (_popEnd - _tumbleEnd))
-          : 1;
-    }
-    final landed = t >= _tumbleEnd;
+    final hasExtra = roll.extra > 0;
+    // Con dos dados, cada uno un poco más chico para que quepan juntos.
+    final size = hasExtra ? dieSize * 0.85 : dieSize;
+    final landed = t >= _tumbleEnd + (hasExtra ? _extraDelay : 0);
     return Opacity(
       opacity: opacity.clamp(0, 1).toDouble(),
       child: ColoredBox(
@@ -138,15 +147,32 @@ class _DiceRollOverlayState extends State<DiceRollOverlay>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Transform.translate(
-                offset: Offset(0, drop),
-                child: Transform.rotate(
-                  angle: angle,
-                  child: Transform.scale(
-                    scale: scale,
-                    child: _Die(size: dieSize, value: face, color: roll.color),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _tumblingDie(
+                    key: const Key('die-main'),
+                    t: t,
+                    size: size,
+                    value: roll.value,
+                    color: roll.color,
+                    spin: 1,
+                    faceShift: 0,
                   ),
-                ),
+                  if (hasExtra) ...[
+                    SizedBox(width: size * 0.25),
+                    // Gira para el otro lado y cae un instante después.
+                    _tumblingDie(
+                      key: const Key('die-extra'),
+                      t: t - _extraDelay,
+                      size: size,
+                      value: roll.extra,
+                      color: roll.color,
+                      spin: -1,
+                      faceShift: 2,
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 16),
               AnimatedOpacity(
@@ -160,12 +186,62 @@ class _DiceRollOverlayState extends State<DiceRollOverlay>
       ),
     );
   }
+
+  /// Un dado que cae girando, rebota y muestra [value]. [t] es su propio
+  /// avance de 0 a 1 (puede ser negativo si todavía no sale); [spin] es el
+  /// sentido del giro y [faceShift] cambia las caras que pasan mientras rueda.
+  Widget _tumblingDie({
+    required Key key,
+    required double t,
+    required double size,
+    required int value,
+    required Color color,
+    required double spin,
+    required int faceShift,
+  }) {
+    final double angle;
+    final double drop;
+    final double scale;
+    final int face;
+    if (t < _tumbleEnd) {
+      final p = (t / _tumbleEnd).clamp(0.0, 1.0);
+      // Gira dos vueltas frenando y termina derecho.
+      angle = spin * (1 - Curves.easeOutCubic.transform(p)) * 4 * pi;
+      drop = (1 - Curves.bounceOut.transform(p)) * -size * 1.5;
+      scale = 0.6 + 0.4 * Curves.easeOut.transform(p);
+      // Cambia de cara cada poco, como si rodara.
+      face = ((p * 14).floor() * 5 + faceShift) % _tumbleFaces + 1;
+    } else {
+      angle = 0;
+      drop = 0;
+      face = value;
+      scale = t < _popEnd
+          ? 1 + 0.25 * sin(pi * (t - _tumbleEnd) / (_popEnd - _tumbleEnd))
+          : 1;
+    }
+    return Transform.translate(
+      offset: Offset(0, drop),
+      child: Transform.rotate(
+        angle: angle,
+        child: Transform.scale(
+          scale: scale,
+          // La clave va en el dado: así su posición incluye la caída.
+          child: _Die(key: key, size: size, value: face, color: color),
+        ),
+      ),
+    );
+  }
 }
 
 /// Una cara del dado con las imágenes de arte (dado_1 a dado_6). Si falta
 /// la imagen, se dibuja un dado blanco con el número del color del jugador.
 class _Die extends StatelessWidget {
-  const _Die({required this.size, required this.value, required this.color});
+  const _Die({
+    super.key,
+    required this.size,
+    required this.value,
+    required this.color,
+  });
 
   final double size;
   final int value;
@@ -257,7 +333,9 @@ class _Label extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '${roll.username} sacó ${roll.value}',
+            roll.extra > 0
+                ? '${roll.username} sacó ${roll.value} y ${roll.extra}'
+                : '${roll.username} sacó ${roll.value}',
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

@@ -48,6 +48,24 @@ void main() {
     );
   });
 
+  test('mientras se retiene (siguen el dado y la caminata) no cuenta, y '
+      'después empieza de cero', () {
+    final referee = MinigameReferee();
+    final game = _game(minigame: _stopwatch);
+    final limit = _rules.timeLimit(_stopwatch);
+
+    expect(referee.check(game, _start), isNull, reason: 'empieza a contar');
+    // Pasa más del límite, pero la pantalla todavía no mostraba el minijuego.
+    referee.hold();
+    final released = _start.add(limit + const Duration(seconds: 30));
+    expect(referee.check(game, released), isNull, reason: 'cuenta de nuevo');
+    expect(
+      referee.check(game, released.add(limit - const Duration(seconds: 1))),
+      isNull,
+    );
+    expect(referee.check(game, released.add(limit)), isNotNull);
+  });
+
   test('si la acción se perdió, la vuelve a pedir pasado otro plazo', () {
     final referee = MinigameReferee();
     final game = _game(minigame: _stopwatch);
