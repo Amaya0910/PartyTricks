@@ -17,6 +17,7 @@ const perfilDeTay = {
   eyeColor: 0,
   mouth: 1,
   mouthColor: 0,
+  pants: 0,
   avatarColor: 0,
   facePhoto: null,
 };
@@ -88,5 +89,11 @@ describe('H-04 · El perfil público no se puede falsificar', () => {
 
   it('el dueño publica su perfil tal como lo arma la app', async () => {
     await assertSucceeds(publicar(TAY, perfilDeTay));
+  });
+
+  // El pantalón se publica para que los demás vean el aspecto real del
+  // personaje en el mapa de la partida.
+  it('el dueño puede publicar el pantalón que lleva puesto', async () => {
+    await assertSucceeds(publicar(TAY, { ...perfilDeTay, pants: 3 }));
   });
 });

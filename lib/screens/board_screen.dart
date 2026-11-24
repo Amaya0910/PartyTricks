@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/controllers/character_look_controller.dart';
+import 'package:party_tricks/models/character_look.dart';
+import 'package:party_tricks/services/social/social_providers.dart';
 import 'package:party_tricks/controllers/results_controller.dart';
 import 'package:party_tricks/controllers/room_guard.dart';
 import 'package:party_tricks/controllers/stats_controller.dart';
@@ -376,9 +378,16 @@ class _BoardScreenState extends ConsumerState<BoardScreen> {
       pathTexture: texture,
       state: game,
       myId: myId,
-      // De los demás jugadores todavía no se tiene el aspecto en la partida:
-      // se dibujan con el de quien no ha elegido nada.
-      looks: {myId: ref.watch(characterLookProvider)},
+      // El mío sale de mi vestuario; el de los demás, de su perfil público.
+      // Mientras llega (o si no existe) se dibuja el de quien no ha elegido.
+      looks: {
+        for (final id in game.players.keys)
+          if (id != myId)
+            id:
+                ref.watch(publicProfileProvider(id)).value?.look ??
+                CharacterLook.standard,
+        myId: ref.watch(characterLookProvider),
+      },
       onChooseBranch: (branch) => _send(ChooseBranch(myId, branch)),
     );
   }

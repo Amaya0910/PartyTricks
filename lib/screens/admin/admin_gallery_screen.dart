@@ -14,7 +14,6 @@ import 'package:party_tricks/widgets/confirm_dialog.dart';
 import 'package:party_tricks/widgets/create_room_dialog.dart';
 import 'package:party_tricks/widgets/dice_roll_overlay.dart';
 import 'package:party_tricks/widgets/minigames/minigame_result_overlay.dart';
-import 'package:party_tricks/widgets/party_character.dart';
 import 'package:party_tricks/widgets/settings_section.dart';
 import 'package:party_tricks/widgets/skin_tone_picker.dart';
 
@@ -244,15 +243,14 @@ class _CharacterPreviewState extends State<_CharacterPreview> {
         SettingsSection(
           title: 'Sala y tablero',
           children: [
-            // Todavía usa la piel fija (AppColors.characterSkin): aquí se
-            // ve cuando el tono llegue a la sala y al tablero.
+            // Los personajes reales de la sala, con distintos tonos de piel.
             SizedBox(
               height: 120,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  for (final color in AppColors.players)
-                    Flexible(child: PartyCharacter(color: color, height: 90)),
+                  for (final skin in AppColors.skinTones.take(4))
+                    Flexible(child: AnimatedCharacter(skinTone: skin)),
                 ],
               ),
             ),

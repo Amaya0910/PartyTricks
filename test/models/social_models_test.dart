@@ -1,4 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:party_tricks/models/character_look.dart';
+import 'package:party_tricks/models/pants_style.dart';
+import 'package:party_tricks/models/shirt_style.dart';
 import 'package:party_tricks/models/social/chat_message.dart';
 import 'package:party_tricks/models/social/chat_summary.dart';
 import 'package:party_tricks/models/social/friendship.dart';
@@ -145,4 +148,28 @@ void main() {
     expect(a.sameAs(c), isFalse);
     expect(PublicProfile.fromMap('u', a.toMap()).sameAs(a), isTrue);
   });
+
+  test(
+    'PublicProfile: el pantalón viaja en el perfil y llega al personaje',
+    () {
+      final pants = PantsStyle.values.first;
+      final pub = PublicProfile(
+        uid: 'u',
+        username: 'Ana',
+        pants: pants,
+        shirt: ShirtStyle.values.last,
+      );
+      final read = PublicProfile.fromMap('u', pub.toMap());
+      expect(read.pants, pants);
+      expect(read.sameAs(pub), isTrue);
+      expect(read.look.pants, pants);
+      expect(read.look.shirt, ShirtStyle.values.last);
+      // Sin pantalón guardado (perfiles viejos) no se dibuja ninguno.
+      expect(PublicProfile.fromMap('u', {'username': 'x'}).look.pants, isNull);
+      expect(
+        const PublicProfile(uid: 'u', username: 'x').look,
+        isA<CharacterLook>(),
+      );
+    },
+  );
 }

@@ -709,7 +709,7 @@ service cloud.firestore {
     function publicProfileKeys() {
       return ['username', 'friendCode', 'experience', 'photoUrl', 'skinTone',
               'eyes', 'eyeColor', 'mouth', 'mouthColor', 'shirt', 'accessory',
-              'hair', 'hairColor', 'avatarColor', 'facePhoto'];
+              'pants', 'hair', 'hairColor', 'avatarColor', 'facePhoto'];
     }
 
     // Foto de perfil: nada, o una foto de Google por HTTPS (H-03). Es la

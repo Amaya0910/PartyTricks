@@ -113,9 +113,13 @@ class _StopwatchGameState extends State<StopwatchGame>
                 color: AppColors.authHint,
               ),
               const SizedBox(width: 6),
-              Text(
-                'El reloj se escondió',
-                style: minigameTextStyle.copyWith(color: AppColors.authHint),
+              // Flexible: en pantallas angostas el texto baja de línea en vez
+              // de salirse de la tarjeta.
+              Flexible(
+                child: Text(
+                  'El reloj se escondió',
+                  style: minigameTextStyle.copyWith(color: AppColors.authHint),
+                ),
               ),
             ],
           ),

@@ -75,9 +75,10 @@ class FirebaseRoomService implements RoomService {
     final snapshot = await _db.ref('publicLobby').limitToFirst(20).get();
     for (final child in snapshot.children) {
       try {
-        return await _join(child.key!, uid, username);
+        return await _join(child.key!, uid, username, onlyIfAlive: true);
       } on RoomException {
-        // Esa sala se llenó o arrancó; se prueba con la siguiente.
+        // Esa sala se llenó, arrancó o quedó sin nadie; se prueba con la
+        // siguiente.
       }
     }
     return null;
@@ -210,7 +211,12 @@ class FirebaseRoomService implements RoomService {
 
   /// Agrega al jugador si la sala espera jugadores y tiene cupo. La
   /// transacción evita que dos entren al último puesto al mismo tiempo.
-  Future<Room> _join(String id, String uid, String username) async {
+  Future<Room> _join(
+    String id,
+    String uid,
+    String username, {
+    bool onlyIfAlive = false,
+  }) async {
     final snapshot = await _room(id).get();
     if (snapshot.value == null) {
       throw const RoomException('La sala ya no existe');
@@ -219,6 +225,12 @@ class FirebaseRoomService implements RoomService {
     if (room.players.containsKey(uid)) return room;
     if (room.status != RoomStatus.waiting) {
       throw const RoomException('La partida ya empezó');
+    }
+    // Desde "Partida aleatoria" no se entra a una sala donde todos están
+    // desconectados (los jugadores fantasma de una sesión que se cerró).
+    if (onlyIfAlive &&
+        !const DisconnectionPolicy().isJoinable(room, DateTime.now())) {
+      throw const RoomException('La sala ya no tiene a nadie');
     }
 
     final player = RoomPlayer(
