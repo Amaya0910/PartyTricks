@@ -12,6 +12,7 @@
 - **Estilo:**
   - **Sin contorno** en el escenario del mapa: plataformas, marcas, tienda, puentes, decoraciones, textura del camino y fondos.
   - **Con contorno negro** (mínimo 2 px en el tamaño exportado): personaje, cosméticos, flecha de bifurcación y marcas que lo necesiten. Moneda, diamante y dados van sin contorno.
+  - **Excepción: Mundo Dulce (tema `dulces`).** Sus marcas de casilla (incluida `marca_bifurcacion.png`), `flecha_bifurcacion.png` y `diamante.png` llevan **contorno chocolate `#3B2218`** (no negro), para que se lean sobre el fondo rosado. `trampa.png` va sin contorno: su cuerpo `#424242` ya da el contraste a 18–24 px. Sus plataformas, tiendas, camino y fondo siguen sin contorno. Estilo, paleta y prompts en `docs/prompts_arte_mundo_dulce.md`.
   - Colores planos, con máximo 3 tonos por objeto: base, claro y oscuro.
   - **Luz desde arriba a la izquierda:** los brillos van arriba a la izquierda y las sombras abajo a la derecha, en todas las piezas.
   - Reutilizamos los colores que ya tenemos: el verde del pasto, el café de la tierra, la piel, el azul del diamante y el dorado de la moneda. Si se agrega uno nuevo, se anota, porque luego se pasa a `AppColors`.
