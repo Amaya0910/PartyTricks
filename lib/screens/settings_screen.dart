@@ -19,6 +19,8 @@ import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/auth/auth_service.dart';
 import 'package:party_tricks/services/character/character_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 import 'package:party_tricks/widgets/app_background.dart';
 import 'package:party_tricks/widgets/code_digits.dart';
 import 'package:party_tricks/widgets/confirm_dialog.dart';
@@ -91,13 +93,17 @@ class _TopBar extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-        child: FilledButton.icon(
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.settingsReload,
+        child: SizedBox(
+          width: 130,
+          child: PartyButton(
+            label: 'Volver',
+            icon: Icons.chevron_left_rounded,
+            color: AppColors.settingsReload,
+            edgeColor: null,
+            height: 46,
+            fontSize: 18,
+            onPressed: () => Navigator.of(context).pop(),
           ),
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.chevron_left),
-          label: const Text('Volver'),
         ),
       ),
     );
@@ -128,7 +134,12 @@ class _Panel extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               itemCount: children.length,
               separatorBuilder: (_, _) => const SizedBox(height: 16),
-              itemBuilder: (_, index) => children[index],
+              // Las tarjetas entran una detrás de otra.
+              itemBuilder: (_, index) => PopIn.staggered(
+                index: index.clamp(0, 4),
+                from: const Offset(0, 0.2),
+                child: children[index],
+              ),
             ),
           ),
         ),
@@ -170,6 +181,9 @@ class _CodeCard extends ConsumerWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.friendsBorder, width: 2),
+        boxShadow: const [
+          BoxShadow(color: AppColors.friendsBorder, offset: Offset(0, 4)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,27 +198,31 @@ class _CodeCard extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.settingsCopy,
-                  ),
+                child: PartyButton(
+                  label: 'Copiar',
+                  icon: Icons.copy_rounded,
+                  color: AppColors.settingsCopy,
+                  edgeColor: AppColors.inactiveButton,
+                  height: 46,
+                  fontSize: 17,
                   onPressed: () async {
                     await Clipboard.setData(
                       ClipboardData(text: profile.friendCode),
                     );
                     if (context.mounted) _show(context, 'Código copiado');
                   },
-                  child: const Text('Copiar'),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.settingsReload,
-                  ),
+                child: PartyButton(
+                  label: 'Recargar',
+                  icon: Icons.refresh_rounded,
+                  color: AppColors.settingsReload,
+                  edgeColor: null,
+                  height: 46,
+                  fontSize: 17,
                   onPressed: () => _reload(context, ref),
-                  child: const Text('Recargar'),
                 ),
               ),
             ],

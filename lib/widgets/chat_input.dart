@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/social/chat_message.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/chunky_button.dart';
 
 /// Campo para escribir del chat ("Presiona para escribir") con el botón de
 /// enviar. Limita el mensaje a [ChatMessage.maxLength] caracteres.
@@ -58,10 +59,25 @@ class _ChatInputState extends State<ChatInput> {
               ),
             ),
           ),
-          IconButton(
-            tooltip: 'Enviar',
-            onPressed: widget.enabled && !_sending ? _send : null,
-            icon: const Icon(Icons.send, color: AppColors.friendsAccent),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4, left: 4, right: 4),
+            child: Tooltip(
+              message: 'Enviar',
+              child: ChunkyButton(
+                color: AppColors.friendsAccent,
+                edgeColor: AppColors.friendsBorder,
+                radius: 22,
+                depth: 4,
+                padding: const EdgeInsets.all(10),
+                semanticLabel: 'Enviar',
+                onPressed: widget.enabled && !_sending ? _send : null,
+                child: const Icon(
+                  Icons.send_rounded,
+                  size: 22,
+                  color: AppColors.white,
+                ),
+              ),
+            ),
           ),
         ],
       ),
