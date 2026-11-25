@@ -16,13 +16,25 @@ Future<T?> showBlurredDialog<T>(
     barrierDismissible: true,
     barrierLabel: 'Cerrar',
     barrierColor: AppColors.dialogBarrier,
-    transitionDuration: const Duration(milliseconds: 220),
+    transitionDuration: const Duration(milliseconds: 340),
     pageBuilder: (context, _, _) => builder(context),
     transitionBuilder: (context, animation, _, child) {
       final blur = _dialogBlur * animation.value;
+      // Entra creciendo con un rebote y sale encogiéndose rápido.
+      final scale = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutBack,
+        reverseCurve: Curves.easeInCubic,
+      );
       return BackdropFilter(
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: FadeTransition(opacity: animation, child: child),
+        child: FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1).animate(scale),
+            child: child,
+          ),
+        ),
       );
     },
   );
@@ -139,8 +151,13 @@ class _Header extends StatelessWidget {
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontSize: 32,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
           color: AppColors.white,
+          // Sombra dura debajo de las letras: título de juego, no de
+          // formulario.
+          shadows: [
+            Shadow(color: AppColors.headerBorder, offset: Offset(0, 3)),
+          ],
         ),
       ),
     );

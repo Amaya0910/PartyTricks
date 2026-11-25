@@ -114,6 +114,18 @@ class _LiquidPainter extends CustomPainter {
       canvas.restore();
     }
 
+    // Reflejo blanco en la parte de arriba: la barra se ve de vidrio.
+    final glossRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        size.height * 0.35,
+        size.height * 0.16,
+        size.width - size.height * 0.7,
+        size.height * 0.22,
+      ),
+      Radius.circular(size.height * 0.11),
+    );
+    canvas.drawRRect(glossRect, Paint()..color = AppColors.gloss);
+
     canvas.drawRRect(
       rrect,
       Paint()
