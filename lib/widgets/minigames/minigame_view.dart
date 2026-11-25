@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
+import 'package:party_tricks/services/feedback/haptics.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/minigames/balloon_game.dart';
 import 'package:party_tricks/widgets/minigames/coin_rain_game.dart';
@@ -625,7 +626,10 @@ class _MinigameButtonState extends State<MinigameButton> {
   bool _pressed = false;
 
   void _setPressed(bool value) {
-    if (mounted && _pressed != value) setState(() => _pressed = value);
+    if (!mounted || _pressed == value) return;
+    // Vibra al hundirse (no al soltarlo).
+    if (value) HapticsScope.of(context).tap();
+    setState(() => _pressed = value);
   }
 
   @override

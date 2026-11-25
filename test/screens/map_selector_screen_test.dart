@@ -8,6 +8,7 @@ import 'package:party_tricks/services/map/remote_map_config.dart';
 import 'package:party_tricks/widgets/map/map_preview_image.dart';
 
 import '../services/map/fake_maps.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
 
 void main() {
   /// Abre el selector desde un botón y guarda lo que devuelve.
@@ -300,10 +301,8 @@ void main() {
   ) async {
     await openSelector(tester, size: const Size(360, 640), maps: fakeMaps(3));
     Color buttonColor() => tester
-        .widget<FilledButton>(find.byKey(const Key('choose-map-button')))
-        .style!
-        .backgroundColor!
-        .resolve(const {})!;
+        .widget<PartyButton>(find.byKey(const Key('choose-map-button')))
+        .color;
     final classicColor = buttonColor();
 
     await tester.tap(find.byKey(const ValueKey('map-thumb-mapa_prueba_2')));

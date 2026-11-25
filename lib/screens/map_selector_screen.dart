@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:party_tricks/services/map/board_summary.dart';
 import 'package:party_tricks/services/map/map_catalog.dart';
 import 'package:party_tricks/services/map/remote_map_config.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 import 'package:party_tricks/widgets/map/map_preview_image.dart';
 
 /// Pantalla para elegir el mapa de la sala. Devuelve el id del mapa elegido
@@ -85,9 +89,17 @@ class _MapSelectorScreenState extends State<MapSelectorScreen> {
       appBar: AppBar(
         backgroundColor: accent,
         foregroundColor: AppColors.white,
-        title: const Text(
+        title: Text(
           'Elige el mapa',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            shadows: [
+              Shadow(
+                color: Color.alphaBlend(AppColors.edgeShade, accent),
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
         ),
       ),
       body: SafeArea(
@@ -132,25 +144,15 @@ class _MapSelectorScreenState extends State<MapSelectorScreen> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: SizedBox(
-            height: 48,
-            child: FilledButton(
-              key: const Key('choose-map-button'),
-              style: FilledButton.styleFrom(
-                backgroundColor: accent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: _choose,
-              child: Text(
-                'Jugar en ${_selected.name}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+          // Toma el color del mapa elegido.
+          child: PartyButton(
+            key: const Key('choose-map-button'),
+            label: 'Jugar en ${_selected.name}',
+            icon: Icons.play_arrow_rounded,
+            color: accent,
+            edgeColor: null,
+            fontSize: 18,
+            onPressed: _choose,
           ),
         ),
       ),
@@ -187,28 +189,65 @@ class _MapDetail extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: previewHeight,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: DecoratedBox(
-                    position: DecorationPosition.foreground,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.white, width: 3),
+              // Al cambiar de mapa, la vista previa entra con un rebote.
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 350),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.9, end: 1).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutBack,
+                      ),
                     ),
-                    child: MapPreviewImage(key: ValueKey(map.id), map: map),
+                    child: child,
+                  ),
+                ),
+                child: Container(
+                  key: ValueKey(map.id),
+                  height: previewHeight,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color.alphaBlend(
+                          AppColors.edgeShade,
+                          map.theme.colors.accent,
+                        ),
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: DecoratedBox(
+                      position: DecorationPosition.foreground,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.white, width: 3),
+                      ),
+                      child: MapPreviewImage(map: map),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 map.name,
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
                   color: AppColors.white,
-                  shadows: [Shadow(color: AppColors.pillShadow, blurRadius: 4)],
+                  shadows: [
+                    Shadow(
+                      color: Color.alphaBlend(
+                        AppColors.edgeShade,
+                        map.theme.colors.accent,
+                      ),
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 4),
@@ -220,32 +259,21 @@ class _MapDetail extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
+                // Los datos del mapa saltan uno detrás de otro.
                 children: [
-                  _InfoChip(
-                    icon: Icons.grid_view_rounded,
-                    label: '${summary.tiles} casillas · ${summary.size.label}',
-                  ),
-                  _InfoChip(
-                    icon: Icons.alt_route,
-                    label: summary.forks == 1
-                        ? '1 atajo'
-                        : '${summary.forks} atajos',
-                  ),
-                  _InfoChip(
-                    icon: Icons.storefront,
-                    label: summary.shops == 1
-                        ? '1 tienda'
-                        : '${summary.shops} tiendas',
-                  ),
-                  _InfoChip(
-                    icon: Icons.timer_outlined,
-                    label: '≈ $minutes min ($rounds rondas)',
-                  ),
-                  _InfoChip(
-                    icon: Icons.group,
-                    label: '${recommended.min}–${recommended.max} jugadores',
-                  ),
-                  _ProtocolChip(map: map),
+                  for (final (index, chip) in _chips(
+                    map,
+                    summary,
+                    minutes,
+                    recommended,
+                  ).indexed)
+                    PopIn.staggered(
+                      key: ValueKey('${map.id}-$index'),
+                      index: index,
+                      startScale: 0.6,
+                      from: Offset.zero,
+                      child: chip,
+                    ),
                 ],
               ),
             ],
@@ -254,6 +282,35 @@ class _MapDetail extends StatelessWidget {
       },
     );
   }
+
+  List<Widget> _chips(
+    MapDefinition map,
+    BoardSummary summary,
+    int minutes,
+    ({int min, int max}) recommended,
+  ) => [
+    _InfoChip(
+      icon: Icons.grid_view_rounded,
+      label: '${summary.tiles} casillas · ${summary.size.label}',
+    ),
+    _InfoChip(
+      icon: Icons.alt_route,
+      label: summary.forks == 1 ? '1 atajo' : '${summary.forks} atajos',
+    ),
+    _InfoChip(
+      icon: Icons.storefront,
+      label: summary.shops == 1 ? '1 tienda' : '${summary.shops} tiendas',
+    ),
+    _InfoChip(
+      icon: Icons.timer_outlined,
+      label: '≈ $minutes min ($rounds rondas)',
+    ),
+    _InfoChip(
+      icon: Icons.group,
+      label: '${recommended.min}–${recommended.max} jugadores',
+    ),
+    _ProtocolChip(map: map),
+  ];
 }
 
 class _InfoChip extends StatelessWidget {
@@ -271,6 +328,8 @@ class _InfoChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color, width: 1.5),
+        boxShadow: [BoxShadow(color: color, offset: const Offset(0, 2))],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -283,7 +342,7 @@ class _InfoChip extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w800,
                 color: color,
               ),
             ),
@@ -373,45 +432,65 @@ class _MapThumb extends StatelessWidget {
       selected: selected,
       button: true,
       label: map.name,
-      child: GestureDetector(
+      child: PressableScale(
         key: ValueKey('map-thumb-${map.id}'),
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected ? map.theme.colors.accent : AppColors.white,
-              width: selected ? 4 : 2,
+        // El elegido crece y queda con el color de su mapa.
+        child: AnimatedScale(
+          scale: selected ? 1 : 0.92,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutBack,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected ? map.theme.colors.accent : AppColors.white,
+                width: selected ? 4 : 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: selected
+                      ? Color.alphaBlend(
+                          AppColors.edgeShade,
+                          map.theme.colors.accent,
+                        )
+                      : AppColors.pillShadow,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
-                  child: MapPreviewImage(map: map, decodeWidth: 240),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                child: Text(
-                  map.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.authText,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    child: MapPreviewImage(map: map, decodeWidth: 240),
                   ),
                 ),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  child: Text(
+                    map.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.authText,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
