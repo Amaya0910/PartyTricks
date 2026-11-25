@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/services/social/social_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
 import 'package:party_tricks/widgets/profile_avatar.dart';
 
 /// Lista de amigos con casillas para invitarlos a la party. Devuelve los
@@ -77,18 +78,18 @@ class _InviteFriendsDialogState extends ConsumerState<InviteFriendsDialog> {
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.accept,
-                ),
+              child: PartyButton(
+                label: _selected.isEmpty
+                    ? 'Elige a quién invitar'
+                    : 'Invitar (${_selected.length})',
+                icon: Icons.send_rounded,
+                color: AppColors.accept,
+                edgeColor: AppColors.inactiveButton,
+                height: 48,
+                fontSize: 18,
                 onPressed: _selected.isEmpty
                     ? null
                     : () => Navigator.of(context).pop(_selected.toList()),
-                child: Text(
-                  _selected.isEmpty
-                      ? 'Elige a quién invitar'
-                      : 'Invitar (${_selected.length})',
-                ),
               ),
             ),
           ],

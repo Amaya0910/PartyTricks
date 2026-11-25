@@ -48,10 +48,15 @@ class _LoopingMotionState extends State<_LoopingMotion>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      child: widget.child,
-      builder: (context, child) => widget.apply(_controller.value, child!),
+    // Dos capas aisladas: la de afuera evita que se redibuje el resto de la
+    // pantalla en cada cuadro, y la de adentro guarda el dibujo del hijo para
+    // solo moverlo (sin volver a pintarlo).
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        child: RepaintBoundary(child: widget.child),
+        builder: (context, child) => widget.apply(_controller.value, child!),
+      ),
     );
   }
 }

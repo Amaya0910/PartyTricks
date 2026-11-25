@@ -10,7 +10,11 @@ import 'package:party_tricks/services/map/remote_map_config.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/animated_mode_switch.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 import 'package:party_tricks/widgets/map/map_preview_image.dart';
+import 'package:party_tricks/widgets/party_pill.dart';
 import 'package:party_tricks/widgets/step_dot_slider.dart';
 
 /// "Alista tu party": opciones para crear una sala.
@@ -129,49 +133,84 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          // Cada bloque entra un poquito después del anterior.
           children: [
-            _MapRow(map: _map, random: _randomMap, onTap: _chooseMap),
-            if (_maps.length > 1) ...[
-              const SizedBox(height: 8),
-              _RandomMapRow(
-                value: _randomMap,
-                onChanged: (value) => setState(() => _randomMap = value),
+            for (final (index, section) in _sections().indexed)
+              PopIn.staggered(
+                index: index,
+                base: const Duration(milliseconds: 100),
+                from: const Offset(0, 0.3),
+                child: section,
               ),
-            ],
-            const SizedBox(height: 20),
-            _SettingLabel('Jugadores: $_maxPlayers'),
-            const SizedBox(height: 8),
-            StepDotSlider(
-              start: _firstDot,
-              min: Room.minPlayers,
-              max: Room.maxAllowedPlayers,
-              value: _maxPlayers,
-              onChanged: (value) => setState(() => _maxPlayers = value),
-            ),
-            const SizedBox(height: 20),
-            _SettingLabel('Rondas: $_rounds'),
-            const SizedBox(height: 8),
-            StepDotSlider(
-              start: _firstDot,
-              min: Room.minRounds,
-              max: Room.maxRounds,
-              value: _rounds,
-              dotSize: 7,
-              showLine: false,
-              onChanged: (value) => setState(() => _rounds = value),
-            ),
-            const SizedBox(height: 20),
-            _VisibilityRow(
-              isPrivate: _isPrivate,
-              onChanged: (value) => setState(() => _isPrivate = value),
-            ),
-            const SizedBox(height: 24),
-            _CreateButton(onPressed: _submit),
           ],
         ),
       ),
     );
   }
+
+  /// Las partes del diálogo, en orden.
+  List<Widget> _sections() => [
+    _MapRow(map: _map, random: _randomMap, onTap: _chooseMap),
+    if (_maps.length > 1)
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: _RandomMapRow(
+          value: _randomMap,
+          onChanged: (value) => setState(() => _randomMap = value),
+        ),
+      ),
+    Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SettingLabel('Jugadores: $_maxPlayers'),
+          const SizedBox(height: 8),
+          StepDotSlider(
+            start: _firstDot,
+            min: Room.minPlayers,
+            max: Room.maxAllowedPlayers,
+            value: _maxPlayers,
+            onChanged: (value) => setState(() => _maxPlayers = value),
+          ),
+        ],
+      ),
+    ),
+    Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SettingLabel('Rondas: $_rounds'),
+          const SizedBox(height: 8),
+          StepDotSlider(
+            start: _firstDot,
+            min: Room.minRounds,
+            max: Room.maxRounds,
+            value: _rounds,
+            dotSize: 7,
+            showLine: false,
+            onChanged: (value) => setState(() => _rounds = value),
+          ),
+        ],
+      ),
+    ),
+    Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: _VisibilityRow(
+        isPrivate: _isPrivate,
+        onChanged: (value) => setState(() => _isPrivate = value),
+      ),
+    ),
+    Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: PartyButton(
+        label: 'Crear',
+        icon: Icons.celebration_rounded,
+        onPressed: _submit,
+      ),
+    ),
+  ];
 }
 
 /// El mapa elegido; al tocarlo se abre el selector.
@@ -186,13 +225,23 @@ class _MapRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.authField,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        key: const Key('choose-map'),
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
+    return PressableScale(
+      key: const Key('choose-map'),
+      onTap: onTap,
+      pressedScale: 0.96,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.authField,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.authAccent, width: 2),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.authShadow,
+              blurRadius: 0,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Row(
@@ -202,16 +251,33 @@ class _MapRow extends StatelessWidget {
                 child: SizedBox(
                   width: 52,
                   height: 52,
-                  child: random
-                      ? const ColoredBox(
-                          color: AppColors.authAccent,
-                          child: Icon(
-                            Icons.casino_rounded,
-                            color: AppColors.white,
-                            size: 30,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, animation) => RotationTransition(
+                      turns: Tween<double>(begin: -0.25, end: 0).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutBack,
+                        ),
+                      ),
+                      child: FadeTransition(opacity: animation, child: child),
+                    ),
+                    child: random
+                        ? const ColoredBox(
+                            key: ValueKey('random'),
+                            color: AppColors.authAccent,
+                            child: Icon(
+                              Icons.casino_rounded,
+                              color: AppColors.white,
+                              size: 30,
+                            ),
+                          )
+                        : MapPreviewImage(
+                            key: ValueKey(map.id),
+                            map: map,
+                            decodeWidth: 120,
                           ),
-                        )
-                      : MapPreviewImage(map: map, decodeWidth: 120),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -233,7 +299,7 @@ class _MapRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w900,
                         color: AppColors.authAccent,
                       ),
                     ),
@@ -291,36 +357,8 @@ class _SettingLabel extends StatelessWidget {
   static const double _widthFactor = 0.68;
 
   @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: FractionallySizedBox(
-        widthFactor: _widthFactor,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.authAccent,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.pillShadow,
-                blurRadius: 3,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.white,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      PartyPill(label: text, widthFactor: _widthFactor, fontSize: 18);
 }
 
 /// "Lista de invitados" con su subtítulo y el interruptor privado/público.
@@ -361,33 +399,6 @@ class _VisibilityRow extends StatelessWidget {
         const SizedBox(width: 12),
         AnimatedModeSwitch(isPrivate: isPrivate, onChanged: onChanged),
       ],
-    );
-  }
-}
-
-class _CreateButton extends StatelessWidget {
-  const _CreateButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      child: FilledButton(
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.authAccent,
-          foregroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        onPressed: onPressed,
-        child: const Text(
-          'Crear',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-      ),
     );
   }
 }

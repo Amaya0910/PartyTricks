@@ -54,14 +54,17 @@ class _ShineSweepState extends State<ShineSweep>
 
   @override
   Widget build(BuildContext context) {
+    // El destello va en su propia capa: el botón de abajo no se repinta.
     return Stack(
       children: [
-        widget.child,
+        RepaintBoundary(child: widget.child),
         Positioned.fill(
           child: IgnorePointer(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(widget.radius),
-              child: CustomPaint(painter: _ShinePainter(_controller)),
+            child: RepaintBoundary(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(widget.radius),
+                child: CustomPaint(painter: _ShinePainter(_controller)),
+              ),
             ),
           ),
         ),

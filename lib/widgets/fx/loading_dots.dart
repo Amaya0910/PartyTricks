@@ -56,19 +56,21 @@ class _LoadingDotsState extends State<LoadingDots>
     return Semantics(
       label: widget.label,
       excludeSemantics: true,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) => Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(widget.label, style: _style),
-            for (var i = 0; i < 3; i++)
-              Transform.translate(
-                offset: Offset(0, _jump(i)),
-                child: const Text('.', style: _style),
-              ),
-          ],
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) => Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(widget.label, style: _style),
+              for (var i = 0; i < 3; i++)
+                Transform.translate(
+                  offset: Offset(0, _jump(i)),
+                  child: const Text('.', style: _style),
+                ),
+            ],
+          ),
         ),
       ),
     );
