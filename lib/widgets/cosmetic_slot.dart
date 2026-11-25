@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 
 /// Espacio de un cosmético con borde punteado. Si [label] y [preview] son
 /// null, está vacío. El [semanticLabel] solo lo lee el lector de pantalla. El seleccionado lleva el borde azul.
@@ -31,37 +32,52 @@ class CosmeticSlot extends StatelessWidget {
       selected: isSelected,
       label: semanticLabel ?? label,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: PressableScale(
         onTap: onTap,
-        child: CustomPaint(
-          painter: DashedBorderPainter(
-            color: isSelected ? AppColors.blueStrong : AppColors.wardrobeInk,
-            strokeWidth: isSelected ? 3 : 2,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (preview != null) Expanded(child: preview!),
-                if (label != null)
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label!,
-                      style: TextStyle(
-                        fontSize: preview == null ? 14 : 11,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.normal,
-                        color: isSelected
-                            ? AppColors.blueStrong
-                            : AppColors.wardrobeInk,
+        // El elegido crece un poco y se rellena de celeste.
+        child: AnimatedScale(
+          scale: isSelected ? 1.06 : 1,
+          duration: const Duration(milliseconds: 380),
+          curve: Curves.elasticOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.resultsMine : AppColors.white,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: CustomPaint(
+              painter: DashedBorderPainter(
+                color: isSelected
+                    ? AppColors.blueStrong
+                    : AppColors.wardrobeInk,
+                strokeWidth: isSelected ? 3 : 2,
+                radius: 6,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (preview != null) Expanded(child: preview!),
+                    if (label != null)
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          label!,
+                          style: TextStyle(
+                            fontSize: preview == null ? 14 : 11,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? AppColors.blueStrong
+                                : AppColors.wardrobeInk,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),

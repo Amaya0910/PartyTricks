@@ -50,10 +50,28 @@ class PlayerSlot extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppColors.avatarBackground,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.slotBorder, width: 2),
+              border: Border.all(
+                // Tu espacio se distingue con el azul de la app.
+                color: isMe ? AppColors.blueStrong : AppColors.slotBorder,
+                width: isMe ? 3 : 2,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.slotBorder,
+                  blurRadius: 0,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
             child: look == null
-                ? null
+                // Espacio libre: invita a que alguien llegue.
+                ? const Center(
+                    child: Icon(
+                      Icons.person_add_alt_1_rounded,
+                      size: 30,
+                      color: AppColors.slotBorder,
+                    ),
+                  )
                 : Stack(
                     children: [
                       Positioned.fill(
@@ -81,8 +99,14 @@ class PlayerSlot extends ConsumerWidget {
                           right: 4,
                           child: Icon(
                             Icons.star,
-                            size: 20,
+                            size: 22,
                             color: AppColors.coin,
+                            shadows: [
+                              Shadow(
+                                color: AppColors.pillShadow,
+                                offset: Offset(0, 1.5),
+                              ),
+                            ],
                           ),
                         ),
                     ],
@@ -100,7 +124,7 @@ class PlayerSlot extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
         ),

@@ -12,6 +12,10 @@ import 'package:party_tricks/services/rooms/room_service.dart';
 import 'package:party_tricks/widgets/active_game_banner.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/create_room_dialog.dart';
+import 'package:party_tricks/widgets/fx/chunky_button.dart';
+import 'package:party_tricks/widgets/fx/idle_motion.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
+import 'package:party_tricks/widgets/fx/shine_sweep.dart';
 import 'package:party_tricks/widgets/join_code_dialog.dart';
 import 'package:party_tricks/widgets/play_menu_dialog.dart';
 import 'package:party_tricks/widgets/my_avatar.dart';
@@ -73,12 +77,17 @@ class HomeScreen extends ConsumerWidget {
 
     return Column(
       children: [
-        PlayerHeader(
-          username: profile?.username ?? '',
-          coins: profile?.coins ?? 0,
-          diamonds: profile?.diamonds ?? 0,
-          avatar: const MyAvatar(size: 64),
-          onAvatarTap: () => Navigator.of(context).push(SettingsScreen.route()),
+        PopIn(
+          from: const Offset(0, -0.6),
+          startScale: 1,
+          child: PlayerHeader(
+            username: profile?.username ?? '',
+            coins: profile?.coins ?? 0,
+            diamonds: profile?.diamonds ?? 0,
+            avatar: const MyAvatar(size: 64),
+            onAvatarTap: () =>
+                Navigator.of(context).push(SettingsScreen.route()),
+          ),
         ),
         const VerifyEmailBanner(),
         const ActiveGameBanner(),
@@ -86,8 +95,12 @@ class HomeScreen extends ConsumerWidget {
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: AnimatedCharacter.fromLook(
-                ref.watch(characterLookProvider),
+              child: PopIn(
+                delay: const Duration(milliseconds: 150),
+                startScale: 0.6,
+                child: AnimatedCharacter.fromLook(
+                  ref.watch(characterLookProvider),
+                ),
               ),
             ),
           ),
@@ -97,8 +110,12 @@ class HomeScreen extends ConsumerWidget {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(48, 0, 48, 24),
-            child: _PlayButton(
-              onPressed: loading ? null : () => _onPlayPressed(context, ref),
+            child: PopIn(
+              delay: const Duration(milliseconds: 300),
+              from: const Offset(0, 0.8),
+              child: _PlayButton(
+                onPressed: loading ? null : () => _onPlayPressed(context, ref),
+              ),
             ),
           ),
         ),
@@ -107,34 +124,53 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+/// El botón principal: con relieve, respira y lo cruza un destello para que
+/// se note que es lo primero que hay que tocar.
 class _PlayButton extends StatelessWidget {
   const _PlayButton({required this.onPressed});
 
   /// Null mientras se crea o se busca la sala.
   final VoidCallback? onPressed;
 
+  static const double _radius = 20;
+
   @override
   Widget build(BuildContext context) {
-    return FilledButton(
+    final button = ChunkyButton(
+      color: AppColors.blueLight,
+      edgeColor: AppColors.blueStrong,
+      borderColor: AppColors.blueStrong,
+      radius: _radius,
+      depth: 7,
+      padding: const EdgeInsets.symmetric(vertical: 10),
       onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(64),
-        backgroundColor: AppColors.blueLight,
-        foregroundColor: AppColors.blueStrong,
-        side: const BorderSide(color: AppColors.blueStrong, width: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
+      semanticLabel: 'Jugar',
       child: const Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             'Jugar',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+              color: AppColors.blueStrong,
+              letterSpacing: 1,
+              // Relieve blanco debajo de las letras, como en los juegos.
+              shadows: [Shadow(color: AppColors.white, offset: Offset(0, 2))],
+            ),
           ),
-          SizedBox(width: 8),
-          Icon(Icons.diamond, size: 32),
+          SizedBox(width: 10),
+          Wobble(
+            child: Icon(Icons.diamond, size: 34, color: AppColors.blueStrong),
+          ),
         ],
       ),
+    );
+
+    // Mientras carga no respira ni brilla: así se nota que está ocupado.
+    if (onPressed == null) return button;
+    return Breathing(
+      child: ShineSweep(radius: _radius, child: button),
     );
   }
 }

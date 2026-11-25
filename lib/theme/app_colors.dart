@@ -175,6 +175,20 @@ class AppColors {
   static const Color pillShadow = Color(0x40000000);
 
   // ---------------------------------------------------------------------------
+  // Efectos de la interfaz (brillos y relieve). Son blanco y negro con
+  // transparencia, no colores nuevos: se mezclan con el color de cada botón.
+  // ---------------------------------------------------------------------------
+
+  /// Reflejo en la mitad de arriba de los botones con relieve.
+  static const Color gloss = Color(0x59FFFFFF);
+
+  /// Destello que cruza los botones importantes.
+  static const Color shine = Color(0x8CFFFFFF);
+
+  /// Oscurece el color de un botón para pintar su canto inferior.
+  static const Color edgeShade = Color(0x40000000);
+
+  // ---------------------------------------------------------------------------
   // Vestuario
   // ---------------------------------------------------------------------------
 

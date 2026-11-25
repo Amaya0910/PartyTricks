@@ -15,6 +15,8 @@ import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/shop/shop_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
+import 'package:party_tricks/widgets/buy_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/cosmetic_preview.dart';
 import 'package:party_tricks/widgets/rarity_badge.dart';
@@ -142,7 +144,12 @@ class _CosmeticPurchaseDialogState
           children: [
             Row(
               children: [
-                _TryOn(character: widget.character(ref)),
+                // Tu personaje aparece con un saltito, ya probándoselo.
+                PopIn(
+                  startScale: 0.6,
+                  from: Offset.zero,
+                  child: _TryOn(character: widget.character(ref)),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -240,6 +247,13 @@ class _TryOn extends StatelessWidget {
         color: AppColors.screenBackground,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.authAccent, width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.headerBorder,
+            blurRadius: 0,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -273,41 +287,14 @@ class _BuyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton(
-      onPressed: isLoading ? null : onPressed,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(46),
-        backgroundColor: AppColors.pillBackground,
-        disabledBackgroundColor: AppColors.authField,
-        foregroundColor: AppColors.authText,
-        disabledForegroundColor: AppColors.authHint,
-        side: const BorderSide(color: AppColors.coin, width: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(23)),
-        textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-      child: isLoading
-          ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: AppColors.coin,
-              ),
-            )
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Comprar'),
-                const SizedBox(width: 10),
-                const Icon(
-                  Icons.monetization_on,
-                  size: 22,
-                  color: AppColors.coin,
-                ),
-                const SizedBox(width: 4),
-                Text('$price'),
-              ],
-            ),
+    return BuyButton(
+      price: price,
+      currencyIcon: Icons.monetization_on,
+      currencyColor: AppColors.coin,
+      face: AppColors.pillBackground,
+      ink: AppColors.coin,
+      isLoading: isLoading,
+      onPressed: onPressed,
     );
   }
 }

@@ -6,6 +6,10 @@ import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
+import 'package:party_tricks/widgets/fx/chunky_button.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
+import 'package:party_tricks/widgets/stat_pill.dart';
 
 /// Qué muestra el diálogo de ítems.
 enum ItemsMode { shop, backpack }
@@ -99,19 +103,15 @@ class MapItemsDialog extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.monetization_on, color: AppColors.coin),
-                Text(
-                  ' ${me.coins}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+            // Tus monedas: el número cuenta hacia abajo al comprar.
+            Center(
+              child: StatPill(
+                icon: Icons.monetization_on,
+                color: AppColors.coin,
+                value: me.coins,
+              ),
             ),
+            const SizedBox(height: 6),
             Flexible(
               child: ItemList(
                 player: me,
@@ -124,9 +124,14 @@ class MapItemsDialog extends ConsumerWidget {
                 ),
               ),
             ),
-            TextButton(
+            const SizedBox(height: 8),
+            PartyButton(
+              label: 'Cerrar',
+              color: AppColors.tileShop,
+              edgeColor: null,
+              height: 46,
+              fontSize: 18,
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cerrar'),
             ),
           ],
         ),
@@ -183,7 +188,13 @@ class ItemList extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-        for (final item in items) _row(item),
+        for (final (index, item) in items.indexed)
+          // Suben en su lugar (de lado se saldrían del borde de la lista).
+          PopIn.staggered(
+            index: index,
+            from: const Offset(0, 0.3),
+            child: _row(item),
+          ),
       ],
     );
   }
@@ -193,16 +204,51 @@ class ItemList extends StatelessWidget {
     final count = player.itemCount(item);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: Icon(itemIcon(item), color: AppColors.tileShop),
+      leading: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: AppColors.pillBackground,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.tileShop, width: 2),
+        ),
+        child: Icon(itemIcon(item), color: AppColors.tileShop, size: 22),
+      ),
       title: Text(
         count > 0 ? '${item.title} (x$count)' : item.title,
-        style: const TextStyle(fontWeight: FontWeight.w600),
+        style: const TextStyle(fontWeight: FontWeight.w900),
       ),
       subtitle: Text(problem ?? item.description),
-      trailing: FilledButton(
-        style: FilledButton.styleFrom(backgroundColor: AppColors.authAccent),
+      trailing: ChunkyButton(
+        color: AppColors.authAccent,
+        edgeColor: AppColors.headerBorder,
+        radius: 14,
+        depth: 4,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         onPressed: problem == null ? () => onPressed(item) : null,
-        child: Text(mode == ItemsMode.shop ? '${item.price}' : 'Usar'),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (mode == ItemsMode.shop) ...[
+              const Icon(
+                Icons.monetization_on,
+                size: 18,
+                color: AppColors.pillBackground,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              mode == ItemsMode.shop ? '${item.price}' : 'Usar',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: AppColors.white,
+                shadows: [
+                  Shadow(color: AppColors.headerBorder, offset: Offset(0, 1.5)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

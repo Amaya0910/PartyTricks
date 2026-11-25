@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 
 /// Tarjeta de Ajustes: cabecera morada con el [title] y las filas debajo,
 /// como en el mockup ("Cuenta", "Preferencias", "Más opciones").
@@ -22,6 +23,9 @@ class SettingsSection extends StatelessWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(_radius),
         border: Border.all(color: AppColors.friendsBorder, width: 2),
+        boxShadow: const [
+          BoxShadow(color: AppColors.friendsBorder, offset: Offset(0, 4)),
+        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(_radius - 2),
@@ -34,10 +38,19 @@ class SettingsSection extends StatelessWidget {
               child: Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w900,
                   color: AppColors.white,
+                  shadows: [
+                    Shadow(
+                      color: Color.alphaBlend(
+                        AppColors.edgeShade,
+                        AppColors.settingsAccent,
+                      ),
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -91,59 +104,59 @@ class SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = danger ? AppColors.settingsDanger : AppColors.authText;
     final value = this.value;
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 52),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.settingsRowBorder, width: 2),
-          ),
-          // La etiqueta y el valor se reparten el ancho y bajan de línea si
-          // no caben, para que nada se salga en pantallas angostas.
-          child: Row(
-            children: [
+    return PressableScale(
+      onTap: onTap,
+      pressedScale: 0.97,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 52),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.settingsRowBorder, width: 2),
+          boxShadow: const [
+            BoxShadow(color: AppColors.settingsRowBorder, offset: Offset(0, 2)),
+          ],
+        ),
+        // La etiqueta y el valor se reparten el ancho y bajan de línea si
+        // no caben, para que nada se salga en pantallas angostas.
+        child: Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+            ),
+            if (value != null) ...[
+              const SizedBox(width: 12),
               Expanded(
-                flex: 3,
+                flex: 2,
                 child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: color,
+                  value,
+                  textAlign: TextAlign.right,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.authText,
                   ),
                 ),
               ),
-              if (value != null) ...[
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    value,
-                    textAlign: TextAlign.right,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.authText,
-                    ),
-                  ),
-                ),
-              ],
-              if (trailing != null)
-                trailing!
-              else if (icon != null) ...[
-                const SizedBox(width: 8),
-                Icon(icon, size: 22, color: AppColors.settingsReload),
-              ],
             ],
-          ),
+            if (trailing != null)
+              trailing!
+            else if (icon != null) ...[
+              const SizedBox(width: 8),
+              Icon(icon, size: 22, color: AppColors.settingsReload),
+            ],
+          ],
         ),
       ),
     );

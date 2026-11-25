@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/models/cosmetic_category.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 
 /// Barra horizontal con las categorías de cosméticos. Se desplaza si no caben.
 /// No conoce Riverpod: recibe la categoría activa y avisa cuando tocan otra.
@@ -70,19 +71,42 @@ class _Tab extends StatelessWidget {
       selected: isSelected,
       label: category.label,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: PressableScale(
         onTap: onTap,
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
           width: width,
+          // La elegida queda blanca con borde azul y "levantada".
+          margin: EdgeInsets.only(bottom: isSelected ? 4 : 0),
           decoration: BoxDecoration(
-            color: AppColors.wardrobeChip,
-            borderRadius: BorderRadius.circular(8),
+            color: isSelected ? AppColors.white : AppColors.wardrobeChip,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppColors.blueStrong : AppColors.wardrobeChip,
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected ? AppColors.blueStrong : AppColors.pillShadow,
+                blurRadius: 0,
+                offset: Offset(0, isSelected ? 4 : 2),
+              ),
+            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(_icons[category], size: 30, color: color),
+              // Al elegirla, el ícono da un salto elástico.
+              TweenAnimationBuilder<double>(
+                key: ValueKey(isSelected),
+                tween: Tween(begin: isSelected ? 0.6 : 1.0, end: 1.0),
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.elasticOut,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: scale, child: child),
+                child: Icon(_icons[category], size: 30, color: color),
+              ),
               const SizedBox(height: 2),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -92,7 +116,9 @@ class _Tab extends StatelessWidget {
                     category.label,
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: isSelected
+                          ? FontWeight.w900
+                          : FontWeight.w700,
                       color: color,
                     ),
                   ),

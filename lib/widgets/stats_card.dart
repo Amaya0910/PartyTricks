@@ -25,11 +25,11 @@ class StatsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(_radius),
-        boxShadow: const [
+        boxShadow: [
+          // Sombra dura del mismo color, más oscura: la tarjeta tiene relieve.
           BoxShadow(
-            color: AppColors.pillShadow,
-            blurRadius: 6,
-            offset: Offset(0, 3),
+            color: Color.alphaBlend(AppColors.edgeShade, color),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -42,11 +42,17 @@ class StatsCard extends StatelessWidget {
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 22,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w900,
                 color: AppColors.white,
+                shadows: [
+                  Shadow(
+                    color: Color.alphaBlend(AppColors.edgeShade, color),
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
             ),
           ),

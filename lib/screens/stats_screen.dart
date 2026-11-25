@@ -7,6 +7,7 @@ import 'package:party_tricks/screens/settings_screen.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/services/stats/stats_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 import 'package:party_tricks/widgets/my_avatar.dart';
 import 'package:party_tricks/widgets/player_header.dart';
 import 'package:party_tricks/widgets/stats_card.dart';
@@ -32,7 +33,9 @@ class StatsScreen extends ConsumerWidget {
         ),
         Expanded(
           child: statsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.white),
+            ),
             error: (_, _) => const _Message(
               'No se pudieron cargar tus estadísticas. Revisa tu conexión.',
             ),
@@ -69,10 +72,16 @@ class _StatsList extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(height: 20),
         itemBuilder: (_, index) {
           final section = sections[index];
-          return StatsCard(
-            title: section.title,
-            color: _colorFor(section.tone),
-            rows: section.rows,
+          // Las tarjetas entran una detrás de otra (las de más abajo, ya
+          // listas al desplazarse).
+          return PopIn.staggered(
+            index: index.clamp(0, 4),
+            from: const Offset(0, 0.2),
+            child: StatsCard(
+              title: section.title,
+              color: _colorFor(section.tone),
+              rows: section.rows,
+            ),
           );
         },
       ),

@@ -85,7 +85,9 @@ void main() {
     expect(find.text('Tay_pro32'), findsOneWidget);
     expect(find.text('tay@correo.com'), findsOneWidget);
     expect(find.text('Cambiar contraseña'), findsOneWidget);
-    expect(find.byType(Switch), findsNWidgets(3));
+    // Notificaciones, Sonido, Efectos de sonido y Vibración.
+    expect(find.byType(Switch), findsNWidgets(4));
+    expect(find.text('Vibración'), findsOneWidget);
     expect(find.text('Cerrar sesión'), findsOneWidget);
   });
 

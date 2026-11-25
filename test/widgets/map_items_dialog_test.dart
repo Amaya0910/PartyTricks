@@ -6,6 +6,7 @@ import 'package:party_tricks/services/game_engine/game_action.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/shop_items.dart';
 import 'package:party_tricks/widgets/map_items_dialog.dart';
+import 'package:party_tricks/widgets/fx/chunky_button.dart';
 
 /// Ana tiene el turno. En el mapa real la 2 es positiva y la 36 tienda.
 GameState game({
@@ -65,13 +66,13 @@ Future<List<GameAction>> pumpDialog(
   return sent;
 }
 
-FilledButton buttonOf(WidgetTester tester, String title) {
+ChunkyButton buttonOf(WidgetTester tester, String title) {
   final tile = find.ancestor(
     of: find.textContaining(title),
     matching: find.byType(ListTile),
   );
-  return tester.widget<FilledButton>(
-    find.descendant(of: tile, matching: find.byType(FilledButton)),
+  return tester.widget<ChunkyButton>(
+    find.descendant(of: tile, matching: find.byType(ChunkyButton)),
   );
 }
 
@@ -100,7 +101,7 @@ void main() {
           of: find.text('Escudo'),
           matching: find.byType(ListTile),
         ),
-        matching: find.byType(FilledButton),
+        matching: find.byType(ChunkyButton),
       ),
     );
     expect(sent, hasLength(1));
@@ -149,7 +150,7 @@ void main() {
           of: find.text('Trampa (x1)'),
           matching: find.byType(ListTile),
         ),
-        matching: find.byType(FilledButton),
+        matching: find.byType(ChunkyButton),
       ),
     );
     expect((sent.single as UseItem).item, ShopItem.trap);

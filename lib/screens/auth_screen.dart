@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/services/auth/auth_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/flip_card.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 import 'package:party_tricks/widgets/login_card.dart';
 import 'package:party_tricks/widgets/register_card.dart';
 
@@ -73,15 +74,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           constraints: const BoxConstraints(
                             maxWidth: _cardMaxWidth,
                           ),
-                          child: SizedBox(
-                            height: _cardHeight,
-                            child: FlipCard(
-                              showBack: _showRegister,
-                              front: LoginCard(
-                                onShowRegister: () => _flipTo(register: true),
-                              ),
-                              back: RegisterCard(
-                                onShowLogin: () => _flipTo(register: false),
+                          // La tarjeta aparece creciendo con un rebote, en su
+                          // lugar (sin moverse: se puede tocar de una vez).
+                          child: PopIn(
+                            from: Offset.zero,
+                            startScale: 0.85,
+                            duration: const Duration(milliseconds: 650),
+                            child: SizedBox(
+                              height: _cardHeight,
+                              child: FlipCard(
+                                showBack: _showRegister,
+                                front: LoginCard(
+                                  onShowRegister: () => _flipTo(register: true),
+                                ),
+                                back: RegisterCard(
+                                  onShowLogin: () => _flipTo(register: false),
+                                ),
                               ),
                             ),
                           ),

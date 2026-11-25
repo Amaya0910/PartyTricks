@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:party_tricks/services/game_engine/game_state.dart';
 import 'package:party_tricks/services/game_engine/match_results.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/app_background.dart';
+import 'package:party_tricks/widgets/fx/idle_motion.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
+import 'package:party_tricks/widgets/party_panel.dart';
+import 'package:party_tricks/widgets/party_pill.dart';
 
 /// Pantalla final de la partida: el ganador, la clasificación completa, los
 /// diamantes finales, lo que te llevas (XP, monedas y diamantes) y cómo te
@@ -40,73 +46,87 @@ class ResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mine = results.of(myId);
+    // Cada bloque entra un poco después del anterior.
+    var order = 0;
+    Widget enter(Widget child) => PopIn.staggered(
+      index: order++,
+      base: const Duration(milliseconds: 120),
+      child: child,
+    );
     return Scaffold(
       backgroundColor: AppColors.screenBackground,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _WinnerBanner(
-                    title: _winnerTitle(),
-                    subtitle: 'Partida de ${results.rounds} rondas',
-                  ),
-                  if (mine != null) ...[
-                    const SizedBox(height: 12),
-                    _Rewards(result: mine),
-                  ],
-                  const SizedBox(height: 12),
-                  _Section(
-                    title: 'Clasificación',
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const AppBackground(),
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
                     children: [
-                      for (final result in results.ranking)
-                        _RankingRow(
-                          result: result,
-                          color: _colorOf(result.id),
-                          isMe: result.id == myId,
+                      enter(
+                        _WinnerBanner(
+                          title: _winnerTitle(),
+                          subtitle: 'Partida de ${results.rounds} rondas',
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _Section(
-                    title: 'Diamantes finales',
-                    children: [
-                      for (final entry in results.awards.entries)
-                        _StatRow(
-                          label: entry.key.label,
-                          value: _names(entry.value),
+                      ),
+                      if (mine != null) ...[
+                        const SizedBox(height: 14),
+                        enter(_Rewards(result: mine)),
+                      ],
+                      const SizedBox(height: 14),
+                      enter(
+                        _Section(
+                          title: 'Clasificación',
+                          children: [
+                            for (final result in results.ranking)
+                              _RankingRow(
+                                result: result,
+                                color: _colorOf(result.id),
+                                isMe: result.id == myId,
+                              ),
+                          ],
                         ),
+                      ),
+                      const SizedBox(height: 14),
+                      enter(
+                        _Section(
+                          title: 'Diamantes finales',
+                          children: [
+                            for (final entry in results.awards.entries)
+                              _StatRow(
+                                label: entry.key.label,
+                                value: _names(entry.value),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (mine != null) ...[
+                        const SizedBox(height: 14),
+                        enter(
+                          _Section(
+                            title: 'Tu partida',
+                            children: _myStats(mine.player),
+                          ),
+                        ),
+                      ],
                     ],
-                  ),
-                  if (mine != null) ...[
-                    const SizedBox(height: 12),
-                    _Section(
-                      title: 'Tu partida',
-                      children: _myStats(mine.player),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  backgroundColor: AppColors.authAccent,
-                  textStyle: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                onPressed: onExit,
-                child: const Text('Volver al inicio'),
-              ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: PartyButton(
+                    label: 'Volver al inicio',
+                    icon: Icons.home_rounded,
+                    onPressed: onExit,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -141,24 +161,6 @@ class ResultsScreen extends StatelessWidget {
   }
 }
 
-class _Panel extends StatelessWidget {
-  const _Panel({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.boardPanel,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: child,
-    );
-  }
-}
-
 class _WinnerBanner extends StatelessWidget {
   const _WinnerBanner({required this.title, required this.subtitle});
 
@@ -167,16 +169,43 @@ class _WinnerBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Panel(
+    return PartyPanel(
       child: Column(
         children: [
-          const Icon(Icons.emoji_events, size: 64, color: AppColors.medalGold),
+          // El trofeo cae con un rebote y luego flota.
+          const PopIn(
+            from: Offset(0, -1),
+            startScale: 0.3,
+            duration: Duration(milliseconds: 800),
+            child: Floating(
+              child: Icon(
+                Icons.emoji_events,
+                size: 80,
+                color: AppColors.medalGold,
+                shadows: [
+                  Shadow(color: AppColors.medalBronze, offset: Offset(0, 4)),
+                ],
+              ),
+            ),
+          ),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: AppColors.authAccent,
+              shadows: [
+                Shadow(color: AppColors.headerBorder, offset: Offset(0, 2)),
+              ],
+            ),
           ),
-          Text(subtitle, textAlign: TextAlign.center),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -191,32 +220,43 @@ class _Rewards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Panel(
+    return PartyPanel(
       child: Column(
         children: [
           Text(
             'Quedaste en el puesto ${result.place}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            // Los premios saltan uno detrás de otro.
             children: [
-              _Reward(
-                icon: Icons.star,
-                color: AppColors.medalGold,
-                value: '+${result.experience} XP',
-              ),
-              _Reward(
-                icon: Icons.monetization_on,
-                color: AppColors.coin,
-                value: '+${result.coins}',
-              ),
-              _Reward(
-                icon: Icons.diamond,
-                color: AppColors.diamond,
-                value: '+${result.diamonds}',
-              ),
+              for (final (index, reward) in [
+                _Reward(
+                  icon: Icons.star,
+                  color: AppColors.medalGold,
+                  value: '+${result.experience} XP',
+                ),
+                _Reward(
+                  icon: Icons.monetization_on,
+                  color: AppColors.coin,
+                  value: '+${result.coins}',
+                ),
+                _Reward(
+                  icon: Icons.diamond,
+                  color: AppColors.diamond,
+                  value: '+${result.diamonds}',
+                ),
+              ].indexed)
+                PopIn.staggered(
+                  index: index,
+                  base: const Duration(milliseconds: 400),
+                  startScale: 0.3,
+                  from: Offset.zero,
+                  duration: const Duration(milliseconds: 650),
+                  child: reward,
+                ),
             ],
           ),
           const SizedBox(height: 8),
@@ -241,10 +281,17 @@ class _Reward extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 32),
+        Icon(
+          icon,
+          color: color,
+          size: 38,
+          shadows: const [
+            Shadow(color: AppColors.pillShadow, offset: Offset(0, 2)),
+          ],
+        ),
         Text(
           value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
         ),
       ],
     );
@@ -259,14 +306,11 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Panel(
+    return PartyPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+          PartyPill(label: title, fontSize: 18),
           const SizedBox(height: 8),
           ...children,
         ],
@@ -300,19 +344,36 @@ class _RankingRow extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
         color: isMe ? AppColors.resultsMine : null,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
+        border: isMe ? Border.all(color: AppColors.blueMain, width: 2) : null,
       ),
       child: ListTile(
         dense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-        leading: CircleAvatar(
-          radius: 16,
-          backgroundColor: medal ?? color,
+        leading: Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: medal ?? color,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.white, width: 2),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.pillShadow,
+                blurRadius: 0,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
           child: Text(
             '${result.place}',
             style: const TextStyle(
               color: AppColors.white,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w900,
+              shadows: [
+                Shadow(color: AppColors.pillShadow, offset: Offset(0, 1)),
+              ],
             ),
           ),
         ),

@@ -13,6 +13,7 @@ class SharedPreferencesService implements PreferencesService {
   static const _notifications = 'prefs.notifications';
   static const _sound = 'prefs.sound';
   static const _soundEffects = 'prefs.soundEffects';
+  static const _vibration = 'prefs.vibration';
   static const _language = 'prefs.language';
 
   @override
@@ -24,6 +25,7 @@ class SharedPreferencesService implements PreferencesService {
       sound: await _prefs.getBool(_sound) ?? defaults.sound,
       soundEffects:
           await _prefs.getBool(_soundEffects) ?? defaults.soundEffects,
+      vibration: await _prefs.getBool(_vibration) ?? defaults.vibration,
       languageCode: await _prefs.getString(_language) ?? defaults.languageCode,
     );
   }
@@ -33,6 +35,7 @@ class SharedPreferencesService implements PreferencesService {
     await _prefs.setBool(_notifications, preferences.notifications);
     await _prefs.setBool(_sound, preferences.sound);
     await _prefs.setBool(_soundEffects, preferences.soundEffects);
+    await _prefs.setBool(_vibration, preferences.vibration);
     await _prefs.setString(_language, preferences.languageCode);
   }
 }

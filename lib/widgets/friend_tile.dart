@@ -5,6 +5,7 @@ import 'package:party_tricks/services/game_engine/experience_calculator.dart';
 import 'package:party_tricks/services/social/chat_format.dart';
 import 'package:party_tricks/services/social/social_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 import 'package:party_tricks/widgets/level_pill.dart';
 import 'package:party_tricks/widgets/profile_avatar.dart';
 
@@ -31,9 +32,9 @@ class FriendTile extends ConsumerWidget {
     final profile = ref.watch(publicProfileProvider(friendUid)).value;
     final unread = chat?.hasUnreadFor(myUid) ?? false;
 
-    return InkWell(
+    return PressableScale(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      pressedScale: 0.96,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
@@ -44,6 +45,9 @@ class FriendTile extends ConsumerWidget {
                 color: AppColors.chatHeader,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.slotBorder, width: 2),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.slotBorder, offset: Offset(0, 3)),
+                ],
               ),
               child: ProfileAvatar(profile: profile, size: 52),
             ),
@@ -55,6 +59,12 @@ class FriendTile extends ConsumerWidget {
                   color: AppColors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.friendsAccent, width: 2),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.friendsAccent,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +78,7 @@ class FriendTile extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ),
@@ -96,14 +106,26 @@ class FriendTile extends ConsumerWidget {
                           ),
                         ),
                         if (unread)
-                          Container(
-                            key: const ValueKey('unread'),
-                            width: 10,
-                            height: 10,
-                            margin: const EdgeInsets.only(left: 8),
-                            decoration: const BoxDecoration(
-                              color: AppColors.unreadDot,
-                              shape: BoxShape.circle,
+                          // El aviso de mensaje nuevo aparece con un salto.
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: 1),
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.elasticOut,
+                            builder: (context, scale, child) =>
+                                Transform.scale(scale: scale, child: child),
+                            child: Container(
+                              key: const ValueKey('unread'),
+                              width: 12,
+                              height: 12,
+                              margin: const EdgeInsets.only(left: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.unreadDot,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.white,
+                                  width: 2,
+                                ),
+                              ),
                             ),
                           ),
                       ],

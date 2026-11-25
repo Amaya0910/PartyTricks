@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/chunky_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
+import 'package:party_tricks/widgets/fx/shake.dart';
 
 /// Una cara de la tarjeta de acceso: cabecera azul con el título, los campos,
 /// el botón principal y el enlace para pasar a la otra cara.
@@ -43,10 +46,11 @@ class AuthCardFace extends StatelessWidget {
         borderRadius: BorderRadius.circular(_radius),
         border: Border.all(color: AppColors.authAccent, width: _borderWidth),
         boxShadow: const [
+          BoxShadow(color: AppColors.headerBorder, offset: Offset(0, 6)),
           BoxShadow(
             color: AppColors.authShadow,
             blurRadius: 14,
-            offset: Offset(0, 7),
+            offset: Offset(0, 10),
           ),
         ],
       ),
@@ -60,19 +64,30 @@ class AuthCardFace extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(28, 24, 28, 8),
                 child: Column(
                   children: [
+                    // Los campos entran uno detrás de otro.
                     for (var i = 0; i < fields.length; i++) ...[
                       if (i > 0) const SizedBox(height: _fieldGap),
-                      fields[i],
+                      PopIn.staggered(
+                        index: i,
+                        base: const Duration(milliseconds: 150),
+                        from: const Offset(0, 0.4),
+                        child: fields[i],
+                      ),
                     ],
                     if (errorMessage != null) ...[
                       const SizedBox(height: 12),
-                      Text(
-                        errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          color: AppColors.authError,
+                      // Cada error nuevo sacude el mensaje para que se note.
+                      Shake(
+                        trigger: errorMessage,
+                        child: Text(
+                          errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.authError,
+                          ),
                         ),
                       ),
                     ],
@@ -131,9 +146,12 @@ class _Header extends StatelessWidget {
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontFamily: 'Inter',
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontSize: 24,
+          fontWeight: FontWeight.w900,
           color: AppColors.white,
+          shadows: [
+            Shadow(color: AppColors.headerBorder, offset: Offset(0, 2)),
+          ],
         ),
       ),
     );
@@ -153,32 +171,45 @@ class _SubmitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton(
-      onPressed: isLoading ? null : onPressed,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(46),
-        backgroundColor: AppColors.authAccent,
-        disabledBackgroundColor: AppColors.authAccent,
-        foregroundColor: AppColors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return SizedBox(
+      height: 52,
+      child: ChunkyButton(
+        color: AppColors.authAccent,
+        edgeColor: AppColors.headerBorder,
+        radius: 14,
+        depth: 5,
+        padding: EdgeInsets.zero,
+        onPressed: isLoading ? null : onPressed,
+        child: Center(
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.white,
+                  ),
+                )
+              : FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.white,
+                      shadows: [
+                        Shadow(
+                          color: AppColors.headerBorder,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
       ),
-      child: isLoading
-          ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: AppColors.white,
-              ),
-            )
-          : Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
     );
   }
 }

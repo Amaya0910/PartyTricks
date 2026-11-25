@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:party_tricks/services/rooms/room_code_generator.dart';
-import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
+import 'package:party_tricks/widgets/code_tiles.dart';
+import 'package:party_tricks/widgets/party_pill.dart';
 
 /// Pide un código de 6 caracteres. Devuelve el código o null si se cierra.
 ///
@@ -72,14 +73,15 @@ class _JoinCodeDialogState extends State<JoinCodeDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Pill(label: widget.label),
+            PartyPill(label: widget.label),
             const SizedBox(height: 12),
             GestureDetector(
               onTap: _focus.requestFocus,
               child: Stack(
                 children: [
-                  _CodePanel(
+                  CodeTiles(
                     text: _controller.text,
+                    length: RoomCodeGenerator.length,
                     activeIndex: _focus.hasFocus ? _controller.text.length : -1,
                   ),
                   // Campo real e invisible: recibe el teclado y el pegado.
@@ -115,133 +117,6 @@ class _JoinCodeDialogState extends State<JoinCodeDialog> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Etiqueta redondeada ("Ingresa Codigo").
-class _Pill extends StatelessWidget {
-  const _Pill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.authAccent,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: AppColors.slotBorder,
-              blurRadius: 3,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.white,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Los 6 cuadritos con un guion en medio (ABC-234).
-class _CodePanel extends StatelessWidget {
-  const _CodePanel({required this.text, required this.activeIndex});
-
-  final String text;
-
-  /// Cuadrito donde se escribirá el siguiente carácter (-1 si no hay foco).
-  final int activeIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    const length = RoomCodeGenerator.length;
-    const half = length ~/ 2;
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppColors.lobbyCodePanel,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < length; i++) ...[
-            if (i == half)
-              const SizedBox(
-                width: 16,
-                child: Text(
-                  '-',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
-            Expanded(
-              child: _Digit(
-                char: i < text.length ? text[i] : '',
-                isActive: i == activeIndex,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Digit extends StatelessWidget {
-  const _Digit({required this.char, required this.isActive});
-
-  final String char;
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: AspectRatio(
-        aspectRatio: 0.7,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(6),
-            border: isActive
-                ? Border.all(color: AppColors.blueStrong, width: 2)
-                : null,
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.slotBorder,
-                blurRadius: 2,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: FittedBox(
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Text(
-                  char,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );

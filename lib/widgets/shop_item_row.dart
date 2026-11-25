@@ -3,6 +3,7 @@ import 'package:party_tricks/models/rarity.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/rarity_badge.dart';
 import 'package:party_tricks/widgets/cosmetic_slot.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 import 'package:party_tricks/widgets/stat_pill.dart';
 
 /// Un artículo de la Tienda, como en el mockup: el dibujo en un cuadro
@@ -39,9 +40,9 @@ class ShopItemRow extends StatelessWidget {
       label:
           '$title, $price monedas${rarity == null ? '' : ', ${rarity!.label}'}',
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: PressableScale(
         onTap: onTap,
+        pressedScale: 0.96,
         child: SizedBox(
           height: _height,
           child: Row(
@@ -72,7 +73,7 @@ class ShopItemRow extends StatelessWidget {
                           style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 18,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w900,
                             color: AppColors.wardrobeInk,
                           ),
                         ),
@@ -140,6 +141,13 @@ class _Dashed extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shopItemBorder,
+            blurRadius: 0,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       child: CustomPaint(
         foregroundPainter: DashedBorderPainter(

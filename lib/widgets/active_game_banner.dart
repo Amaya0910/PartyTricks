@@ -4,6 +4,8 @@ import 'package:party_tricks/models/room.dart';
 import 'package:party_tricks/screens/board_screen.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/chunky_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 
 /// Si el jugador cerró la app con una partida en curso, le ofrece volver.
 ///
@@ -36,29 +38,45 @@ class ActiveGameBanner extends ConsumerWidget {
       }
       return const SizedBox.shrink();
     }
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Material(
-        color: AppColors.boardPanel,
-        borderRadius: BorderRadius.circular(16),
-        child: ListTile(
-          leading: const Icon(
-            Icons.sports_esports,
-            color: AppColors.authAccent,
+    return PopIn(
+      from: const Offset(0, -0.4),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Material(
+          color: AppColors.boardPanel,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.authAccent, width: 2),
           ),
-          title: const Text(
-            'Tienes una partida en curso',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle: const Text('Tus monedas, ítems y posición te esperan.'),
-          trailing: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.authAccent,
+          elevation: 3,
+          shadowColor: AppColors.pillShadow,
+          child: ListTile(
+            leading: const Icon(
+              Icons.sports_esports,
+              color: AppColors.authAccent,
             ),
-            onPressed: () => Navigator.of(
-              context,
-            ).push(BoardScreen.route(room.id, isHost: room.hostUid == me.uid)),
-            child: const Text('Volver'),
+            title: const Text(
+              'Tienes una partida en curso',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text('Tus monedas, ítems y posición te esperan.'),
+            trailing: ChunkyButton(
+              color: AppColors.authAccent,
+              edgeColor: AppColors.headerBorder,
+              radius: 14,
+              depth: 4,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              onPressed: () => Navigator.of(context).push(
+                BoardScreen.route(room.id, isHost: room.hostUid == me.uid),
+              ),
+              child: const Text(
+                'Volver',
+                style: TextStyle(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
           ),
         ),
       ),

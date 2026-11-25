@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
 
 /// Pregunta antes de hacer algo que no se puede deshacer (eliminar amigo,
 /// bloquear). Devuelve true si el jugador confirma.
@@ -49,11 +50,15 @@ class ConfirmDialog extends StatelessWidget {
               style: const TextStyle(fontSize: 16, color: AppColors.authText),
             ),
             const SizedBox(height: 20),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.reject),
+            PartyButton(
+              label: confirmLabel,
+              color: AppColors.reject,
+              edgeColor: null,
+              height: 48,
+              fontSize: 18,
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text(confirmLabel),
             ),
+            const SizedBox(height: 4),
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Cancelar'),
