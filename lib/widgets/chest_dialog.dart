@@ -5,8 +5,10 @@ import 'package:party_tricks/models/chest.dart';
 import 'package:party_tricks/services/shop/shop_service.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
+import 'package:party_tricks/widgets/buy_button.dart';
 import 'package:party_tricks/widgets/chest_visuals.dart';
 import 'package:party_tricks/widgets/cosmetic_odds_dialog.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 
 /// Ventana de un cofre: sus probabilidades y el botón Comprar.
 /// Devuelve el premio si se compró, o null si se cierra sin comprar.
@@ -63,7 +65,13 @@ class _ChestDialogState extends ConsumerState<ChestDialog> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _ChestTile(chest: chest, palette: palette),
+                // El cofre cae girando un poco, como si lo soltaran.
+                PopIn(
+                  from: const Offset(0, -0.5),
+                  startScale: 0.4,
+                  duration: const Duration(milliseconds: 650),
+                  child: _ChestTile(chest: chest, palette: palette),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _Odds(
@@ -115,8 +123,15 @@ class _ChestTile extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: palette.card,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: palette.strong, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: palette.strong,
+            blurRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: ChestImage(chest: chest),
     );
@@ -153,8 +168,11 @@ class _Odds extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w900,
               color: AppColors.white,
+              shadows: [
+                Shadow(color: AppColors.pillShadow, offset: Offset(0, 1.5)),
+              ],
             ),
           ),
         ),
@@ -234,36 +252,14 @@ class _BuyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton(
-      onPressed: isLoading ? null : onPressed,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(44),
-        backgroundColor: palette.card,
-        disabledBackgroundColor: palette.card,
-        foregroundColor: palette.strong,
-        side: BorderSide(color: palette.strong, width: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-      child: isLoading
-          ? SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: palette.strong,
-              ),
-            )
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Comprar'),
-                const SizedBox(width: 10),
-                const Icon(Icons.diamond, size: 20),
-                const SizedBox(width: 4),
-                Text('${chest.price}'),
-              ],
-            ),
+    return BuyButton(
+      price: chest.price,
+      currencyIcon: Icons.diamond,
+      currencyColor: AppColors.diamond,
+      face: palette.card,
+      ink: palette.strong,
+      isLoading: isLoading,
+      onPressed: onPressed,
     );
   }
 }

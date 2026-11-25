@@ -17,6 +17,8 @@ import 'package:party_tricks/widgets/chest_reward_dialog.dart';
 import 'package:party_tricks/widgets/chest_visuals.dart';
 import 'package:party_tricks/widgets/cosmetic_preview.dart';
 import 'package:party_tricks/widgets/cosmetic_purchase_dialog.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 import 'package:party_tricks/widgets/shop_item_row.dart';
 import 'package:party_tricks/widgets/stat_pill.dart';
 
@@ -170,9 +172,17 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.authAccent, width: 3),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.headerBorder,
+                blurRadius: 0,
+                offset: Offset(0, 5),
+              ),
+            ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(21),
             // En horizontal (pantalla baja) el encabezado no deja sitio a la
             // lista: todo se desplaza junto en vez de desbordarse.
             child: LayoutBuilder(
@@ -237,8 +247,11 @@ class _Title extends StatelessWidget {
         style: TextStyle(
           fontFamily: 'Inter',
           fontSize: 28,
-          fontWeight: FontWeight.w700,
-          color: AppColors.authText,
+          fontWeight: FontWeight.w900,
+          color: AppColors.authAccent,
+          shadows: [
+            Shadow(color: AppColors.headerBorder, offset: Offset(0, 2)),
+          ],
         ),
       ),
     );
@@ -262,8 +275,8 @@ class _Band extends StatelessWidget {
         style: const TextStyle(
           fontFamily: 'Inter',
           fontSize: 18,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.5,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2,
           color: AppColors.authText,
         ),
       ),
@@ -285,7 +298,13 @@ class _ChestRow extends StatelessWidget {
           for (final (index, chest) in ChestType.values.indexed) ...[
             if (index > 0) const SizedBox(width: 12),
             Expanded(
-              child: _ChestCard(chest: chest, onTap: () => onTap(chest)),
+              // Los cofres caen uno detrás de otro al abrir la tienda.
+              child: PopIn.staggered(
+                index: index,
+                from: const Offset(0, -0.4),
+                startScale: 0.6,
+                child: _ChestCard(chest: chest, onTap: () => onTap(chest)),
+              ),
             ),
           ],
         ],
@@ -308,8 +327,7 @@ class _ChestCard extends StatelessWidget {
       button: true,
       label: '${chest.title}, ${chest.price} diamantes',
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: PressableScale(
         onTap: onTap,
         child: AspectRatio(
           aspectRatio: 0.8,
@@ -318,6 +336,13 @@ class _ChestCard extends StatelessWidget {
               color: palette.card,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: palette.strong, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: palette.strong,
+                  blurRadius: 0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Padding(
               padding: const EdgeInsets.all(8),
@@ -414,38 +439,44 @@ class _FilterTab extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  static const Duration _duration = Duration(milliseconds: 220);
+
   @override
   Widget build(BuildContext context) {
+    // El elegido se vuelve una cápsula azul que crece con un rebote.
     return Semantics(
       button: true,
       selected: selected,
       label: label,
-      child: InkWell(
+      child: PressableScale(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 3),
           child: Center(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: selected ? AppColors.blueStrong : Colors.transparent,
-                    width: 2,
-                  ),
+            child: AnimatedScale(
+              scale: selected ? 1.06 : 1,
+              duration: _duration,
+              curve: Curves.easeOutBack,
+              child: AnimatedContainer(
+                duration: _duration,
+                curve: Curves.easeOut,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
                 ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  label,
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.blueStrong : AppColors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: AnimatedDefaultTextStyle(
+                  duration: _duration,
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: selected
-                        ? AppColors.blueStrong
-                        : AppColors.wardrobeInk,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    color: selected ? AppColors.white : AppColors.wardrobeInk,
                   ),
+                  child: Text(label),
                 ),
               ),
             ),
@@ -466,6 +497,9 @@ class _ItemList extends StatelessWidget {
   /// desplaza por su cuenta.
   final bool shrinkWrap;
 
+  /// Cuántos artículos entran uno detrás de otro (los demás, juntos).
+  static const int _staggeredItems = 6;
+
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
@@ -478,13 +512,21 @@ class _ItemList extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final item = items[index];
-          return ShopItemRow(
-            preview: item.preview,
-            title: item.title,
-            description: item.description,
-            price: item.price,
-            rarity: item.rarity,
-            onTap: item.onTap,
+          // Los primeros entran escalonados; los de más abajo ya están al
+          // desplazarse, sin hacer esperar.
+          return PopIn.staggered(
+            key: ValueKey(item.title),
+            index: index.clamp(0, _staggeredItems),
+            from: const Offset(0.3, 0),
+            startScale: 0.95,
+            child: ShopItemRow(
+              preview: item.preview,
+              title: item.title,
+              description: item.description,
+              price: item.price,
+              rarity: item.rarity,
+              onTap: item.onTap,
+            ),
           );
         },
       ),

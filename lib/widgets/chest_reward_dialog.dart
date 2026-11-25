@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/models/chest.dart';
@@ -6,6 +8,9 @@ import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/blurred_dialog.dart';
 import 'package:party_tricks/widgets/chest_visuals.dart';
 import 'package:party_tricks/widgets/cosmetic_preview.dart';
+import 'package:party_tricks/widgets/fx/chunky_button.dart';
+import 'package:party_tricks/widgets/fx/confetti_burst.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 import 'package:party_tricks/widgets/rarity_badge.dart';
 
 /// Ventana con lo que salió del cofre: el cosmético, las monedas, el dado
@@ -76,9 +81,25 @@ class ChestRewardDialog extends ConsumerWidget {
           children: [
             // Aquí va el premio. Es un widget aparte para poder cambiarlo
             // por una animación de sorteo cuando exista.
-            Center(
-              child: _Pop(
-                child: _PrizeTile(chest: chest, palette: palette, prize: prize),
+            // El premio aparece con un rebote; si hubo premio, con confeti.
+            SizedBox(
+              height: _PrizeTile._size + 20,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  if (prize.outcome != ChestOutcome.nothing)
+                    _Rays(color: palette.card),
+                  _Pop(
+                    child: _PrizeTile(
+                      chest: chest,
+                      palette: palette,
+                      prize: prize,
+                    ),
+                  ),
+                  if (prize.outcome != ChestOutcome.nothing)
+                    const Positioned.fill(child: ConfettiBurst()),
+                ],
               ),
             ),
             if (prize.cosmetic?.rarity case final rarity?) ...[
@@ -86,14 +107,20 @@ class ChestRewardDialog extends ConsumerWidget {
               Center(child: RarityBadge(rarity: rarity)),
             ],
             const SizedBox(height: 12),
-            Text(
-              headline,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: palette.strong,
+            PopIn(
+              delay: const Duration(milliseconds: 250),
+              child: Text(
+                headline,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: palette.strong,
+                  shadows: const [
+                    Shadow(color: AppColors.white, offset: Offset(0, 2)),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 4),
@@ -108,23 +135,31 @@ class ChestRewardDialog extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
-                backgroundColor: palette.card,
-                foregroundColor: palette.strong,
-                side: BorderSide(color: palette.strong, width: 2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
+            SizedBox(
+              height: 50,
+              child: ChunkyButton(
+                color: palette.card,
+                edgeColor: palette.strong,
+                borderColor: palette.strong,
+                radius: 24,
+                depth: 5,
+                padding: EdgeInsets.zero,
+                onPressed: () => Navigator.of(context).pop(),
+                child: Center(
+                  child: Text(
+                    prize.outcome == ChestOutcome.nothing
+                        ? 'Volver'
+                        : '¡Genial!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: palette.strong,
+                      shadows: const [
+                        Shadow(color: AppColors.white, offset: Offset(0, 1.5)),
+                      ],
+                    ),
+                  ),
                 ),
-                textStyle: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              child: Text(
-                prize.outcome == ChestOutcome.nothing ? 'Volver' : '¡Genial!',
               ),
             ),
           ],
@@ -145,8 +180,8 @@ class _Pop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.6, end: 1),
-      duration: const Duration(milliseconds: 450),
+      tween: Tween(begin: 0.3, end: 1),
+      duration: const Duration(milliseconds: 700),
       curve: Curves.elasticOut,
       builder: (context, scale, child) =>
           Transform.scale(scale: scale, child: child),
@@ -179,6 +214,13 @@ class _PrizeTile extends ConsumerWidget {
         color: palette.card,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: palette.strong, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: palette.strong,
+            blurRadius: 0,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: _content(ref),
     );
@@ -202,6 +244,73 @@ class _PrizeTile extends ConsumerWidget {
       _ => Opacity(opacity: 0.55, child: ChestImage(chest: chest)),
     };
   }
+}
+
+/// Rayos de luz detrás del premio: crecen y dan media vuelta al aparecer.
+/// La animación termina sola (no se repite).
+class _Rays extends StatelessWidget {
+  const _Rays({required this.color});
+
+  final Color color;
+
+  static const double _size = 230;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 1400),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, child) => Transform.rotate(
+        angle: t * math.pi / 2,
+        child: Transform.scale(scale: 0.4 + 0.6 * t, child: child),
+      ),
+      child: SizedBox.square(
+        dimension: _size,
+        child: CustomPaint(painter: _RaysPainter(color)),
+      ),
+    );
+  }
+}
+
+class _RaysPainter extends CustomPainter {
+  _RaysPainter(this.color);
+
+  final Color color;
+
+  static const int _rays = 12;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.width / 2;
+    final paint = Paint()
+      ..shader = RadialGradient(
+        colors: [color, color.withValues(alpha: 0)],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    const step = 2 * math.pi / _rays;
+    for (var i = 0; i < _rays; i++) {
+      final a = i * step;
+      final path = Path()
+        ..moveTo(center.dx, center.dy)
+        ..lineTo(
+          center.dx + radius * _cos(a - step / 4),
+          center.dy + radius * _sin(a - step / 4),
+        )
+        ..lineTo(
+          center.dx + radius * _cos(a + step / 4),
+          center.dy + radius * _sin(a + step / 4),
+        )
+        ..close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  static double _cos(double a) => math.cos(a);
+  static double _sin(double a) => math.sin(a);
+
+  @override
+  bool shouldRepaint(_RaysPainter oldDelegate) => oldDelegate.color != color;
 }
 
 /// Fondo blanco redondeado para los dibujos de la cara.

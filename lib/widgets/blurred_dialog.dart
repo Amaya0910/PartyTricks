@@ -149,14 +149,17 @@ class _Header extends StatelessWidget {
       child: Text(
         title,
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w900,
           color: AppColors.white,
-          // Sombra dura debajo de las letras: título de juego, no de
-          // formulario.
+          // Sombra dura debajo de las letras (título de juego, no de
+          // formulario), del mismo color de la cabecera pero más oscuro.
           shadows: [
-            Shadow(color: AppColors.headerBorder, offset: Offset(0, 3)),
+            Shadow(
+              color: Color.alphaBlend(AppColors.edgeShade, color),
+              offset: const Offset(0, 3),
+            ),
           ],
         ),
       ),

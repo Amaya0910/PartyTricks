@@ -15,14 +15,23 @@ class RarityBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: rarity.color,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.white, width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.pillShadow,
+            blurRadius: 0,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Text(
         rarity.label,
         style: const TextStyle(
           fontFamily: 'Inter',
           fontSize: 12,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w900,
           color: AppColors.white,
+          shadows: [Shadow(color: AppColors.pillShadow, offset: Offset(0, 1))],
         ),
       ),
     );
