@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:party_tricks/services/feedback/haptics.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/fx/motion.dart';
 
@@ -33,6 +34,9 @@ class _ConfettiBurstState extends State<ConfettiBurst>
     duration: widget.duration,
   );
 
+  /// Para vibrar una sola vez aunque cambien las dependencias.
+  bool _celebrated = false;
+
   late final List<_Piece> _pieces = _Piece.scatter(
     count: widget.pieces,
     random: math.Random(widget.seed),
@@ -41,8 +45,10 @@ class _ConfettiBurstState extends State<ConfettiBurst>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!Motion.reduced(context) && _controller.isDismissed) {
-      _controller.forward();
+    if (_controller.isDismissed && !_celebrated) {
+      _celebrated = true;
+      HapticsScope.of(context).success();
+      if (!Motion.reduced(context)) _controller.forward();
     }
   }
 

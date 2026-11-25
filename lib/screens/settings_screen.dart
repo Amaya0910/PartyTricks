@@ -356,6 +356,11 @@ class _PreferencesSection extends ConsumerWidget {
           value: prefs.soundEffects,
           onChanged: controller.setSoundEffects,
         ),
+        SettingsSwitchTile(
+          label: 'Vibración',
+          value: prefs.vibration,
+          onChanged: controller.setVibration,
+        ),
         SettingsTile(
           label: 'Idioma',
           value: 'Español',

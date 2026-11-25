@@ -7,12 +7,16 @@ class AppPreferences {
     this.notifications = true,
     this.sound = true,
     this.soundEffects = true,
+    this.vibration = true,
     this.languageCode = 'es',
   });
 
   final bool notifications;
   final bool sound;
   final bool soundEffects;
+
+  /// Vibraciones cortas al tocar botones, ganar premios o equivocarse.
+  final bool vibration;
 
   /// Idioma de la app. Por ahora solo español.
   final String languageCode;
@@ -21,12 +25,14 @@ class AppPreferences {
     bool? notifications,
     bool? sound,
     bool? soundEffects,
+    bool? vibration,
     String? languageCode,
   }) {
     return AppPreferences(
       notifications: notifications ?? this.notifications,
       sound: sound ?? this.sound,
       soundEffects: soundEffects ?? this.soundEffects,
+      vibration: vibration ?? this.vibration,
       languageCode: languageCode ?? this.languageCode,
     );
   }

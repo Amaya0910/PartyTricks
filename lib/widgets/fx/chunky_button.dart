@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:party_tricks/services/feedback/haptics.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 
 /// Botón con relieve al estilo de los juegos de fiesta: una cara de color
@@ -66,7 +67,9 @@ class _ChunkyButtonState extends State<ChunkyButton>
   }
 
   void _down(TapDownDetails _) {
-    if (_enabled) _press.forward();
+    if (!_enabled) return;
+    _press.forward();
+    HapticsScope.of(context).tap();
   }
 
   void _up() {

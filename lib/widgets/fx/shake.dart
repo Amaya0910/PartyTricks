@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:party_tricks/services/feedback/haptics.dart';
 import 'package:party_tricks/widgets/fx/motion.dart';
 
 /// Sacude a [child] de lado a lado cada vez que cambia [trigger]. Sirve
@@ -28,19 +29,21 @@ class _ShakeState extends State<Shake> with SingleTickerProviderStateMixin {
   static const double _distance = 10;
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.trigger != null) _controller.forward();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // El primer error (el que hace aparecer el mensaje) también se sacude.
+    if (widget.trigger != null && _controller.isDismissed) {
+      HapticsScope.of(context).error();
+      if (!Motion.reduced(context)) _controller.forward();
+    }
   }
 
   @override
   void didUpdateWidget(Shake oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.trigger != null &&
-        widget.trigger != oldWidget.trigger &&
-        !Motion.reduced(context)) {
-      _controller.forward(from: 0);
-    }
+    if (widget.trigger == null || widget.trigger == oldWidget.trigger) return;
+    HapticsScope.of(context).error();
+    if (!Motion.reduced(context)) _controller.forward(from: 0);
   }
 
   @override

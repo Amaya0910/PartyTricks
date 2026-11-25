@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:party_tricks/services/feedback/haptics.dart';
 
 /// Se encoge al presionarlo y vuelve con un rebote. Para cosas tocables que
 /// no son botones con relieve (avatares, tarjetas, íconos).
@@ -48,7 +49,12 @@ class _PressableScaleState extends State<PressableScale>
     final enabled = widget.onTap != null;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTapDown: enabled ? (_) => _press.forward() : null,
+      onTapDown: enabled
+          ? (_) {
+              _press.forward();
+              HapticsScope.of(context).select();
+            }
+          : null,
       onTapUp: enabled ? (_) => _press.reverse() : null,
       onTapCancel: enabled ? _press.reverse : null,
       onTap: widget.onTap,
