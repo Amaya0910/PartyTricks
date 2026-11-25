@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:party_tricks/controllers/preferences_controller.dart';
 import 'package:party_tricks/models/app_preferences.dart';
+import 'package:party_tricks/services/feedback/haptics.dart';
 
 import '../services/preferences/fake_preferences_service.dart';
 
@@ -51,5 +52,16 @@ void main() {
     await notifier().setSound(false);
 
     expect(service.saved.sound, isFalse);
+  });
+
+  test('la vibración viene encendida y se puede apagar', () async {
+    await start();
+    expect(current().vibration, isTrue);
+    expect(container.read(hapticsProvider), isA<DeviceHaptics>());
+
+    await notifier().setVibration(false);
+
+    expect(service.saved.vibration, isFalse);
+    expect(container.read(hapticsProvider), isA<SilentHaptics>());
   });
 }

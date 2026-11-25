@@ -10,6 +10,8 @@ import 'package:party_tricks/services/social/chat_format.dart';
 import 'package:party_tricks/services/social/social_exception.dart';
 import 'package:party_tricks/services/social/social_providers.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/chunky_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 import 'package:party_tricks/widgets/friend_request_tile.dart';
 import 'package:party_tricks/widgets/friend_tile.dart';
 import 'package:party_tricks/widgets/join_code_dialog.dart';
@@ -140,25 +142,39 @@ class _FriendsList extends ConsumerWidget {
                             'Solicitudes (${sections.incoming.length})',
                           ),
                           for (final request in sections.incoming)
-                            FriendRequestTile.incoming(
-                              otherUid: request.otherOf(myUid),
-                              onAccept: () =>
-                                  _run(context, () => friends.accept(request)),
-                              onReject: () =>
-                                  _run(context, () => friends.remove(request)),
+                            PopIn(
+                              key: ValueKey('in-${request.id}'),
+                              from: const Offset(0.3, 0),
+                              child: FriendRequestTile.incoming(
+                                otherUid: request.otherOf(myUid),
+                                onAccept: () => _run(
+                                  context,
+                                  () => friends.accept(request),
+                                ),
+                                onReject: () => _run(
+                                  context,
+                                  () => friends.remove(request),
+                                ),
+                              ),
                             ),
                         ],
                         if (sections.friends.isNotEmpty) ...[
                           if (sections.incoming.isNotEmpty)
                             const _SectionLabel('Amigos'),
-                          for (final friend in sections.friends)
-                            FriendTile(
-                              friendUid: friend.otherOf(myUid),
-                              myUid: myUid,
-                              chat: chats[friend.id],
-                              onTap: () => ref
-                                  .read(openChatProvider.notifier)
-                                  .open(friend.otherOf(myUid)),
+                          for (final (index, friend)
+                              in sections.friends.indexed)
+                            PopIn.staggered(
+                              key: ValueKey('friend-${friend.id}'),
+                              index: index.clamp(0, 6),
+                              from: const Offset(0.3, 0),
+                              child: FriendTile(
+                                friendUid: friend.otherOf(myUid),
+                                myUid: myUid,
+                                chat: chats[friend.id],
+                                onTap: () => ref
+                                    .read(openChatProvider.notifier)
+                                    .open(friend.otherOf(myUid)),
+                              ),
                             ),
                         ],
                         if (sections.outgoing.isNotEmpty) ...[
@@ -207,8 +223,11 @@ class _Title extends StatelessWidget {
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 34,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
           color: AppColors.white,
+          shadows: [
+            Shadow(color: AppColors.headerBorder, offset: Offset(0, 3)),
+          ],
         ),
       ),
     );
@@ -263,8 +282,8 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
+          fontSize: 15,
+          fontWeight: FontWeight.w900,
           letterSpacing: 0.5,
           color: AppColors.friendsBorder,
         ),
@@ -289,7 +308,7 @@ class _Empty extends StatelessWidget {
   }
 }
 
-/// Botón cuadrado "+" del mockup.
+/// Botón cuadrado "+" del mockup, con relieve.
 class _AddButton extends StatelessWidget {
   const _AddButton({required this.onPressed});
 
@@ -297,16 +316,24 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    return ChunkyButton(
       color: AppColors.friendsAccent,
-      elevation: 4,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: const SizedBox.square(
-          dimension: 72,
-          child: Icon(Icons.add, size: 48, color: AppColors.white),
+      edgeColor: AppColors.friendsBorder,
+      borderColor: AppColors.white,
+      radius: 20,
+      depth: 6,
+      padding: EdgeInsets.zero,
+      semanticLabel: 'Agregar amigo',
+      onPressed: onPressed,
+      child: const SizedBox.square(
+        dimension: 72,
+        child: Icon(
+          Icons.add,
+          size: 48,
+          color: AppColors.white,
+          shadows: [
+            Shadow(color: AppColors.friendsBorder, offset: Offset(0, 2)),
+          ],
         ),
       ),
     );

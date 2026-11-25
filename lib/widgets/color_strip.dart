@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 
 /// Línea horizontal de colores que se desplaza si no caben. No conoce
 /// Riverpod: recibe la posición elegida y avisa cuando tocan otra.
@@ -84,26 +85,44 @@ class _Swatch extends StatelessWidget {
       selected: isSelected,
       label: label,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: PressableScale(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isSelected ? AppColors.blueStrong : AppColors.wardrobeInk,
-              width: isSelected ? 3 : 1,
+        child: AnimatedScale(
+          // El color elegido salta y queda más grande.
+          scale: isSelected ? 1.15 : 1,
+          duration: const Duration(milliseconds: 420),
+          curve: Curves.elasticOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.blueStrong
+                    : AppColors.wardrobeInk,
+                width: isSelected ? 3 : 1,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.pillShadow,
+                  blurRadius: 0,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
+            child: isNone
+                ? Icon(
+                    Icons.close_rounded,
+                    size: 24,
+                    color: Colors.red.shade600,
+                  )
+                : isSelected
+                ? Icon(Icons.check, size: 18, color: checkColor)
+                : null,
           ),
-          child: isNone
-              ? Icon(Icons.close_rounded, size: 24, color: Colors.red.shade600)
-              : isSelected
-              ? Icon(Icons.check, size: 18, color: checkColor)
-              : null,
         ),
       ),
     );

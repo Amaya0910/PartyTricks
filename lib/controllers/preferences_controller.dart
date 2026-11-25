@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_tricks/models/app_preferences.dart';
+import 'package:party_tricks/services/feedback/haptics.dart';
 import 'package:party_tricks/services/preferences/preferences_service.dart';
 import 'package:party_tricks/services/preferences/shared_preferences_service.dart';
 
@@ -21,6 +22,9 @@ class PreferencesController extends AsyncNotifier<AppPreferences> {
   Future<void> setSoundEffects(bool value) =>
       _update((p) => p.copyWith(soundEffects: value));
 
+  Future<void> setVibration(bool value) =>
+      _update((p) => p.copyWith(vibration: value));
+
   Future<void> _update(AppPreferences Function(AppPreferences) change) async {
     final current = state.value ?? const AppPreferences();
     final next = change(current);
@@ -33,3 +37,9 @@ final preferencesControllerProvider =
     AsyncNotifierProvider<PreferencesController, AppPreferences>(
       PreferencesController.new,
     );
+
+/// Cómo vibra la app según Ajustes (mientras cargan las preferencias, vibra).
+final hapticsProvider = Provider<Haptics>((ref) {
+  final on = ref.watch(preferencesControllerProvider).value?.vibration ?? true;
+  return on ? const DeviceHaptics() : const SilentHaptics();
+});

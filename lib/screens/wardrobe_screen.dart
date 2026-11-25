@@ -24,6 +24,7 @@ import 'package:party_tricks/widgets/character/animated_character.dart';
 import 'package:party_tricks/widgets/character/character_clips.dart';
 import 'package:party_tricks/widgets/cosmetic_slot.dart';
 import 'package:party_tricks/widgets/eyes_picker.dart';
+import 'package:party_tricks/widgets/fx/chunky_button.dart';
 import 'package:party_tricks/widgets/hair_picker.dart';
 import 'package:party_tricks/widgets/mouth_picker.dart';
 import 'package:party_tricks/widgets/pants_picker.dart';
@@ -307,18 +308,43 @@ class _CharacterStageState extends State<_CharacterStage>
         Positioned.fill(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: _view == CharacterView.frente
-                ? AnimatedCharacter.fromLook(widget.look)
-                : _clip.build(look: widget.look, phase: _phase),
+            // Cada vez que cambia la ropa o la vista, el personaje da un
+            // saltito, como si se la probara.
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey((widget.look, _view)),
+              tween: Tween(begin: 0.9, end: 1),
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.elasticOut,
+              builder: (context, scale, child) => Transform.scale(
+                scale: scale,
+                alignment: Alignment.bottomCenter,
+                child: child,
+              ),
+              child: _view == CharacterView.frente
+                  ? AnimatedCharacter.fromLook(widget.look)
+                  : _clip.build(look: widget.look, phase: _phase),
+            ),
           ),
         ),
         Positioned(
           top: 12,
           left: 12,
-          child: IconButton.filledTonal(
-            tooltip: _nextLabel,
-            onPressed: _toggle,
-            icon: const Icon(Icons.autorenew),
+          child: Tooltip(
+            message: _nextLabel,
+            child: ChunkyButton(
+              color: AppColors.white,
+              edgeColor: AppColors.authAccent,
+              borderColor: AppColors.authAccent,
+              radius: 22,
+              depth: 4,
+              padding: const EdgeInsets.all(8),
+              semanticLabel: _nextLabel,
+              onPressed: _toggle,
+              child: const Icon(
+                Icons.autorenew_rounded,
+                color: AppColors.authAccent,
+              ),
+            ),
           ),
         ),
       ],
@@ -333,16 +359,31 @@ class _PhotoButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.icon(
+    return ChunkyButton(
+      color: AppColors.activeButton,
+      edgeColor: AppColors.inactiveButton,
+      borderColor: AppColors.inactiveButton,
+      radius: 12,
+      depth: 4,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       onPressed: onPressed,
-      icon: const Icon(Icons.photo_camera),
-      label: const Text('Foto'),
-      style: FilledButton.styleFrom(
-        backgroundColor: AppColors.activeButton,
-        foregroundColor: AppColors.white,
-        side: const BorderSide(color: AppColors.inactiveButton, width: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.photo_camera, color: AppColors.white, size: 20),
+          SizedBox(width: 6),
+          Text(
+            'Foto',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: AppColors.white,
+              shadows: [
+                Shadow(color: AppColors.inactiveButton, offset: Offset(0, 1.5)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

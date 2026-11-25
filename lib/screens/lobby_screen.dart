@@ -14,7 +14,12 @@ import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/social/social_exception.dart';
 import 'package:party_tricks/theme/app_colors.dart';
 import 'package:party_tricks/widgets/app_background.dart';
+import 'package:party_tricks/widgets/code_tiles.dart';
+import 'package:party_tricks/widgets/fx/idle_motion.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 import 'package:party_tricks/widgets/invite_friends_dialog.dart';
+import 'package:party_tricks/widgets/party_pill.dart';
 import 'package:party_tricks/widgets/player_slot.dart';
 
 /// Sala de espera: muestra el código, los jugadores y la cuenta regresiva
@@ -165,7 +170,9 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
             ),
             SafeArea(
               child: roomAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: AppColors.white),
+                ),
                 error: (_, _) =>
                     _Message(text: 'No se pudo cargar la sala', onBack: _leave),
                 data: (room) => room == null
@@ -232,94 +239,114 @@ class _Waiting extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: AppColors.blueStrong,
-                          width: 3,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: AppColors.headerBorder,
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
+                    PopIn(
+                      startScale: 0.7,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: AppColors.blueStrong,
+                            width: 3,
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _Header(endsAt: room.lobbyEndsAt),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                const _Pill(label: 'Tu código'),
-                                const SizedBox(height: 8),
-                                _CodePanel(code: room.code),
-                                const SizedBox(height: 16),
-                                _Pill(
-                                  label:
-                                      'Jugadores (${players.length}/${room.maxPlayers})'
-                                      ' · ${room.rounds} rondas'
-                                      ' · ${_mapName(room.mapId)}',
-                                ),
-                                const SizedBox(height: 12),
-                                // Un espacio por cada jugador posible. La
-                                // cuadrícula mide lo que miden sus filas.
-                                GridView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  padding: EdgeInsets.zero,
-                                  itemCount: room.maxPlayers,
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 3,
-                                        mainAxisSpacing: 12,
-                                        crossAxisSpacing: 12,
-                                        childAspectRatio: 0.8,
-                                      ),
-                                  itemBuilder: (context, index) {
-                                    if (index >= players.length) {
-                                      return const PlayerSlot();
-                                    }
-                                    final player = players[index];
-                                    return PlayerSlot(
-                                      player: player,
-                                      isMe: player.uid == myUid,
-                                      isHost: player.uid == room.hostUid,
-                                    );
-                                  },
-                                ),
-                              ],
+                          boxShadow: const [
+                            BoxShadow(
+                              color: AppColors.headerBorder,
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _Header(endsAt: room.lobbyEndsAt),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                12,
+                                12,
+                                12,
+                                12,
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const PartyPill(label: 'Tu código'),
+                                  const SizedBox(height: 8),
+                                  CodeTiles(
+                                    text: room.code,
+                                    length: room.code.length,
+                                    animateIn: true,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  PartyPill(
+                                    label:
+                                        'Jugadores (${players.length}/${room.maxPlayers})'
+                                        ' · ${room.rounds} rondas'
+                                        ' · ${_mapName(room.mapId)}',
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Un espacio por cada jugador posible. La
+                                  // cuadrícula mide lo que miden sus filas.
+                                  GridView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    padding: EdgeInsets.zero,
+                                    itemCount: room.maxPlayers,
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 3,
+                                          mainAxisSpacing: 12,
+                                          crossAxisSpacing: 12,
+                                          childAspectRatio: 0.8,
+                                        ),
+                                    itemBuilder: (context, index) {
+                                      if (index >= players.length) {
+                                        return const PlayerSlot();
+                                      }
+                                      final player = players[index];
+                                      // Quien llega entra con un rebote.
+                                      return PopIn(
+                                        key: ValueKey(player.uid),
+                                        startScale: 0.5,
+                                        from: Offset.zero,
+                                        child: PlayerSlot(
+                                          player: player,
+                                          isMe: player.uid == myUid,
+                                          isHost: player.uid == room.hostUid,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        backgroundColor: AppColors.accept,
+                    const SizedBox(height: 14),
+                    PopIn(
+                      delay: const Duration(milliseconds: 250),
+                      child: PartyButton(
+                        label: 'Invitar a amigos',
+                        icon: Icons.person_add_rounded,
+                        color: AppColors.accept,
+                        edgeColor: AppColors.inactiveButton,
+                        onPressed: onInvite,
                       ),
-                      onPressed: onInvite,
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('Invitar a amigos'),
                     ),
-                    const SizedBox(height: 8),
-                    FilledButton(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        backgroundColor: AppColors.authAccent,
+                    const SizedBox(height: 10),
+                    PopIn(
+                      delay: const Duration(milliseconds: 330),
+                      child: PartyButton(
+                        label: 'Salir',
+                        icon: Icons.logout_rounded,
+                        onPressed: onLeave,
                       ),
-                      onPressed: onLeave,
-                      child: const Text('Salir'),
                     ),
                   ],
                 ),
@@ -352,10 +379,14 @@ class _Header extends StatelessWidget {
             'Tu party',
             style: TextStyle(
               fontSize: 32,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w900,
               color: AppColors.white,
+              shadows: [
+                Shadow(color: AppColors.headerBorder, offset: Offset(0, 3)),
+              ],
             ),
           ),
+          const SizedBox(height: 4),
           _Countdown(endsAt: endsAt),
         ],
       ),
@@ -375,6 +406,9 @@ class _Countdown extends StatefulWidget {
 }
 
 class _CountdownState extends State<_Countdown> {
+  /// Desde cuántos segundos el reloj salta más fuerte.
+  static const int _hurrySeconds = 10;
+
   late final Timer _timer;
 
   @override
@@ -395,120 +429,37 @@ class _CountdownState extends State<_Countdown> {
     final seconds = left.isNegative ? 0 : left.inSeconds;
     final clock =
         '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
-    return Text(
-      'Empieza en $clock',
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.white,
-      ),
-    );
-  }
-}
-
-/// Etiqueta redondeada ("Tu código", "Jugadores").
-class _Pill extends StatelessWidget {
-  const _Pill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.authAccent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.white,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Código de la sala en cuadritos, con un guion en medio (ABC-234).
-class _CodePanel extends StatelessWidget {
-  const _CodePanel({required this.code});
-
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    final half = code.length ~/ 2;
-    final chars = code.split('');
+    // En los últimos segundos el reloj late para meter prisa.
+    final hurry = seconds > 0 && seconds <= _hurrySeconds;
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.lobbyCodePanel,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.headerPanel,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          for (var i = 0; i < chars.length; i++) ...[
-            if (i == half)
-              const SizedBox(
-                width: 16,
-                child: Text(
-                  '-',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
-            Expanded(child: _Digit(char: chars[i])),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Digit extends StatelessWidget {
-  const _Digit({required this.char});
-
-  final String char;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: AspectRatio(
-        aspectRatio: 0.7,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.slotBorder,
-                blurRadius: 2,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: FittedBox(
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Text(
-                  char,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+          const Icon(Icons.timer_rounded, size: 18, color: AppColors.white),
+          const SizedBox(width: 6),
+          // Cada segundo, el número nuevo entra con un saltito.
+          TweenAnimationBuilder<double>(
+            key: ValueKey(seconds),
+            tween: Tween(begin: hurry ? 1.35 : 1.12, end: 1),
+            duration: const Duration(milliseconds: 380),
+            curve: Curves.easeOutBack,
+            builder: (context, scale, child) =>
+                Transform.scale(scale: scale, child: child),
+            child: Text(
+              'Empieza en $clock',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+                color: AppColors.white,
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -525,23 +476,41 @@ class _Message extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              text,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.authAccent,
+        child: PopIn(
+          startScale: 0.7,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Floating(
+                child: Icon(
+                  Icons.celebration_rounded,
+                  size: 64,
+                  color: AppColors.white,
+                  shadows: [
+                    Shadow(color: AppColors.headerBorder, offset: Offset(0, 3)),
+                  ],
+                ),
               ),
-              onPressed: onBack,
-              child: const Text('Regresar a menú'),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                text,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.white,
+                  shadows: [
+                    Shadow(color: AppColors.headerBorder, offset: Offset(0, 3)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: 260,
+                child: PartyButton(label: 'Regresar a menú', onPressed: onBack),
+              ),
+            ],
+          ),
         ),
       ),
     );

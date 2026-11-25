@@ -5,6 +5,7 @@ import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/social/chat_format.dart';
 import 'package:party_tricks/services/social/invite_status.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 
 /// Un mensaje del chat: los míos a la derecha en azul y los del amigo a la
 /// izquierda en gris, con la hora debajo. Las invitaciones llevan el botón
@@ -36,44 +37,62 @@ class ChatBubble extends StatelessWidget {
         constraints: BoxConstraints(
           maxWidth: MediaQuery.sizeOf(context).width * 0.7,
         ),
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-          decoration: BoxDecoration(
-            color: isMine ? AppColors.friendsAccent : AppColors.chatField,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(14),
-              topRight: const Radius.circular(14),
-              bottomLeft: Radius.circular(isMine ? 14 : 2),
-              bottomRight: Radius.circular(isMine ? 2 : 14),
+        // El mensaje entra con un rebote desde su lado.
+        child: PopIn(
+          from: Offset(isMine ? 0.25 : -0.25, 0),
+          startScale: 0.7,
+          duration: const Duration(milliseconds: 420),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+            decoration: BoxDecoration(
+              color: isMine ? AppColors.friendsAccent : AppColors.chatField,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
+                bottomLeft: Radius.circular(isMine ? 16 : 3),
+                bottomRight: Radius.circular(isMine ? 3 : 16),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isMine
+                      ? AppColors.headerBorder
+                      : AppColors.switchBorder,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  message.text,
-                  style: TextStyle(fontSize: 15, color: textColor),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    message.text,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
                 ),
-              ),
-              if (message.isInvite && message.roomId != null)
-                _InviteButton(
-                  roomId: message.roomId!,
-                  roomCode: message.roomCode ?? '',
-                  // Quien invita no necesita unirse a su propia party.
-                  onJoin: isMine ? null : onJoin,
+                if (message.isInvite && message.roomId != null)
+                  _InviteButton(
+                    roomId: message.roomId!,
+                    roomCode: message.roomCode ?? '',
+                    // Quien invita no necesita unirse a su propia party.
+                    onJoin: isMine ? null : onJoin,
+                  ),
+                const SizedBox(height: 2),
+                Text(
+                  ChatFormat.time(message.sentAt, now),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: textColor.withValues(alpha: 0.8),
+                  ),
                 ),
-              const SizedBox(height: 2),
-              Text(
-                ChatFormat.time(message.sentAt, now),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: textColor.withValues(alpha: 0.8),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

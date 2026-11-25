@@ -21,6 +21,9 @@ import 'package:party_tricks/services/map/map_providers.dart';
 import 'package:party_tricks/services/rooms/room_providers.dart';
 import 'package:party_tricks/services/stats/match_time_tracker.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/party_button.dart';
+import 'package:party_tricks/widgets/party_panel.dart';
+import 'package:party_tricks/widgets/party_pill.dart';
 import 'package:party_tricks/widgets/board_view.dart';
 import 'package:party_tricks/widgets/confirm_dialog.dart';
 import 'package:party_tricks/widgets/dice_roll_overlay.dart';
@@ -472,21 +475,32 @@ class _Panel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.boardPanel,
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return PartyPanel(
+      margin: const EdgeInsets.fromLTRB(8, 0, 8, 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      radius: 18,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Ronda ${game.round} de ${game.totalRounds}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          Center(
+            // La ronda nueva entra con un saltito.
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              transitionBuilder: (child, animation) => ScaleTransition(
+                scale: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutBack,
+                ),
+                child: child,
+              ),
+              child: PartyPill(
+                key: ValueKey(game.round),
+                label: 'Ronda ${game.round} de ${game.totalRounds}',
+                fontSize: 18,
+              ),
+            ),
           ),
+          const SizedBox(height: 4),
           Expanded(
             child: ListView(
               children: [
@@ -502,7 +516,24 @@ class _Panel extends StatelessWidget {
               ],
             ),
           ),
-          _actions(),
+          // Lo que toca hacer cambia con un deslizamiento suave.
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 280),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween(
+                  begin: const Offset(0, 0.4),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+            ),
+            child: KeyedSubtree(
+              key: ValueKey((game.phase, game.currentPlayerId)),
+              child: _actions(),
+            ),
+          ),
         ],
       ),
     );
@@ -624,44 +655,78 @@ class _PlayerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      dense: true,
-      leading: CircleAvatar(backgroundColor: color, radius: 10),
-      title: Text(
-        player.username,
-        style: TextStyle(
-          fontWeight: hasTurn ? FontWeight.bold : FontWeight.normal,
+    // Quien tiene el turno se resalta y su ficha crece.
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutBack,
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: BoxDecoration(
+        color: hasTurn ? AppColors.resultsMine : null,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: hasTurn ? AppColors.blueMain : AppColors.boardPanel,
+          width: 2,
         ),
       ),
-      // Lo que le dejó una casilla especial para su siguiente turno.
-      subtitle: switch (player.pendingEffect) {
-        final effect? => Text(
-          '✨ ${effect.title}',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: switch (effect.kind) {
-              EffectKind.good => Colors.green.shade700,
-              EffectKind.bad => Colors.red.shade700,
-              EffectKind.neutral => Colors.deepPurple,
-            },
+      child: ListTile(
+        dense: true,
+        leading: AnimatedScale(
+          scale: hasTurn ? 1.35 : 1,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.elasticOut,
+          child: Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.white, width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.pillShadow,
+                  blurRadius: 0,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
           ),
         ),
-        null => null,
-      },
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.monetization_on, color: AppColors.coin, size: 18),
-          Text(' ${player.coins}   '),
-          const Icon(Icons.diamond, color: AppColors.diamond, size: 18),
-          Text(' ${player.diamonds}'),
-          if (_items > 0) ...[
-            const Text('   '),
-            const Icon(Icons.backpack, color: AppColors.tileShop, size: 18),
-            Text(' $_items'),
+        title: Text(
+          player.username,
+          style: TextStyle(
+            fontWeight: hasTurn ? FontWeight.w900 : FontWeight.w600,
+          ),
+        ),
+        // Lo que le dejó una casilla especial para su siguiente turno.
+        subtitle: switch (player.pendingEffect) {
+          final effect? => Text(
+            '✨ ${effect.title}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: switch (effect.kind) {
+                EffectKind.good => Colors.green.shade700,
+                EffectKind.bad => Colors.red.shade700,
+                EffectKind.neutral => Colors.deepPurple,
+              },
+            ),
+          ),
+          null => null,
+        },
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.monetization_on, color: AppColors.coin, size: 18),
+            Text(' ${player.coins}   '),
+            const Icon(Icons.diamond, color: AppColors.diamond, size: 18),
+            Text(' ${player.diamonds}'),
+            if (_items > 0) ...[
+              const Text('   '),
+              const Icon(Icons.backpack, color: AppColors.tileShop, size: 18),
+              Text(' $_items'),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -675,15 +740,7 @@ class _Button extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton(
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(52),
-        backgroundColor: AppColors.authAccent,
-        textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-      ),
-      onPressed: onPressed,
-      child: Text(label),
-    );
+    return PartyButton(label: label, onPressed: onPressed);
   }
 }
 

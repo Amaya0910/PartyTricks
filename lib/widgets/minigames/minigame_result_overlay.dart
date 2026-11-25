@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:party_tricks/services/game_engine/minigames.dart';
 import 'package:party_tricks/services/map/map_assets.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/confetti_burst.dart';
+import 'package:party_tricks/widgets/fx/pop_in.dart';
 import 'package:party_tricks/widgets/minigames/minigame_view.dart';
 
 /// Resultado del minijuego sobre el mapa: quién ganó, lo que hizo cada uno
@@ -94,14 +96,25 @@ class _MinigameResultOverlayState extends State<MinigameResultOverlay>
             ),
           );
         },
-        child: Center(
-          child: SingleChildScrollView(
-            child: MinigameResultCard(
-              result: result,
-              players: widget.players,
-              coins: widget.coins,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: SingleChildScrollView(
+                child: MinigameResultCard(
+                  result: result,
+                  players: widget.players,
+                  coins: widget.coins,
+                ),
+              ),
             ),
-          ),
+            // Si alguien ganó, sale confeti (una vez por resultado).
+            if (result.winnerIds.isNotEmpty)
+              ConfettiBurst(
+                key: ValueKey((result.round, result.type)),
+                pieces: 48,
+              ),
+          ],
         ),
       ),
     );
@@ -177,13 +190,19 @@ class MinigameResultCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 10),
                           ],
-                          for (final line in _lines())
-                            _ScoreRow(
-                              text: line.text,
-                              name: players.nameOf(line.id),
-                              color: players.colorOf(line.id),
-                              winner: result.winnerIds.contains(line.id),
-                              out: line.out,
+                          // Cada jugador aparece uno detrás de otro.
+                          for (final (index, line) in _lines().indexed)
+                            PopIn.staggered(
+                              index: index,
+                              base: const Duration(milliseconds: 250),
+                              from: const Offset(0.2, 0),
+                              child: _ScoreRow(
+                                text: line.text,
+                                name: players.nameOf(line.id),
+                                color: players.colorOf(line.id),
+                                winner: result.winnerIds.contains(line.id),
+                                out: line.out,
+                              ),
                             ),
                           if (result.tiebreak.isNotEmpty)
                             _Tiebreak(result: result, players: players),

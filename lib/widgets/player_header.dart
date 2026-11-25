@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:party_tricks/theme/app_colors.dart';
+import 'package:party_tricks/widgets/fx/pressable_scale.dart';
 import 'package:party_tricks/widgets/stat_pill.dart';
 
 /// Cabecera con el avatar, el nombre y las monedas/diamantes del jugador.
@@ -50,7 +51,7 @@ class PlayerHeader extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  GestureDetector(
+                  PressableScale(
                     onTap: onAvatarTap,
                     child: Stack(
                       clipBehavior: Clip.none,
@@ -61,13 +62,33 @@ class PlayerHeader extends StatelessWidget {
                               backgroundColor: AppColors.avatarBackground,
                               child: Icon(Icons.person, size: 36),
                             ),
+                        // La llave de Ajustes, en una burbuja para que se vea
+                        // como un botón.
                         Positioned(
-                          left: -4,
-                          bottom: -4,
-                          child: Icon(
-                            Icons.build,
-                            size: 22,
-                            color: Theme.of(context).colorScheme.primary,
+                          left: -6,
+                          bottom: -6,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.headerBorder,
+                                width: 2,
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: AppColors.pillShadow,
+                                  blurRadius: 3,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.build,
+                              size: 16,
+                              color: AppColors.headerBorder,
+                            ),
                           ),
                         ),
                       ],
@@ -94,7 +115,15 @@ class PlayerHeader extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.white,
+                                  shadows: [
+                                    Shadow(
+                                      color: AppColors.headerBorder,
+                                      offset: Offset(0, 2),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(height: 8),
